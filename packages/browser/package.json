@@ -1,0 +1,55 @@
+{
+	"name": "@interceptor/browser",
+	"version": "0.0.1",
+	"type": "module",
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"exports": {
+		".": "./src/index.ts",
+		"./remote": "./src/remote/index.ts",
+		"./remote/profiles": "./src/remote/profiles.ts",
+		"./shared": "./src/shared/index.ts",
+		"./shared/config": "./src/shared/config.ts",
+		"./shared/types": "./src/shared/types.ts",
+		"./shared/auth": "./src/shared/auth.ts",
+		"./shared/interceptor": "./src/shared/interceptor.ts",
+		"./shared/session-manager": "./src/shared/session-manager.ts",
+		"./handler": "./src/handler/index.ts",
+		"./handler/api-proxy": "./src/handler/api-proxy.ts",
+		"./handler/domain-loader": "./src/handler/domain-loader.ts",
+		"./analysis": "./src/analysis/discovery-analyzer.ts",
+		"./analysis/discovery": "./src/analysis/discovery-analyzer.ts",
+		"./analysis/dom": "./src/analysis/dom-orchestrator.ts",
+		"./codegen": "./src/codegen/index.ts",
+		"./registry": "./src/registry.ts",
+		"./mcp": "./src/mcp/server.ts",
+		"./analysis/discovery": "./src/analysis/discovery-analyzer.ts"
+	},
+	"scripts": {
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"typecheck": "tsc --noEmit",
+		"postinstall": "npx patchright install chromium"
+	},
+	"dependencies": {
+		"@ghostery/adblocker-playwright": "2.14.1",
+		"@modelcontextprotocol/sdk": "1.27.1",
+		"cheerio": "^1.2.0",
+		"cross-fetch": "4.1.0",
+		"hono": "^4.12.8",
+		"patchright": "1.58.2",
+		"ws": "8.18.2",
+		"zod": "4.3.6"
+	},
+	"devDependencies": {
+		"@types/node": "25.5.0",
+		"@types/ws": "8.18.1",
+		"typescript": "5.9.3",
+		"vitest": "4.1.0"
+	},
+	"overrides": {
+		"@ghostery/adblocker-playwright": {
+			"playwright": "npm:patchright@1.57.0"
+		}
+	}
+}

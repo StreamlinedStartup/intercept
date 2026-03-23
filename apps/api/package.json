@@ -1,0 +1,24 @@
+{
+	"name": "@interceptor/api",
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsx --watch --watch-path=src src/index.ts",
+		"test": "vitest run",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@interceptor/browser": "workspace:*",
+		"@interceptor/domain-boardshop": "workspace:*",
+		"@interceptor/shared": "workspace:*",
+		"hono": "^4.12.8",
+		"ws": "^8.19.0"
+	},
+	"devDependencies": {
+		"@types/node": "25.5.0",
+		"@types/ws": "^8.18.1",
+		"tsx": "^4.21.0",
+		"typescript": "5.9.3"
+	}
+}
