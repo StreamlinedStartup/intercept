@@ -15,6 +15,31 @@ Once connected to a page, it intercepts every byte of network traffic — then a
 ## Prerequisites
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
+- Docker (for the Postgres/TimescaleDB container — required by the UFC Fight Predictor pipeline)
+
+## Database setup
+
+The API server fails to start without a reachable database. One-time setup:
+
+```bash
+cp .env.example .env                                 # contains DATABASE_URL pointing at localhost:5434
+docker compose up -d postgres                        # spins up timescaledb on host port 5434
+pnpm --filter @interceptor/db migrate                # applies schema + creates hypertables
+```
+
+`pnpm --filter @interceptor/db smoke` round-trips one row of every table to verify the wiring.
+
+## Odds snapshots
+
+There is no scheduler in v1. Take one odds snapshot per day with the API server running:
+
+```bash
+curl localhost:3001/api/odds-mma/snapshot
+```
+
+`ODDS_API_KEY` must be set in the API environment. The endpoint fetches current MMA moneyline odds from the-odds-api, writes `odds_snapshots`, and logs unmatched event/fighter pairs to `unmatched_odds` for review.
+
+The free plan budget is 500 requests/month. A daily snapshot costs about 30 requests/month, leaving roughly 470 requests for dashboard refreshes and development. If automation is needed later, cron, a systemd timer, or a GitHub Action can call the same endpoint; scheduler infrastructure is intentionally out of scope for v1.
 
 ## Getting Started
 
