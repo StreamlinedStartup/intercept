@@ -129,6 +129,18 @@ beans update <id> -s completed --body-replace-old "- [ ] X" --body-replace-new "
 
 **Every completed bean task gets its own commit. Every completed epic gets its own PR. No exceptions.**
 
+### Remote boundary — never submit upstream to original Interceptor
+
+**This repo is now a separate UFC Fight Predictor product. It must never submit work upstream to the original `intercept` project. No exceptions.**
+
+- Do not open pull requests against `adam-s/intercept` or any other original/upstream Interceptor repository.
+- Do not push branches to an upstream Interceptor remote, even if credentials appear to allow it.
+- Do not fork upstream Interceptor for contribution purposes, and do not create cross-repo PRs targeting upstream Interceptor.
+- Do not merge, squash, rebase, or otherwise land this project’s work into upstream Interceptor.
+- Treat any remote named `origin` or `upstream` that points at original Interceptor as read-only historical context only.
+- If a PR is required for an epic, create it only inside this project’s own GitHub repository/fork. If that remote does not exist, create a new project-owned remote and use that as the destination.
+- If the user asks to “push remote,” “open PR,” or “merge PR,” first verify the destination is not upstream Interceptor. Refuse and explain if the only available destination is upstream Interceptor.
+
 - Do not batch multiple completed tasks into one commit unless a bean explicitly defines them as one task.
 - Do not close a bean until its code/docs/fixtures, bean file update, and verification evidence are committed together.
 - Do not close an epic until every child task is committed, the smoke gate is committed, and a PR exists for the epic.
