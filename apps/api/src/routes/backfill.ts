@@ -88,6 +88,8 @@ type StoredBackfillState = {
 	last_error: string | null;
 };
 
+type SeedScope = 'in-window' | 'ppvs-5y' | 'ufc-5y';
+
 export function registerBackfillRoutes(app: Hono): void {
 	app.get('/api/predict/backfill/job/:jobId', (c) => {
 		const job = getBackfillJob(c.req.param('jobId'));
@@ -152,14 +154,14 @@ export function registerBackfillRoutes(app: Hono): void {
 
 	app.post('/api/predict/backfill/seed', async (c) => {
 		const scope = new URL(c.req.url).searchParams.get('scope');
-		if (scope !== 'in-window' && scope !== 'ppvs-5y') {
-			return c.json({ error: "scope must be 'in-window' or 'ppvs-5y'" }, 400);
+		if (!isSeedScope(scope)) {
+			return c.json({ error: "scope must be 'in-window', 'ppvs-5y', or 'ufc-5y'" }, 400);
 		}
 
 		const origin = new URL(c.req.url).origin;
-		if (scope === 'ppvs-5y') {
-			const job = startBackfillJob('seed:ppvs-5y', async ({ setProgress }) => {
-				const seed = await collectPpvSeed(origin, new Date(), setProgress);
+		if (scope === 'ppvs-5y' || scope === 'ufc-5y') {
+			const job = startBackfillJob(`seed:${scope}`, async ({ setProgress }) => {
+				const seed = await collectRecentUfcSeed(origin, new Date(), scope, setProgress);
 				await runSeedBackfill([...seed.fighters.keys()], origin, setProgress);
 			});
 			return c.json(
@@ -176,11 +178,7 @@ export function registerBackfillRoutes(app: Hono): void {
 			);
 		}
 
-		const seed =
-			scope === 'in-window'
-				? await collectInWindowSeed(origin)
-				: await collectPpvSeed(origin, new Date());
-
+		const seed = await collectInWindowSeed(origin);
 		const fighterIds = [...seed.fighters.keys()];
 		const seedJobId = crypto.randomUUID();
 		void runSeedBackfill(fighterIds, origin);
@@ -197,6 +195,10 @@ export function registerBackfillRoutes(app: Hono): void {
 			202,
 		);
 	});
+}
+
+function isSeedScope(scope: string | null): scope is SeedScope {
+	return scope === 'in-window' || scope === 'ppvs-5y' || scope === 'ufc-5y';
 }
 
 async function collectInWindowSeed(origin: string): Promise<{
@@ -232,9 +234,10 @@ async function collectInWindowSeed(origin: string): Promise<{
 	return { windowDays: 30, events: eventsInWindow, fighters: fightersToBackfill };
 }
 
-async function collectPpvSeed(
+async function collectRecentUfcSeed(
 	origin: string,
 	now: Date,
+	scope: Extract<SeedScope, 'ppvs-5y' | 'ufc-5y'>,
 	setProgress?: (progress: BackfillJobProgress) => void,
 ): Promise<{
 	windowDays: number;
@@ -244,6 +247,7 @@ async function collectPpvSeed(
 	const cutoff = new Date(now);
 	cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 5);
 	const selectedEvents: UfcstatsCompletedResponse['events'] = [];
+	const eventLabel = scope === 'ppvs-5y' ? 'PPV card' : 'UFC card';
 
 	for (let page = 1; page <= 20; page++) {
 		setProgress?.({
@@ -263,7 +267,7 @@ async function collectPpvSeed(
 			if (!date) continue;
 			if (date >= startOfDay(cutoff)) {
 				pageHasRecentEvent = true;
-				if (/^UFC\s+\d+\b/.test(event.name)) {
+				if (isSeedEventForScope(event.name, scope)) {
 					selectedEvents.push(event);
 				}
 			}
@@ -277,7 +281,7 @@ async function collectPpvSeed(
 		setProgress?.({
 			current: i + 1,
 			total: selectedEvents.length,
-			message: `Collecting PPV card ${i + 1} of ${selectedEvents.length}`,
+			message: `Collecting ${eventLabel} ${i + 1} of ${selectedEvents.length}`,
 		});
 		const detail = await fetchInternalJson<UfcstatsEventDetail>(
 			origin,
@@ -291,6 +295,15 @@ async function collectPpvSeed(
 	}
 
 	return { windowDays: 365 * 5, events: selectedEvents, fighters: fightersToBackfill };
+}
+
+function isSeedEventForScope(
+	eventName: string,
+	scope: Extract<SeedScope, 'ppvs-5y' | 'ufc-5y'>,
+): boolean {
+	if (!eventName.startsWith('UFC ')) return false;
+	if (scope === 'ppvs-5y') return /^UFC\s+\d+\b/.test(eventName);
+	return true;
 }
 
 async function runSeedBackfill(

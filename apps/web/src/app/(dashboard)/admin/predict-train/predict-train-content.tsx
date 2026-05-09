@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type SeedResponse = {
-	scope: 'in-window' | 'ppvs-5y';
+	scope: 'in-window' | 'ppvs-5y' | 'ufc-5y';
 	seed_job_id: string;
 	window_days: number;
 	event_count: number;
@@ -95,6 +95,13 @@ export function PredictTrainContent() {
 							onClick={() => seed('ppvs-5y')}
 						>
 							Seed: PPVs (5y)
+						</SeedButton>
+						<SeedButton
+							loading={loadingScope === 'ufc-5y'}
+							disabled={loadingScope !== null}
+							onClick={() => seed('ufc-5y')}
+						>
+							Seed: UFC (5y)
 						</SeedButton>
 					</div>
 
