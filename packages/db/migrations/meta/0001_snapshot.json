@@ -1,0 +1,987 @@
+{
+  "id": "35a75900-fe40-4ff8-8ebb-b2524076d144",
+  "prevId": "66cd30b1-111d-4416-8fcd-01d295c09eb0",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.events": {
+      "name": "events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(16)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed": {
+          "name": "completed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "promotion": {
+          "name": "promotion",
+          "type": "promotion",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ufc'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fight_results": {
+      "name": "fight_results",
+      "schema": "",
+      "columns": {
+        "fight_id": {
+          "name": "fight_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fighter_id": {
+          "name": "fighter_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opponent_id": {
+          "name": "opponent_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "outcome",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "method_detail": {
+          "name": "method_detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "round": {
+          "name": "round",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "time_seconds": {
+          "name": "time_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "knockdowns": {
+          "name": "knockdowns",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sig_strikes_landed": {
+          "name": "sig_strikes_landed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sig_strikes_attempted": {
+          "name": "sig_strikes_attempted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_strikes_landed": {
+          "name": "total_strikes_landed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_strikes_attempted": {
+          "name": "total_strikes_attempted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "takedowns_landed": {
+          "name": "takedowns_landed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "takedowns_attempted": {
+          "name": "takedowns_attempted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sub_attempts": {
+          "name": "sub_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ctrl_seconds": {
+          "name": "ctrl_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversals": {
+          "name": "reversals",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fight_results_fight_id_fights_id_fk": {
+          "name": "fight_results_fight_id_fights_id_fk",
+          "tableFrom": "fight_results",
+          "tableTo": "fights",
+          "columnsFrom": [
+            "fight_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fight_results_fighter_id_fighters_id_fk": {
+          "name": "fight_results_fighter_id_fighters_id_fk",
+          "tableFrom": "fight_results",
+          "tableTo": "fighters",
+          "columnsFrom": [
+            "fighter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fight_results_opponent_id_fighters_id_fk": {
+          "name": "fight_results_opponent_id_fighters_id_fk",
+          "tableFrom": "fight_results",
+          "tableTo": "fighters",
+          "columnsFrom": [
+            "opponent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "fight_results_fight_id_fighter_id_pk": {
+          "name": "fight_results_fight_id_fighter_id_pk",
+          "columns": [
+            "fight_id",
+            "fighter_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fight_round_stats": {
+      "name": "fight_round_stats",
+      "schema": "",
+      "columns": {
+        "fight_id": {
+          "name": "fight_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fighter_id": {
+          "name": "fighter_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "round": {
+          "name": "round",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "knockdowns": {
+          "name": "knockdowns",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sig_strikes_landed": {
+          "name": "sig_strikes_landed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sig_strikes_attempted": {
+          "name": "sig_strikes_attempted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_strikes_landed": {
+          "name": "total_strikes_landed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_strikes_attempted": {
+          "name": "total_strikes_attempted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "takedowns_landed": {
+          "name": "takedowns_landed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "takedowns_attempted": {
+          "name": "takedowns_attempted",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sub_attempts": {
+          "name": "sub_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ctrl_seconds": {
+          "name": "ctrl_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversals": {
+          "name": "reversals",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fight_round_stats_fight_id_fights_id_fk": {
+          "name": "fight_round_stats_fight_id_fights_id_fk",
+          "tableFrom": "fight_round_stats",
+          "tableTo": "fights",
+          "columnsFrom": [
+            "fight_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fight_round_stats_fighter_id_fighters_id_fk": {
+          "name": "fight_round_stats_fighter_id_fighters_id_fk",
+          "tableFrom": "fight_round_stats",
+          "tableTo": "fighters",
+          "columnsFrom": [
+            "fighter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "fight_round_stats_fight_id_fighter_id_round_pk": {
+          "name": "fight_round_stats_fight_id_fighter_id_round_pk",
+          "columns": [
+            "fight_id",
+            "fighter_id",
+            "round"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fighter_backfill_state": {
+      "name": "fighter_backfill_state",
+      "schema": "",
+      "columns": {
+        "fighter_id": {
+          "name": "fighter_id",
+          "type": "varchar(16)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "last_backfilled_at": {
+          "name": "last_backfilled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "history_count_at_backfill": {
+          "name": "history_count_at_backfill",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_known_fight_id": {
+          "name": "last_known_fight_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "backfill_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'none'"
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fighter_backfill_state_fighter_id_fighters_id_fk": {
+          "name": "fighter_backfill_state_fighter_id_fighters_id_fk",
+          "tableFrom": "fighter_backfill_state",
+          "tableTo": "fighters",
+          "columnsFrom": [
+            "fighter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fighter_stat_snapshots": {
+      "name": "fighter_stat_snapshots",
+      "schema": "",
+      "columns": {
+        "fighter_id": {
+          "name": "fighter_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "snapshot_at": {
+          "name": "snapshot_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slpm": {
+          "name": "slpm",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "str_acc": {
+          "name": "str_acc",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sapm": {
+          "name": "sapm",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "str_def": {
+          "name": "str_def",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "td_avg": {
+          "name": "td_avg",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "td_acc": {
+          "name": "td_acc",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "td_def": {
+          "name": "td_def",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sub_avg": {
+          "name": "sub_avg",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wins": {
+          "name": "wins",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "losses": {
+          "name": "losses",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "draws": {
+          "name": "draws",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ufc_fight_count": {
+          "name": "ufc_fight_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "days_since_last_fight": {
+          "name": "days_since_last_fight",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "primary_weight_class": {
+          "name": "primary_weight_class",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fighter_stat_snapshots_fighter_id_fighters_id_fk": {
+          "name": "fighter_stat_snapshots_fighter_id_fighters_id_fk",
+          "tableFrom": "fighter_stat_snapshots",
+          "tableTo": "fighters",
+          "columnsFrom": [
+            "fighter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "fighter_stat_snapshots_fighter_id_snapshot_at_pk": {
+          "name": "fighter_stat_snapshots_fighter_id_snapshot_at_pk",
+          "columns": [
+            "fighter_id",
+            "snapshot_at"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fighters": {
+      "name": "fighters",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(16)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nickname": {
+          "name": "nickname",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dob": {
+          "name": "dob",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "height_in": {
+          "name": "height_in",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reach_in": {
+          "name": "reach_in",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stance": {
+          "name": "stance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "history_count": {
+          "name": "history_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fights": {
+      "name": "fights",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(16)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weight_class": {
+          "name": "weight_class",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scheduled_rounds": {
+          "name": "scheduled_rounds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_headliner": {
+          "name": "is_headliner",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fights_event_id_events_id_fk": {
+          "name": "fights_event_id_events_id_fk",
+          "tableFrom": "fights",
+          "tableTo": "events",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.model_versions": {
+      "name": "model_versions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(32)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "trained_at": {
+          "name": "trained_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "training_set_size": {
+          "name": "training_set_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accuracy": {
+          "name": "accuracy",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "log_loss": {
+          "name": "log_loss",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brier_score": {
+          "name": "brier_score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roc_auc": {
+          "name": "roc_auc",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model_path": {
+          "name": "model_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "feature_importance": {
+          "name": "feature_importance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.odds_snapshots": {
+      "name": "odds_snapshots",
+      "schema": "",
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fight_id": {
+          "name": "fight_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fighter_id": {
+          "name": "fighter_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "snapshot_at": {
+          "name": "snapshot_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bookmaker": {
+          "name": "bookmaker",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decimal_odds": {
+          "name": "decimal_odds",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "american_odds": {
+          "name": "american_odds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "odds_snapshots_event_id_events_id_fk": {
+          "name": "odds_snapshots_event_id_events_id_fk",
+          "tableFrom": "odds_snapshots",
+          "tableTo": "events",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "odds_snapshots_fight_id_fights_id_fk": {
+          "name": "odds_snapshots_fight_id_fights_id_fk",
+          "tableFrom": "odds_snapshots",
+          "tableTo": "fights",
+          "columnsFrom": [
+            "fight_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "odds_snapshots_fighter_id_fighters_id_fk": {
+          "name": "odds_snapshots_fighter_id_fighters_id_fk",
+          "tableFrom": "odds_snapshots",
+          "tableTo": "fighters",
+          "columnsFrom": [
+            "fighter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "odds_snapshots_fighter_id_snapshot_at_bookmaker_pk": {
+          "name": "odds_snapshots_fighter_id_snapshot_at_bookmaker_pk",
+          "columns": [
+            "fighter_id",
+            "snapshot_at",
+            "bookmaker"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.predictions": {
+      "name": "predictions",
+      "schema": "",
+      "columns": {
+        "fight_id": {
+          "name": "fight_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model_version": {
+          "name": "model_version",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "predicted_at": {
+          "name": "predicted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "predicted_winner_id": {
+          "name": "predicted_winner_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "win_prob": {
+          "name": "win_prob",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "edge_pct": {
+          "name": "edge_pct",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "predictions_fight_id_fights_id_fk": {
+          "name": "predictions_fight_id_fights_id_fk",
+          "tableFrom": "predictions",
+          "tableTo": "fights",
+          "columnsFrom": [
+            "fight_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "predictions_model_version_model_versions_id_fk": {
+          "name": "predictions_model_version_model_versions_id_fk",
+          "tableFrom": "predictions",
+          "tableTo": "model_versions",
+          "columnsFrom": [
+            "model_version"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "predictions_predicted_winner_id_fighters_id_fk": {
+          "name": "predictions_predicted_winner_id_fighters_id_fk",
+          "tableFrom": "predictions",
+          "tableTo": "fighters",
+          "columnsFrom": [
+            "predicted_winner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "predictions_fight_id_model_version_predicted_at_pk": {
+          "name": "predictions_fight_id_model_version_predicted_at_pk",
+          "columns": [
+            "fight_id",
+            "model_version",
+            "predicted_at"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.backfill_status": {
+      "name": "backfill_status",
+      "schema": "public",
+      "values": [
+        "none",
+        "current",
+        "stale_count",
+        "stale_stats",
+        "in_progress",
+        "failed"
+      ]
+    },
+    "public.outcome": {
+      "name": "outcome",
+      "schema": "public",
+      "values": [
+        "win",
+        "loss",
+        "draw",
+        "nc"
+      ]
+    },
+    "public.promotion": {
+      "name": "promotion",
+      "schema": "public",
+      "values": [
+        "ufc",
+        "bellator",
+        "strikeforce",
+        "other"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -1,5 +1,5 @@
 import type { DomainRoute } from '@interceptor/browser/handler/domain-loader';
-import { db, fighters, oddsSnapshots } from '@interceptor/db';
+import { db, fighters, oddsSnapshots, sql, unmatchedOdds } from '@interceptor/db';
 import { DEBUG, rateLimitedFetch } from '@interceptor/shared';
 import { cacheControlHeader, cacheGet, cacheSet } from './cache';
 
@@ -39,6 +39,19 @@ type OddsEvent = {
 	bookmakers: OddsBookmaker[];
 };
 
+type CanonicalFight = {
+	event_id: string;
+	event_date: string;
+	fight_id: string;
+	fighters: Array<{ id: string; name: string }>;
+};
+
+type MatchedFight = {
+	eventId: string;
+	fightId: string;
+	fighters: Array<{ id: string; name: string; normalizedName: string }>;
+};
+
 function parseJsonOrText(text: string): unknown {
 	try {
 		return JSON.parse(text) as unknown;
@@ -75,6 +88,21 @@ function oddsNameToFighterId(name: string): string {
 		throw new Error('Cannot derive fighter id from an empty odds outcome name');
 	}
 	return `odds:${slug}`;
+}
+
+function normalizeName(name: string): string {
+	return name.toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function pairKey(date: string, fighterA: string, fighterB: string): string {
+	const names = [normalizeName(fighterA), normalizeName(fighterB)].sort();
+	return `${date}:${names[0]}:${names[1]}`;
+}
+
+function eventDateFromCommenceTime(commenceTime: string): string | null {
+	const date = new Date(commenceTime);
+	if (Number.isNaN(date.getTime())) return null;
+	return date.toISOString().slice(0, 10);
 }
 
 function decimalToAmerican(decimalOdds: number): number {
@@ -152,6 +180,36 @@ async function cachedUpcoming(c: RouteCtx): Promise<Response> {
 	return c.json(result.body, result.status);
 }
 
+async function loadFightMatchIndex(): Promise<Map<string, MatchedFight>> {
+	const rows = await sql<CanonicalFight[]>`
+		SELECT
+			e.id AS event_id,
+			e.date::text AS event_date,
+			f.id AS fight_id,
+			json_agg(json_build_object('id', fi.id, 'name', fi.name) ORDER BY fi.name) AS fighters
+		FROM events e
+		JOIN fights f ON f.event_id = e.id
+		JOIN fight_results fr ON fr.fight_id = f.id
+		JOIN fighters fi ON fi.id = fr.fighter_id
+		GROUP BY e.id, e.date, f.id
+		HAVING count(*) = 2
+	`;
+	const index = new Map<string, MatchedFight>();
+	for (const row of rows) {
+		const [fighterA, fighterB] = row.fighters;
+		if (!fighterA || !fighterB) continue;
+		index.set(pairKey(row.event_date, fighterA.name, fighterB.name), {
+			eventId: row.event_id,
+			fightId: row.fight_id,
+			fighters: row.fighters.map((fighter) => ({
+				...fighter,
+				normalizedName: normalizeName(fighter.name),
+			})),
+		});
+	}
+	return index;
+}
+
 async function snapshotOdds(c: RouteCtx): Promise<Response> {
 	const snapshotAt = new Date();
 	const snapshotId = snapshotAt.toISOString();
@@ -168,20 +226,47 @@ async function snapshotOdds(c: RouteCtx): Promise<Response> {
 		return c.json({ error: 'Unexpected odds API response shape' }, 502);
 	}
 
+	const fightIndex = await loadFightMatchIndex();
 	const fighterRows = new Map<string, { id: string; name: string }>();
 	const oddsRows: (typeof oddsSnapshots.$inferInsert)[] = [];
+	const unmatchedRows = new Map<string, typeof unmatchedOdds.$inferInsert>();
+	let matchedRows = 0;
 
 	for (const event of result.body) {
+		const eventDate = eventDateFromCommenceTime(event.commence_time);
+		const matchedFight = eventDate
+			? (fightIndex.get(pairKey(eventDate, event.home_team, event.away_team)) ?? null)
+			: null;
+		if (!matchedFight && eventDate) {
+			const unmatchedId = `${snapshotId}:${event.id}`;
+			unmatchedRows.set(unmatchedId, {
+				id: unmatchedId,
+				rawEventName: `${event.away_team} vs ${event.home_team}`,
+				rawFighterA: event.away_team,
+				rawFighterB: event.home_team,
+				rawDate: eventDate,
+				snapshotId,
+				reason: 'no canonical fight for date and fighter pair',
+			});
+		}
+
 		for (const bookmaker of event.bookmakers) {
 			for (const market of bookmaker.markets) {
 				if (market.key !== 'h2h') continue;
 				for (const outcome of market.outcomes) {
 					if (typeof outcome.name !== 'string' || typeof outcome.price !== 'number') continue;
-					const fighterId = oddsNameToFighterId(outcome.name);
-					fighterRows.set(fighterId, { id: fighterId, name: outcome.name });
+					const matchedFighter = matchedFight?.fighters.find(
+						(fighter) => fighter.normalizedName === normalizeName(outcome.name),
+					);
+					const fighterId = matchedFighter?.id ?? oddsNameToFighterId(outcome.name);
+					if (!matchedFighter) {
+						fighterRows.set(fighterId, { id: fighterId, name: outcome.name });
+					} else {
+						matchedRows++;
+					}
 					oddsRows.push({
-						eventId: null,
-						fightId: null,
+						eventId: matchedFight?.eventId ?? null,
+						fightId: matchedFight?.fightId ?? null,
 						fighterId,
 						snapshotAt,
 						bookmaker: bookmaker.key,
@@ -193,10 +278,18 @@ async function snapshotOdds(c: RouteCtx): Promise<Response> {
 		}
 	}
 
+	const unmatchedValues = Array.from(unmatchedRows.values());
+	if (unmatchedValues.length) {
+		await db.insert(unmatchedOdds).values(unmatchedValues).onConflictDoNothing();
+	}
+
 	if (!oddsRows.length) {
+		DEBUG('odds-mma', 'matched 0 of 0 odds rows; 0 unmatched logged');
 		return c.json({
 			snapshot_id: snapshotId,
 			rows_written: 0,
+			matched_rows: 0,
+			unmatched_logged: unmatchedValues.length,
 			requests_remaining: result.requestsRemaining,
 		});
 	}
@@ -209,9 +302,16 @@ async function snapshotOdds(c: RouteCtx): Promise<Response> {
 		.onConflictDoNothing()
 		.returning({ fighterId: oddsSnapshots.fighterId });
 
+	DEBUG(
+		'odds-mma',
+		`matched ${matchedRows} of ${oddsRows.length} odds rows; ${unmatchedValues.length} unmatched logged`,
+	);
+
 	return c.json({
 		snapshot_id: snapshotId,
 		rows_written: inserted.length,
+		matched_rows: matchedRows,
+		unmatched_logged: unmatchedValues.length,
 		requests_remaining: result.requestsRemaining,
 	});
 }
