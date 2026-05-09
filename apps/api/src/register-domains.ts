@@ -25,6 +25,6 @@ registerDomain(ufcstats);
 // ─── Outbound rate limits (per-hostname) ─────────────────────────────
 
 registerRateLimit('api.boardshop.example.com', { maxPerMinute: 30, retryOn429: 2 });
-registerRateLimit('api.the-odds-api.com', { maxPerMinute: 5, retryOn429: 2 });
+registerRateLimit('api.the-odds-api.com', { maxPerMinute: 5, retryOn429: 1 });
 // ufcstats.com — be a polite citizen on a small public stats site.
 registerRateLimit('ufcstats.com', { maxPerMinute: 30, retryOn429: 2 });
