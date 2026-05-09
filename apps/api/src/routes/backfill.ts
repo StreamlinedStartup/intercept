@@ -62,6 +62,12 @@ type UfcstatsUpcomingResponse = {
 	events: Array<{ id: string; name: string; date: string }>;
 };
 
+type UfcstatsCompletedResponse = {
+	page: string;
+	count: number;
+	events: Array<{ id: string; name: string; date: string; location: string | null }>;
+};
+
 type UfcstatsEventDetail = {
 	id: string;
 	name: string;
@@ -146,37 +152,36 @@ export function registerBackfillRoutes(app: Hono): void {
 
 	app.post('/api/predict/backfill/seed', async (c) => {
 		const scope = new URL(c.req.url).searchParams.get('scope');
-		if (scope !== 'in-window') {
-			return c.json({ error: "scope must be 'in-window'" }, 400);
+		if (scope !== 'in-window' && scope !== 'ppvs-5y') {
+			return c.json({ error: "scope must be 'in-window' or 'ppvs-5y'" }, 400);
 		}
 
 		const origin = new URL(c.req.url).origin;
-		const upcoming = await fetchInternalJson<UfcstatsUpcomingResponse>(
-			origin,
-			'/api/ufcstats/events/upcoming',
-		);
-		const now = new Date();
-		const windowEnd = new Date(now);
-		windowEnd.setDate(windowEnd.getDate() + 30);
-		const eventsInWindow = upcoming.events.filter((event) => {
-			const date = parseDateObject(event.date);
-			return date ? date >= startOfDay(now) && date <= endOfDay(windowEnd) : false;
-		});
-
-		const fightersToBackfill = new Map<string, string>();
-		for (const event of eventsInWindow) {
-			const detail = await fetchInternalJson<UfcstatsEventDetail>(
-				origin,
-				`/api/ufcstats/event/${event.id}`,
+		if (scope === 'ppvs-5y') {
+			const job = startBackfillJob('seed:ppvs-5y', async ({ setProgress }) => {
+				const seed = await collectPpvSeed(origin, new Date(), setProgress);
+				await runSeedBackfill([...seed.fighters.keys()], origin, setProgress);
+			});
+			return c.json(
+				{
+					scope,
+					seed_job_id: job.jobId,
+					window_days: 365 * 5,
+					event_count: 0,
+					fighter_count: 0,
+					queued_count: 0,
+					job: serializeBackfillJob(job),
+				},
+				202,
 			);
-			for (const fight of detail.fights) {
-				for (const fighter of fight.fighters) {
-					if (fighter.id) fightersToBackfill.set(fighter.id, fighter.name);
-				}
-			}
 		}
 
-		const fighterIds = [...fightersToBackfill.keys()];
+		const seed =
+			scope === 'in-window'
+				? await collectInWindowSeed(origin)
+				: await collectPpvSeed(origin, new Date());
+
+		const fighterIds = [...seed.fighters.keys()];
 		const seedJobId = crypto.randomUUID();
 		void runSeedBackfill(fighterIds, origin);
 
@@ -184,9 +189,9 @@ export function registerBackfillRoutes(app: Hono): void {
 			{
 				scope,
 				seed_job_id: seedJobId,
-				window_days: 30,
-				event_count: eventsInWindow.length,
-				fighter_count: fightersToBackfill.size,
+				window_days: seed.windowDays,
+				event_count: seed.events.length,
+				fighter_count: seed.fighters.size,
 				queued_count: fighterIds.length,
 			},
 			202,
@@ -194,8 +199,112 @@ export function registerBackfillRoutes(app: Hono): void {
 	});
 }
 
-async function runSeedBackfill(fighterIds: string[], origin: string): Promise<void> {
-	for (const fighterId of fighterIds) {
+async function collectInWindowSeed(origin: string): Promise<{
+	windowDays: number;
+	events: UfcstatsUpcomingResponse['events'];
+	fighters: Map<string, string>;
+}> {
+	const upcoming = await fetchInternalJson<UfcstatsUpcomingResponse>(
+		origin,
+		'/api/ufcstats/events/upcoming',
+	);
+	const now = new Date();
+	const windowEnd = new Date(now);
+	windowEnd.setDate(windowEnd.getDate() + 30);
+	const eventsInWindow = upcoming.events.filter((event) => {
+		const date = parseDateObject(event.date);
+		return date ? date >= startOfDay(now) && date <= endOfDay(windowEnd) : false;
+	});
+
+	const fightersToBackfill = new Map<string, string>();
+	for (const event of eventsInWindow) {
+		const detail = await fetchInternalJson<UfcstatsEventDetail>(
+			origin,
+			`/api/ufcstats/event/${event.id}`,
+		);
+		for (const fight of detail.fights) {
+			for (const fighter of fight.fighters) {
+				if (fighter.id) fightersToBackfill.set(fighter.id, fighter.name);
+			}
+		}
+	}
+
+	return { windowDays: 30, events: eventsInWindow, fighters: fightersToBackfill };
+}
+
+async function collectPpvSeed(
+	origin: string,
+	now: Date,
+	setProgress?: (progress: BackfillJobProgress) => void,
+): Promise<{
+	windowDays: number;
+	events: UfcstatsCompletedResponse['events'];
+	fighters: Map<string, string>;
+}> {
+	const cutoff = new Date(now);
+	cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 5);
+	const selectedEvents: UfcstatsCompletedResponse['events'] = [];
+
+	for (let page = 1; page <= 20; page++) {
+		setProgress?.({
+			current: page - 1,
+			total: 20,
+			message: `Loading completed events page ${page}`,
+		});
+		const completed = await fetchInternalJson<UfcstatsCompletedResponse>(
+			origin,
+			`/api/ufcstats/events/completed?page=${page}`,
+		);
+		if (!completed.events.length) break;
+
+		let pageHasRecentEvent = false;
+		for (const event of completed.events) {
+			const date = parseDateObject(event.date);
+			if (!date) continue;
+			if (date >= startOfDay(cutoff)) {
+				pageHasRecentEvent = true;
+				if (/^UFC\s+\d+\b/.test(event.name)) {
+					selectedEvents.push(event);
+				}
+			}
+		}
+		if (!pageHasRecentEvent) break;
+	}
+
+	const fightersToBackfill = new Map<string, string>();
+	for (let i = 0; i < selectedEvents.length; i++) {
+		const event = selectedEvents[i];
+		setProgress?.({
+			current: i + 1,
+			total: selectedEvents.length,
+			message: `Collecting PPV card ${i + 1} of ${selectedEvents.length}`,
+		});
+		const detail = await fetchInternalJson<UfcstatsEventDetail>(
+			origin,
+			`/api/ufcstats/event/${event.id}`,
+		);
+		for (const fight of detail.fights) {
+			for (const fighter of fight.fighters) {
+				if (fighter.id) fightersToBackfill.set(fighter.id, fighter.name);
+			}
+		}
+	}
+
+	return { windowDays: 365 * 5, events: selectedEvents, fighters: fightersToBackfill };
+}
+
+async function runSeedBackfill(
+	fighterIds: string[],
+	origin: string,
+	setProgress?: (progress: BackfillJobProgress) => void,
+): Promise<void> {
+	for (let i = 0; i < fighterIds.length; i++) {
+		const fighterId = fighterIds[i];
+		setProgress?.({
+			current: i + 1,
+			total: fighterIds.length,
+			message: `Backfilling fighter ${i + 1} of ${fighterIds.length}`,
+		});
 		try {
 			await runBackfill(fighterId, origin, () => {
 				/* seed progress is summarized by queued count in the admin UI */
