@@ -1,0 +1,19 @@
+/**
+ * Odds Mma API Routes
+ *
+ * Generated from captured traffic. These routes are proxied through
+ * the browser's authenticated session via browserFetch().
+ */
+
+import type { DomainRoute } from '@interceptor/browser/handler/domain-loader';
+
+export const routes: DomainRoute[] = [
+	// Routes will be populated from captured traffic.
+	// Example:
+	// {
+	// 	method: 'GET',
+	// 	path: '/search',
+	// 	targetUrl: 'https://api.the-odds-api.com/v1/search',
+	// 	description: 'Search endpoint',
+	// },
+];
