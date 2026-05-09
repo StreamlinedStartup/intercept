@@ -195,6 +195,9 @@ importers:
       '@interceptor/browser':
         specifier: workspace:*
         version: link:../../packages/browser
+      '@interceptor/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@interceptor/shared':
         specifier: workspace:*
         version: link:../../packages/shared
