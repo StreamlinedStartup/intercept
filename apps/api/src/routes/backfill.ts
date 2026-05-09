@@ -58,6 +58,19 @@ type UfcstatsFight = {
 	totalsByRound: Array<{ round: string; data: Record<string, string> }>;
 };
 
+type UfcstatsUpcomingResponse = {
+	events: Array<{ id: string; name: string; date: string }>;
+};
+
+type UfcstatsEventDetail = {
+	id: string;
+	name: string;
+	info: { date?: string } & Record<string, string>;
+	fights: Array<{
+		fighters: Array<{ id: string | null; name: string }>;
+	}>;
+};
+
 type Outcome = 'win' | 'loss' | 'draw' | 'nc';
 
 type StoredBackfillState = {
@@ -130,6 +143,67 @@ export function registerBackfillRoutes(app: Hono): void {
 
 		return c.json(serializeBackfillJob(job), 202);
 	});
+
+	app.post('/api/predict/backfill/seed', async (c) => {
+		const scope = new URL(c.req.url).searchParams.get('scope');
+		if (scope !== 'in-window') {
+			return c.json({ error: "scope must be 'in-window'" }, 400);
+		}
+
+		const origin = new URL(c.req.url).origin;
+		const upcoming = await fetchInternalJson<UfcstatsUpcomingResponse>(
+			origin,
+			'/api/ufcstats/events/upcoming',
+		);
+		const now = new Date();
+		const windowEnd = new Date(now);
+		windowEnd.setDate(windowEnd.getDate() + 30);
+		const eventsInWindow = upcoming.events.filter((event) => {
+			const date = parseDateObject(event.date);
+			return date ? date >= startOfDay(now) && date <= endOfDay(windowEnd) : false;
+		});
+
+		const fightersToBackfill = new Map<string, string>();
+		for (const event of eventsInWindow) {
+			const detail = await fetchInternalJson<UfcstatsEventDetail>(
+				origin,
+				`/api/ufcstats/event/${event.id}`,
+			);
+			for (const fight of detail.fights) {
+				for (const fighter of fight.fighters) {
+					if (fighter.id) fightersToBackfill.set(fighter.id, fighter.name);
+				}
+			}
+		}
+
+		const fighterIds = [...fightersToBackfill.keys()];
+		const seedJobId = crypto.randomUUID();
+		void runSeedBackfill(fighterIds, origin);
+
+		return c.json(
+			{
+				scope,
+				seed_job_id: seedJobId,
+				window_days: 30,
+				event_count: eventsInWindow.length,
+				fighter_count: fightersToBackfill.size,
+				queued_count: fighterIds.length,
+			},
+			202,
+		);
+	});
+}
+
+async function runSeedBackfill(fighterIds: string[], origin: string): Promise<void> {
+	for (const fighterId of fighterIds) {
+		try {
+			await runBackfill(fighterId, origin, () => {
+				/* seed progress is summarized by queued count in the admin UI */
+			});
+		} catch (err) {
+			await markBackfillFailed(fighterId, err);
+		}
+	}
 }
 
 async function getStoredBackfillState(fighterId: string): Promise<StoredBackfillState | null> {
@@ -526,6 +600,21 @@ function parseUfcstatsDate(value: string | undefined): string | null {
 	const date = new Date(cleaned);
 	if (Number.isNaN(date.getTime())) return null;
 	return date.toISOString().slice(0, 10);
+}
+
+function parseDateObject(value: string | undefined): Date | null {
+	const iso = parseUfcstatsDate(value);
+	return iso ? new Date(`${iso}T00:00:00.000Z`) : null;
+}
+
+function startOfDay(date: Date): Date {
+	return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function endOfDay(date: Date): Date {
+	return new Date(
+		Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999),
+	);
 }
 
 function parseHeightInches(value: string | undefined): number | null {
