@@ -1,0 +1,19 @@
+ALTER TABLE "events" ALTER COLUMN "id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fight_results" ALTER COLUMN "fight_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fight_results" ALTER COLUMN "fighter_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fight_results" ALTER COLUMN "opponent_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fight_round_stats" ALTER COLUMN "fight_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fight_round_stats" ALTER COLUMN "fighter_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fighter_backfill_state" ALTER COLUMN "fighter_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fighter_backfill_state" ALTER COLUMN "last_known_fight_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fighter_stat_snapshots" ALTER COLUMN "fighter_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fighters" ALTER COLUMN "id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fights" ALTER COLUMN "id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "fights" ALTER COLUMN "event_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "model_versions" ALTER COLUMN "id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "odds_snapshots" ALTER COLUMN "event_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "odds_snapshots" ALTER COLUMN "fight_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "odds_snapshots" ALTER COLUMN "fighter_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "predictions" ALTER COLUMN "fight_id" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "predictions" ALTER COLUMN "model_version" SET DATA TYPE text;--> statement-breakpoint
+ALTER TABLE "predictions" ALTER COLUMN "predicted_winner_id" SET DATA TYPE text;
