@@ -70,6 +70,34 @@ type PredictionHistoryRow = {
 	best_decimal_odds: number | null;
 };
 
+type MlTrainResult = {
+	model_id: string;
+	model_path: string;
+	training_set_size: number;
+	train_rows: number;
+	holdout_rows: number;
+	log_loss: number;
+	brier_score: number;
+	accuracy: number;
+	roc_auc: number;
+	top_features: Array<{
+		name: string;
+		importance: number;
+	}>;
+};
+
+type TrainJob = {
+	jobId: string;
+	status: 'in_progress' | 'completed' | 'failed';
+	progress: { current: number; total: number; message: string };
+	result: MlTrainResult | null;
+	error: string | null;
+	startedAt: string;
+	completedAt: string | null;
+};
+
+const trainJobs = new Map<string, TrainJob>();
+
 export function registerPredictRoutes(app: Hono): void {
 	app.get('/api/predict/fight/:id', async (c) => {
 		const fightId = c.req.param('id');
@@ -163,6 +191,76 @@ export function registerPredictRoutes(app: Hono): void {
 		const serialized = rows.map(serializeHistoryRow);
 		return c.json({ aggregate: aggregateHistory(serialized), rows: serialized });
 	});
+
+	app.post('/api/predict/train', async (c) => {
+		const unauthorized = requireAdmin(c.req.header('X-Admin-Secret'));
+		if (unauthorized) return c.json(unauthorized.body, unauthorized.status);
+
+		const job = startTrainJob();
+		return c.json(serializeTrainJob(job), 202);
+	});
+
+	app.get('/api/predict/train/job/:id', (c) => {
+		const unauthorized = requireAdmin(c.req.header('X-Admin-Secret'));
+		if (unauthorized) return c.json(unauthorized.body, unauthorized.status);
+
+		const jobId = c.req.param('id');
+		const job = trainJobs.get(jobId);
+		if (!job) return c.json({ error: 'Training job not found', job_id: jobId }, 404);
+		return c.json(serializeTrainJob(job));
+	});
+}
+
+function requireAdmin(secret: string | undefined): {
+	body: { error: string };
+	status: 401 | 500;
+} | null {
+	const expected = process.env.ADMIN_SECRET;
+	if (!expected) return { body: { error: 'ADMIN_SECRET is not configured' }, status: 500 };
+	if (!secret || secret !== expected)
+		return { body: { error: 'Invalid admin secret' }, status: 401 };
+	return null;
+}
+
+function startTrainJob(): TrainJob {
+	const job: TrainJob = {
+		jobId: crypto.randomUUID(),
+		status: 'in_progress',
+		progress: { current: 0, total: 3, message: 'Starting training' },
+		result: null,
+		error: null,
+		startedAt: new Date().toISOString(),
+		completedAt: null,
+	};
+	trainJobs.set(job.jobId, job);
+
+	void (async () => {
+		job.progress = { current: 1, total: 3, message: 'Training model' };
+		const bridge = await getBridge();
+		job.result = await bridge.call<MlTrainResult>('ml.train', {});
+		job.progress = { current: 3, total: 3, message: 'Training complete' };
+		job.status = 'completed';
+		job.completedAt = new Date().toISOString();
+	})().catch((err) => {
+		job.status = 'failed';
+		job.error = err instanceof Error ? err.message : String(err);
+		job.progress = { current: job.progress.current, total: 3, message: 'Training failed' };
+		job.completedAt = new Date().toISOString();
+	});
+
+	return job;
+}
+
+function serializeTrainJob(job: TrainJob) {
+	return {
+		job_id: job.jobId,
+		status: job.status,
+		progress: job.progress,
+		result: job.result,
+		error: job.error,
+		started_at: job.startedAt,
+		completed_at: job.completedAt,
+	};
 }
 
 async function loadFightParticipants(fightId: string): Promise<FightParticipantRow[]> {
