@@ -36,6 +36,12 @@ FEATURE_NAMES = [
     "days_since_last_fight_diff",
     "long_layoff_a",
     "long_layoff_b",
+    "weight_class_change",
+    "same_weight_class_count_diff",
+    "finish_rate_diff",
+    "decision_rate_diff",
+    "time_in_cage_a",
+    "time_in_cage_b",
     "stance_orthodox_orthodox",
     "stance_orthodox_southpaw",
     "stance_southpaw_orthodox",
@@ -58,6 +64,7 @@ def build_features(fight_id: str) -> tuple[np.ndarray, float]:
                 """
                 SELECT
                     f.id AS fight_id,
+                    f.weight_class,
                     e.date AS event_date,
                     fr.fighter_id,
                     fr.opponent_id,
@@ -81,14 +88,25 @@ def build_features(fight_id: str) -> tuple[np.ndarray, float]:
             fighter_a = _row_dict(cur.description, rows[0])
             fighter_b = _row_dict(cur.description, rows[1])
             target_date = fighter_a["event_date"]
+            target_weight_class = fighter_a["weight_class"]
 
     return (
-        build_feature_row(fighter_a["fighter_id"], fighter_b["fighter_id"], target_date),
+        build_feature_row(
+            fighter_a["fighter_id"],
+            fighter_b["fighter_id"],
+            target_date,
+            target_weight_class,
+        ),
         _label(fighter_a["outcome"], fighter_b["outcome"]),
     )
 
 
-def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) -> np.ndarray:
+def build_feature_row(
+    fighter_a_id: str,
+    fighter_b_id: str,
+    fight_date: date,
+    target_weight_class: str | None = None,
+) -> np.ndarray:
     """Build features for a caller-specified fighter order."""
     with pool.borrow() as conn:
         with conn.cursor() as cur:
@@ -100,6 +118,8 @@ def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) ->
             ufc_fight_count_b = _ufc_fight_count(cur, fighter_b_id, fight_date)
             form_a = _recent_form(cur, fighter_a_id, fight_date)
             form_b = _recent_form(cur, fighter_b_id, fight_date)
+            profile_a = _career_profile(cur, fighter_a_id, fight_date, target_weight_class)
+            profile_b = _career_profile(cur, fighter_b_id, fight_date, target_weight_class)
 
     return np.array(
         [
@@ -129,6 +149,12 @@ def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) ->
             _diff(form_a["days_since_last_fight"], form_b["days_since_last_fight"]),
             form_a["long_layoff"],
             form_b["long_layoff"],
+            _any_true_or_nan(profile_a["weight_class_change"], profile_b["weight_class_change"]),
+            _diff(profile_a["same_weight_class_count"], profile_b["same_weight_class_count"]),
+            _diff(profile_a["finish_rate"], profile_b["finish_rate"]),
+            _diff(profile_a["decision_rate"], profile_b["decision_rate"]),
+            profile_a["time_in_cage"],
+            profile_b["time_in_cage"],
             *_stance_one_hot(fighter_a["stance"], fighter_b["stance"]),
         ],
         dtype=float,
@@ -257,6 +283,87 @@ def _loss_streak(rows: list[dict[str, Any]]) -> int:
             break
         streak += 1
     return streak
+
+
+def _career_profile(
+    cur: Any,
+    fighter_id: str,
+    target_date: date,
+    target_weight_class: str | None,
+) -> dict[str, float]:
+    cur.execute(
+        """
+        SELECT
+            fr.outcome,
+            fr.method,
+            fr.time_seconds,
+            f.weight_class,
+            e.date AS event_date
+        FROM fight_results fr
+        JOIN fights f ON f.id = fr.fight_id
+        JOIN events e ON e.id = f.event_id
+        WHERE fr.fighter_id = %s
+            AND e.date < %s
+            AND fr.outcome IN ('win', 'loss')
+        ORDER BY e.date DESC, fr.fight_id DESC
+        """,
+        (fighter_id, target_date),
+    )
+    rows = [_row_dict(cur.description, row) for row in cur.fetchall()]
+    if not rows:
+        return {
+            "weight_class_change": math.nan,
+            "same_weight_class_count": 0.0 if target_weight_class else math.nan,
+            "finish_rate": math.nan,
+            "decision_rate": math.nan,
+            "time_in_cage": math.nan,
+        }
+
+    wins = [row for row in rows if row["outcome"] == "win"]
+    time_in_cage = _sum(rows, "time_seconds")
+    return {
+        "weight_class_change": _weight_class_change(rows, target_weight_class),
+        "same_weight_class_count": _same_weight_class_count(rows, target_weight_class),
+        "finish_rate": _method_rate(wins, {"ko", "tko", "sub", "submission"}),
+        "decision_rate": _method_rate(wins, {"decision"}),
+        "time_in_cage": time_in_cage if time_in_cage > 0 else math.nan,
+    }
+
+
+def _weight_class_change(rows: list[dict[str, Any]], target_weight_class: str | None) -> float:
+    if target_weight_class is None:
+        return math.nan
+    recent_weight_class = rows[0]["weight_class"]
+    if recent_weight_class is None:
+        return math.nan
+    return 1.0 if recent_weight_class != target_weight_class else 0.0
+
+
+def _same_weight_class_count(rows: list[dict[str, Any]], target_weight_class: str | None) -> float:
+    if target_weight_class is None:
+        return math.nan
+    return float(sum(1 for row in rows if row["weight_class"] == target_weight_class))
+
+
+def _method_rate(wins: list[dict[str, Any]], method_tokens: set[str]) -> float:
+    if not wins:
+        return math.nan
+    method_wins = sum(1 for row in wins if _method_matches(row["method"], method_tokens))
+    return method_wins / len(wins)
+
+
+def _method_matches(method: str | None, method_tokens: set[str]) -> bool:
+    if method is None:
+        return False
+    normalized = method.strip().lower()
+    return any(token in normalized for token in method_tokens)
+
+
+def _any_true_or_nan(a: float, b: float) -> float:
+    values = [value for value in [a, b] if not math.isnan(value)]
+    if not values:
+        return math.nan
+    return 1.0 if any(value == 1.0 for value in values) else 0.0
 
 
 def _row_dict(description: Any, row: Any) -> dict[str, Any]:

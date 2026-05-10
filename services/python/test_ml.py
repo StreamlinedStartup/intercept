@@ -182,6 +182,36 @@ def test_recent_form_features_are_nan_without_prior_fights() -> None:
         conn.commit()
 
 
+def test_weight_class_change_after_three_lightweight_fights_then_welterweight() -> None:
+    prefix = "test-nk4h-weight"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_weight_class_fixture(cur, prefix)
+        conn.commit()
+
+    features, _label = build_features(f"{prefix}-target")
+
+    weight_class_change = FEATURE_NAMES.index("weight_class_change")
+    same_weight_class_count_diff = FEATURE_NAMES.index("same_weight_class_count_diff")
+    finish_rate_diff = FEATURE_NAMES.index("finish_rate_diff")
+    decision_rate_diff = FEATURE_NAMES.index("decision_rate_diff")
+    time_in_cage_a = FEATURE_NAMES.index("time_in_cage_a")
+    time_in_cage_b = FEATURE_NAMES.index("time_in_cage_b")
+
+    assert features[weight_class_change] == 1.0
+    assert features[same_weight_class_count_diff] == -1.0
+    assert features[finish_rate_diff] == pytest.approx(0.5)
+    assert features[decision_rate_diff] == pytest.approx(-0.5)
+    assert features[time_in_cage_a] == 900.0
+    assert features[time_in_cage_b] == 300.0
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
 def _delete_fixture(cur, prefix: str) -> None:
     cur.execute("DELETE FROM fight_results WHERE fight_id LIKE %s", (f"{prefix}-%",))
     cur.execute("DELETE FROM fights WHERE id LIKE %s", (f"{prefix}-%",))
@@ -262,6 +292,120 @@ def _insert_fixture(
         beta_outcome="win",
         alpha_sig_landed=1,
         beta_sig_landed=1,
+    )
+
+
+def _insert_weight_class_fixture(cur, prefix: str) -> None:
+    cur.execute(
+        """
+        INSERT INTO fighters (id, name, dob, height_in, reach_in, stance)
+        VALUES
+            (%s, 'Fixture Alpha', '1990-01-01', 72, 74, null),
+            (%s, 'Fixture Beta', '1992-01-01', 70, 73, null),
+            (%s, 'Fixture Gamma', '1991-01-01', 71, 72, null),
+            (%s, 'Fixture Delta', '1993-01-01', 69, 71, null)
+        """,
+        (
+            f"{prefix}-alpha",
+            f"{prefix}-beta",
+            f"{prefix}-gamma",
+            f"{prefix}-delta",
+        ),
+    )
+    cur.execute(
+        """
+        INSERT INTO events (id, name, date, completed, promotion)
+        VALUES
+            (%s, 'Fixture Lightweight 1', '2020-01-01', true, 'ufc'),
+            (%s, 'Fixture Lightweight 2', '2020-02-01', true, 'ufc'),
+            (%s, 'Fixture Lightweight 3', '2020-03-01', true, 'ufc'),
+            (%s, 'Fixture Welterweight Prior', '2020-04-01', true, 'ufc'),
+            (%s, 'Fixture Welterweight Target', '2020-05-01', true, 'ufc')
+        """,
+        (
+            f"{prefix}-event-lightweight-1",
+            f"{prefix}-event-lightweight-2",
+            f"{prefix}-event-lightweight-3",
+            f"{prefix}-event-welterweight-prior",
+            f"{prefix}-event-target",
+        ),
+    )
+    for index in range(1, 4):
+        cur.execute(
+            """
+            INSERT INTO fights (id, event_id, weight_class, scheduled_rounds, is_headliner)
+            VALUES (%s, %s, 'lightweight', 3, false)
+            """,
+            (f"{prefix}-lightweight-{index}", f"{prefix}-event-lightweight-{index}"),
+        )
+    cur.execute(
+        """
+        INSERT INTO fights (id, event_id, weight_class, scheduled_rounds, is_headliner)
+        VALUES
+            (%s, %s, 'welterweight', 3, false),
+            (%s, %s, 'welterweight', 3, false)
+        """,
+        (
+            f"{prefix}-welterweight-prior",
+            f"{prefix}-event-welterweight-prior",
+            f"{prefix}-target",
+            f"{prefix}-event-target",
+        ),
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-lightweight-1",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-beta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=10,
+        fighter_a_method="KO/TKO",
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-lightweight-2",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-beta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=10,
+        fighter_a_method="Decision - Unanimous",
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-lightweight-3",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-beta",
+        fighter_a_outcome="loss",
+        fighter_b_outcome="win",
+        fighter_a_sig_landed=10,
+        fighter_b_sig_landed=20,
+        fighter_b_method="Submission",
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-welterweight-prior",
+        fighter_a_id=f"{prefix}-gamma",
+        fighter_b_id=f"{prefix}-delta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=10,
+        fighter_a_method="Decision - Split",
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-target",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-gamma",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=1,
+        fighter_b_sig_landed=1,
+        fighter_a_method="Decision - Unanimous",
     )
 
 
@@ -468,6 +612,8 @@ def _insert_result_pair_for_fighters(
     fighter_b_outcome: str,
     fighter_a_sig_landed: int,
     fighter_b_sig_landed: int,
+    fighter_a_method: str | None = None,
+    fighter_b_method: str | None = None,
 ) -> None:
     cur.execute(
         """
@@ -476,6 +622,7 @@ def _insert_result_pair_for_fighters(
             fighter_id,
             opponent_id,
             outcome,
+            method,
             time_seconds,
             sig_strikes_landed,
             sig_strikes_attempted,
@@ -484,19 +631,21 @@ def _insert_result_pair_for_fighters(
             sub_attempts
         )
         VALUES
-            (%s, %s, %s, %s, 300, %s, 50, 1, 2, 0),
-            (%s, %s, %s, %s, 300, %s, 50, 0, 1, 0)
+            (%s, %s, %s, %s, %s, 300, %s, 50, 1, 2, 0),
+            (%s, %s, %s, %s, %s, 300, %s, 50, 0, 1, 0)
         """,
         (
             fight_id,
             fighter_a_id,
             fighter_b_id,
             fighter_a_outcome,
+            fighter_a_method,
             fighter_a_sig_landed,
             fight_id,
             fighter_b_id,
             fighter_a_id,
             fighter_b_outcome,
+            fighter_b_method,
             fighter_b_sig_landed,
         ),
     )
