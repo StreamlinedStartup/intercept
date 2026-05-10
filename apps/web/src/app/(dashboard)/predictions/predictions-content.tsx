@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, RefreshCw, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,12 +59,20 @@ type ModelListResponse = {
 };
 
 type LatestModel = ModelListResponse['result']['models'][number] | null;
+type RoiFilter = 'all' | 'edge5' | 'edge10';
+
+const ROI_FILTERS: Array<{ label: string; value: RoiFilter; minEdge: number }> = [
+	{ label: 'All', value: 'all', minEdge: Number.NEGATIVE_INFINITY },
+	{ label: 'Edge >5%', value: 'edge5', minEdge: 0.05 },
+	{ label: 'Edge >10%', value: 'edge10', minEdge: 0.1 },
+];
 
 export function PredictionsContent() {
 	const [history, setHistory] = useState<HistoryResponse | null>(null);
 	const [model, setModel] = useState<LatestModel>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [roiFilter, setRoiFilter] = useState<RoiFilter>('all');
 
 	const load = useCallback(async () => {
 		setLoading(true);
@@ -129,12 +137,112 @@ export function PredictionsContent() {
 			) : history && history.rows.length > 0 ? (
 				<>
 					<MetricsGrid model={model} history={history} />
+					<RoiChart rows={history.rows} filter={roiFilter} onFilterChange={setRoiFilter} />
 					<PredictionsTable rows={history.rows} />
 				</>
 			) : (
 				<EmptyState />
 			)}
 		</div>
+	);
+}
+
+function RoiChart({
+	rows,
+	filter,
+	onFilterChange,
+}: {
+	rows: HistoryRow[];
+	filter: RoiFilter;
+	onFilterChange: (filter: RoiFilter) => void;
+}) {
+	const points = useMemo(() => buildRoiSeries(rows, filter), [rows, filter]);
+	const chart = buildRoiChart(points);
+
+	return (
+		<Card>
+			<CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<CardTitle className="text-base">Cumulative ROI</CardTitle>
+				<div className="flex rounded-md border p-1 w-fit">
+					{ROI_FILTERS.map((option) => (
+						<Button
+							key={option.value}
+							type="button"
+							size="sm"
+							variant={filter === option.value ? 'secondary' : 'ghost'}
+							className="h-7 px-2 text-xs"
+							onClick={() => onFilterChange(option.value)}
+						>
+							{option.label}
+						</Button>
+					))}
+				</div>
+			</CardHeader>
+			<CardContent>
+				{chart ? (
+					<div className="h-72 w-full">
+						<svg className="h-full w-full overflow-visible" viewBox="0 0 640 260" role="img">
+							<title>Cumulative betting units by event date</title>
+							<line
+								x1={40}
+								x2={620}
+								y1={chart.zeroY}
+								y2={chart.zeroY}
+								stroke="currentColor"
+								strokeDasharray="4 4"
+								className="text-muted-foreground/70"
+							/>
+							<text
+								x={44}
+								y={Math.max(14, chart.zeroY - 8)}
+								className="fill-muted-foreground text-[10px]"
+							>
+								breakeven
+							</text>
+							<polyline
+								points={chart.path}
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="3"
+								strokeLinejoin="round"
+								strokeLinecap="round"
+								className="text-emerald-600"
+							/>
+							{chart.points.map((point) => (
+								<circle
+									key={point.key}
+									cx={point.x}
+									cy={point.y}
+									r="4"
+									className="fill-background stroke-emerald-600"
+									strokeWidth="2"
+								>
+									<title>
+										{point.label}: {formatSignedNumber(point.units)} units
+									</title>
+								</circle>
+							))}
+							<text x={40} y={252} className="fill-muted-foreground text-[10px]">
+								{chart.firstLabel}
+							</text>
+							<text x={620} y={252} textAnchor="end" className="fill-muted-foreground text-[10px]">
+								{chart.lastLabel}
+							</text>
+							<text x={40} y={18} className="fill-muted-foreground text-[10px]">
+								{formatSignedNumber(chart.maxUnits)}u
+							</text>
+							<text x={40} y={238} className="fill-muted-foreground text-[10px]">
+								{formatSignedNumber(chart.minUnits)}u
+							</text>
+						</svg>
+					</div>
+				) : (
+					<div className="h-40 flex items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
+						No resolved bets for this filter
+					</div>
+				)}
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -234,6 +342,72 @@ function PredictionsTable({ rows }: { rows: HistoryRow[] }) {
 			</CardContent>
 		</Card>
 	);
+}
+
+function buildRoiSeries(rows: HistoryRow[], filter: RoiFilter) {
+	const selectedFilter = ROI_FILTERS.find((option) => option.value === filter) ?? ROI_FILTERS[0];
+	let cumulativeUnits = 0;
+
+	return rows
+		.filter((row) => row.hit !== null && row.market_prob !== null)
+		.filter((row) => (row.edge_pct ?? Number.NEGATIVE_INFINITY) > selectedFilter.minEdge)
+		.toSorted((a, b) => {
+			const eventDateDiff = a.event_date.localeCompare(b.event_date);
+			if (eventDateDiff !== 0) return eventDateDiff;
+			return a.predicted_at.localeCompare(b.predicted_at);
+		})
+		.map((row) => {
+			const units = typeof row.bet_pl_units === 'number' ? row.bet_pl_units : estimateBetUnits(row);
+			cumulativeUnits += units;
+			return {
+				key: `${row.fight_id}-${row.predicted_at}`,
+				label: formatDate(row.event_date),
+				units: cumulativeUnits,
+			};
+		});
+}
+
+function buildRoiChart(points: ReturnType<typeof buildRoiSeries>) {
+	if (points.length === 0) return null;
+
+	const width = 640;
+	const height = 260;
+	const left = 40;
+	const right = 620;
+	const top = 18;
+	const bottom = 230;
+	const units = points.map((point) => point.units);
+	const minUnits = Math.min(0, ...units);
+	const maxUnits = Math.max(0, ...units);
+	const range = maxUnits - minUnits || 1;
+
+	const plottedPoints = points.map((point, index) => {
+		const x =
+			points.length === 1
+				? (left + right) / 2
+				: left + (index / (points.length - 1)) * (right - left);
+		const y = bottom - ((point.units - minUnits) / range) * (bottom - top);
+		return { ...point, x, y };
+	});
+
+	const zeroY = bottom - ((0 - minUnits) / range) * (bottom - top);
+	return {
+		width,
+		height,
+		path: plottedPoints.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' '),
+		points: plottedPoints,
+		zeroY,
+		minUnits,
+		maxUnits,
+		firstLabel: points[0]?.label ?? '',
+		lastLabel: points.at(-1)?.label ?? '',
+	};
+}
+
+function estimateBetUnits(row: HistoryRow): number {
+	if (row.hit === false) return -1;
+	if (row.hit === true && row.market_prob && row.market_prob > 0) return 1 / row.market_prob - 1;
+	return 0;
 }
 
 function HitIcon({ hit }: { hit: boolean | null }) {
