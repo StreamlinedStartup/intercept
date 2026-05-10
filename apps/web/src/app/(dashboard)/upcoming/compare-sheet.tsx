@@ -74,6 +74,14 @@ type FightPrediction = {
 		value: number | null;
 		shap: number;
 	}>;
+	odds?: Array<{
+		fighter_id: string;
+		decimal_odds: number;
+		american_odds: number;
+		market_prob: number;
+	}>;
+	edge_pct?: number;
+	market_prob?: number;
 };
 
 const INITIAL: FighterState = { data: null, loading: false, error: null };
@@ -596,6 +604,17 @@ function ModelPickRow({
 	const winner =
 		prediction.predicted_winner_id === target.fighterA.id ? target.fighterA : target.fighterB;
 	const probability = probabilityForFighter(prediction, winner.id);
+	const marketFavorite = prediction.odds
+		? prediction.odds.reduce((best, row) => (row.market_prob > best.market_prob ? row : best))
+		: null;
+	const edgeTone =
+		typeof prediction.edge_pct === 'number' && marketFavorite
+			? marketFavorite.fighter_id !== prediction.predicted_winner_id
+				? 'red'
+				: Math.abs(prediction.edge_pct) > 0.05
+					? 'green'
+					: 'neutral'
+			: null;
 	return (
 		<div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-3 text-center">
 			<div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
@@ -604,6 +623,11 @@ function ModelPickRow({
 			<div className="text-sm font-semibold text-foreground mt-1">
 				{winner.name} · {Math.round(probability * 100)}%
 			</div>
+			{typeof prediction.edge_pct === 'number' && edgeTone && (
+				<Badge variant="outline" className={`mt-2 text-xs ${edgeBadgeClass(edgeTone)}`}>
+					Edge {formatSignedPct(prediction.edge_pct)}
+				</Badge>
+			)}
 			<div className="text-xs text-muted-foreground mt-0.5">Model {prediction.model_version}</div>
 		</div>
 	);
@@ -613,6 +637,17 @@ function probabilityForFighter(prediction: FightPrediction, fighterId: string): 
 	return prediction.predicted_winner_id === fighterId
 		? prediction.win_prob
 		: 1 - prediction.win_prob;
+}
+
+function formatSignedPct(value: number): string {
+	const pct = Math.round(value * 100);
+	return `${pct > 0 ? '+' : ''}${pct}%`;
+}
+
+function edgeBadgeClass(tone: 'green' | 'red' | 'neutral'): string {
+	if (tone === 'green') return 'border-emerald-500/50 text-emerald-600 bg-emerald-500/10';
+	if (tone === 'red') return 'border-destructive/50 text-destructive bg-destructive/10';
+	return 'border-muted-foreground/30 text-muted-foreground';
 }
 
 function PhysicalsBlock({ a, b, today }: { a: FighterState; b: FighterState; today: Date }) {

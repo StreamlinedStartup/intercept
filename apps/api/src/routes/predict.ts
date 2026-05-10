@@ -43,6 +43,16 @@ type StoredPrediction = {
 		value: number | null;
 		shap: number;
 	}>;
+	odds?: MarketOdds[];
+	edge_pct?: number;
+	market_prob?: number;
+};
+
+type MarketOdds = {
+	fighter_id: string;
+	decimal_odds: number;
+	american_odds: number;
+	market_prob: number;
 };
 
 export function registerPredictRoutes(app: Hono): void {
@@ -172,6 +182,9 @@ async function predictAndPersist(
 		fighter_b_id: fighterB.fighter_id,
 		fight_date: fightDate,
 	});
+	const market = await loadMarketOdds(fightId);
+	const predictedMarketOdds = market.find((odds) => odds.fighter_id === result.predicted_winner_id);
+	const edgePct = predictedMarketOdds ? result.win_prob - predictedMarketOdds.market_prob : null;
 
 	await db.insert(predictions).values({
 		fightId,
@@ -179,7 +192,7 @@ async function predictAndPersist(
 		predictedAt: new Date(),
 		predictedWinnerId: result.predicted_winner_id,
 		winProb: result.win_prob,
-		edgePct: null,
+		edgePct,
 	});
 
 	return {
@@ -191,7 +204,51 @@ async function predictAndPersist(
 		win_prob: result.win_prob,
 		model_version: result.model_version,
 		contributing_features: result.contributing_features ?? [],
+		...(market.length === 2 && edgePct !== null
+			? { odds: market, edge_pct: edgePct, market_prob: predictedMarketOdds?.market_prob }
+			: {}),
 	};
+}
+
+async function loadMarketOdds(fightId: string): Promise<MarketOdds[]> {
+	const rows = (await sql`
+		WITH latest AS (
+			SELECT max(snapshot_at) AS snapshot_at
+			FROM odds_snapshots
+			WHERE fight_id = ${fightId}
+		),
+		best AS (
+			SELECT DISTINCT ON (o.fighter_id)
+				o.fighter_id,
+				o.decimal_odds,
+				o.american_odds
+			FROM odds_snapshots o
+			JOIN latest l ON l.snapshot_at = o.snapshot_at
+			WHERE o.fight_id = ${fightId}
+			ORDER BY o.fighter_id ASC, o.decimal_odds DESC
+		)
+		SELECT fighter_id, decimal_odds, american_odds
+		FROM best
+	`) as Array<{
+		fighter_id: string;
+		decimal_odds: number;
+		american_odds: number;
+	}>;
+	if (rows.length !== 2) return [];
+
+	const raw = rows.map((row) => ({
+		...row,
+		rawMarketProb: 1 / row.decimal_odds,
+	}));
+	const total = raw.reduce((sum, row) => sum + row.rawMarketProb, 0);
+	if (total <= 0) return [];
+
+	return raw.map((row) => ({
+		fighter_id: row.fighter_id,
+		decimal_odds: row.decimal_odds,
+		american_odds: row.american_odds,
+		market_prob: row.rawMarketProb / total,
+	}));
 }
 
 function formatDbDate(value: string | Date): string {
