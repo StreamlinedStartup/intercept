@@ -21,6 +21,10 @@ FEATURE_NAMES = [
     "height_diff",
     "reach_diff",
     "age_diff",
+    "ufc_fight_count_a",
+    "ufc_fight_count_b",
+    "ufc_fight_count_diff",
+    "ufc_debut",
     "stance_orthodox_orthodox",
     "stance_orthodox_southpaw",
     "stance_southpaw_orthodox",
@@ -81,6 +85,8 @@ def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) ->
             fighter_b = _load_fighter(cur, fighter_b_id)
             stats_a = _career_stats(cur, fighter_a_id, fight_date)
             stats_b = _career_stats(cur, fighter_b_id, fight_date)
+            ufc_fight_count_a = _ufc_fight_count(cur, fighter_a_id, fight_date)
+            ufc_fight_count_b = _ufc_fight_count(cur, fighter_b_id, fight_date)
 
     return np.array(
         [
@@ -95,6 +101,10 @@ def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) ->
             _diff(_maybe_float(fighter_a["height_in"]), _maybe_float(fighter_b["height_in"])),
             _diff(_maybe_float(fighter_a["reach_in"]), _maybe_float(fighter_b["reach_in"])),
             _diff(_age_years(fighter_a["dob"], fight_date), _age_years(fighter_b["dob"], fight_date)),
+            float(ufc_fight_count_a),
+            float(ufc_fight_count_b),
+            float(ufc_fight_count_a - ufc_fight_count_b),
+            1.0 if ufc_fight_count_a == 0 or ufc_fight_count_b == 0 else 0.0,
             *_stance_one_hot(fighter_a["stance"], fighter_b["stance"]),
         ],
         dtype=float,
@@ -156,6 +166,22 @@ def _career_stats(cur: Any, fighter_id: str, target_date: date) -> dict[str, flo
         "td_def": _defense(_sum(rows, "opp_takedowns_landed"), _sum(rows, "opp_takedowns_attempted")),
         "sub_avg": _per_15(_sum(rows, "sub_attempts"), minutes),
     }
+
+
+def _ufc_fight_count(cur: Any, fighter_id: str, target_date: date) -> int:
+    cur.execute(
+        """
+        SELECT COUNT(DISTINCT fr.fight_id)
+        FROM fight_results fr
+        JOIN fights f ON f.id = fr.fight_id
+        JOIN events e ON e.id = f.event_id
+        WHERE fr.fighter_id = %s
+            AND e.promotion = 'ufc'
+            AND e.date < %s
+        """,
+        (fighter_id, target_date),
+    )
+    return int(cur.fetchone()[0])
 
 
 def _row_dict(description: Any, row: Any) -> dict[str, Any]:

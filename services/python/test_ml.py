@@ -70,6 +70,56 @@ def test_stance_direction_is_asymmetric() -> None:
         conn.commit()
 
 
+def test_ufc_debut_for_fighter_with_zero_prior_ufc_fights() -> None:
+    prefix = "test-n40x-debut"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_fixture(cur, prefix)
+        conn.commit()
+
+    features, _label = build_features(f"{prefix}-target-early")
+
+    count_a = FEATURE_NAMES.index("ufc_fight_count_a")
+    count_b = FEATURE_NAMES.index("ufc_fight_count_b")
+    count_diff = FEATURE_NAMES.index("ufc_fight_count_diff")
+    debut = FEATURE_NAMES.index("ufc_debut")
+
+    assert features[count_a] == 0.0
+    assert features[count_b] == 0.0
+    assert features[count_diff] == 0.0
+    assert features[debut] == 1.0
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
+def test_non_ufc_prior_fight_does_not_increment_ufc_fight_count() -> None:
+    prefix = "test-n40x-non-ufc"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_non_ufc_experience_fixture(cur, prefix)
+        conn.commit()
+
+    features, _label = build_features(f"{prefix}-target")
+
+    count_a = FEATURE_NAMES.index("ufc_fight_count_a")
+    count_b = FEATURE_NAMES.index("ufc_fight_count_b")
+    debut = FEATURE_NAMES.index("ufc_debut")
+
+    assert features[count_a] == 0.0
+    assert features[count_b] == 0.0
+    assert features[debut] == 1.0
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
 def _delete_fixture(cur, prefix: str) -> None:
     cur.execute("DELETE FROM fight_results WHERE fight_id LIKE %s", (f"{prefix}-%",))
     cur.execute("DELETE FROM fights WHERE id LIKE %s", (f"{prefix}-%",))
@@ -148,6 +198,59 @@ def _insert_fixture(
         fight_id=f"{prefix}-target-late",
         alpha_outcome="loss",
         beta_outcome="win",
+        alpha_sig_landed=1,
+        beta_sig_landed=1,
+    )
+
+
+def _insert_non_ufc_experience_fixture(cur, prefix: str) -> None:
+    cur.execute(
+        """
+        INSERT INTO fighters (id, name, dob, height_in, reach_in, stance)
+        VALUES
+            (%s, 'Fixture Alpha', '1990-01-01', 72, 74, null),
+            (%s, 'Fixture Beta', '1992-01-01', 70, 73, null)
+        """,
+        (f"{prefix}-alpha", f"{prefix}-beta"),
+    )
+    cur.execute(
+        """
+        INSERT INTO events (id, name, date, completed, promotion)
+        VALUES
+            (%s, 'Fixture Prior Bellator', '2020-01-01', true, 'bellator'),
+            (%s, 'Fixture Target UFC', '2020-02-01', true, 'ufc')
+        """,
+        (f"{prefix}-event-prior-bellator", f"{prefix}-event-target"),
+    )
+    cur.execute(
+        """
+        INSERT INTO fights (id, event_id, weight_class, scheduled_rounds, is_headliner)
+        VALUES
+            (%s, %s, 'welterweight', 3, false),
+            (%s, %s, 'welterweight', 3, false)
+        """,
+        (
+            f"{prefix}-prior-bellator",
+            f"{prefix}-event-prior-bellator",
+            f"{prefix}-target",
+            f"{prefix}-event-target",
+        ),
+    )
+    _insert_result_pair(
+        cur,
+        prefix,
+        fight_id=f"{prefix}-prior-bellator",
+        alpha_outcome="win",
+        beta_outcome="loss",
+        alpha_sig_landed=40,
+        beta_sig_landed=10,
+    )
+    _insert_result_pair(
+        cur,
+        prefix,
+        fight_id=f"{prefix}-target",
+        alpha_outcome="win",
+        beta_outcome="loss",
         alpha_sig_landed=1,
         beta_sig_landed=1,
     )
