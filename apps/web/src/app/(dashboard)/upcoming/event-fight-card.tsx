@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, Loader2, Star } from 'lucide-react';
+import { Check, ChevronRight, Loader2, Star } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,18 @@ type BackfillJob = {
 	error: string | null;
 	started_at: string;
 	completed_at: string | null;
+};
+
+type FightPrediction = {
+	fight_id: string;
+	predicted_winner_id: string;
+	win_prob: number;
+	model_version: string;
+	contributing_features: Array<{
+		name: string;
+		value: number | null;
+		shap: number;
+	}>;
 };
 
 /**
@@ -57,6 +69,9 @@ export function EventFightCard({
 	const [backfillStates, setBackfillStates] = useState<Record<string, BackfillState>>({});
 	const [loadingIds, setLoadingIds] = useState<Set<string>>(() => new Set());
 	const [jobProgress, setJobProgress] = useState<Record<string, string>>({});
+	const [predictions, setPredictions] = useState<Record<string, FightPrediction>>({});
+	const [predictionLoadingIds, setPredictionLoadingIds] = useState<Set<string>>(() => new Set());
+	const [predictionErrors, setPredictionErrors] = useState<Record<string, string>>({});
 
 	const fetchBackfillState = useCallback(async (fighterId: string) => {
 		const res = await fetch(`/api/predict/backfill/state/${fighterId}`);
@@ -70,6 +85,60 @@ export function EventFightCard({
 			void fetchBackfillState(fighterId);
 		}
 	}, [fetchBackfillState, fighterIds]);
+
+	useEffect(() => {
+		for (let i = 0; i < detail.fights.length; i++) {
+			const fight = detail.fights[i];
+			const [a, b] = fight.fighters;
+			if (!a?.id || !b?.id) continue;
+			if (
+				backfillStates[a.id]?.status !== 'current' ||
+				backfillStates[b.id]?.status !== 'current'
+			) {
+				continue;
+			}
+
+			const fightId = resolveFightId(detail.id, i, fight);
+			if (predictions[fightId] || predictionLoadingIds.has(fightId) || predictionErrors[fightId]) {
+				continue;
+			}
+
+			setPredictionLoadingIds((prev) => new Set(prev).add(fightId));
+			void fetch(`/api/predict/fight/${fightId}`)
+				.then(async (res) => {
+					const body = await res.json();
+					if (!res.ok) {
+						throw new Error(body.error ?? `Prediction ${fightId} returned ${res.status}`);
+					}
+					setPredictions((prev) => ({ ...prev, [fightId]: body as FightPrediction }));
+					setPredictionErrors((prev) => {
+						const next = { ...prev };
+						delete next[fightId];
+						return next;
+					});
+				})
+				.catch((err) => {
+					setPredictionErrors((prev) => ({
+						...prev,
+						[fightId]: err instanceof Error ? err.message : String(err),
+					}));
+				})
+				.finally(() => {
+					setPredictionLoadingIds((prev) => {
+						const next = new Set(prev);
+						next.delete(fightId);
+						return next;
+					});
+				});
+		}
+	}, [
+		backfillStates,
+		detail.fights,
+		detail.id,
+		predictionErrors,
+		predictionLoadingIds,
+		predictions,
+	]);
 
 	const loadBackfill = useCallback(
 		async (fighterId: string) => {
@@ -122,10 +191,15 @@ export function EventFightCard({
 	return (
 		<div className="flex flex-col gap-4">
 			<HeadlinerRow
+				eventId={detail.id}
+				fightIndex={0}
 				fight={headliner}
 				backfillStates={backfillStates}
 				loadingIds={loadingIds}
 				jobProgress={jobProgress}
+				predictions={predictions}
+				predictionLoadingIds={predictionLoadingIds}
+				predictionErrors={predictionErrors}
 				onCompare={onCompare}
 				onLoadBackfill={loadBackfill}
 			/>
@@ -140,10 +214,15 @@ export function EventFightCard({
 								key={
 									fight.fightId ?? `${fight.fighters.map((f) => f.id ?? f.name).join('-')}-${idx}`
 								}
+								eventId={detail.id}
+								fightIndex={idx + 1}
 								fight={fight}
 								backfillStates={backfillStates}
 								loadingIds={loadingIds}
 								jobProgress={jobProgress}
+								predictions={predictions}
+								predictionLoadingIds={predictionLoadingIds}
+								predictionErrors={predictionErrors}
 								onCompare={onCompare}
 								onLoadBackfill={loadBackfill}
 							/>
@@ -156,17 +235,27 @@ export function EventFightCard({
 }
 
 function HeadlinerRow({
+	eventId,
+	fightIndex,
 	fight,
 	backfillStates,
 	loadingIds,
 	jobProgress,
+	predictions,
+	predictionLoadingIds,
+	predictionErrors,
 	onCompare,
 	onLoadBackfill,
 }: {
+	eventId: string;
+	fightIndex: number;
 	fight: FightCardEntry;
 	backfillStates: Record<string, BackfillState>;
 	loadingIds: Set<string>;
 	jobProgress: Record<string, string>;
+	predictions: Record<string, FightPrediction>;
+	predictionLoadingIds: Set<string>;
+	predictionErrors: Record<string, string>;
 	onCompare: (
 		a: { id: string; name: string },
 		b: { id: string; name: string },
@@ -176,9 +265,10 @@ function HeadlinerRow({
 }) {
 	const [a, b] = fight.fighters;
 	const compareDisabled = !a?.id || !b?.id;
+	const fightId = resolveFightId(eventId, fightIndex, fight);
 	return (
 		<div className="rounded-lg border border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent p-4 sm:p-5">
-			<div className="flex items-center gap-2 mb-3">
+			<div className="flex items-center gap-2 mb-3 flex-wrap">
 				<Star className="w-4 h-4 text-red-500 fill-red-500" />
 				<span className="text-xs font-semibold uppercase tracking-wide text-red-500">
 					Main Event
@@ -186,6 +276,14 @@ function HeadlinerRow({
 				<Badge variant="outline" className="ml-auto text-xs">
 					{fight.weightClass}
 				</Badge>
+				<PredictionChip
+					className="ml-0"
+					fight={fight}
+					prediction={predictions[fightId]}
+					loading={predictionLoadingIds.has(fightId)}
+					error={predictionErrors[fightId]}
+					backfillStates={backfillStates}
+				/>
 			</div>
 			<div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 sm:gap-4 items-center">
 				<FighterCell
@@ -280,17 +378,27 @@ function FighterCell({
 }
 
 function FightRow({
+	eventId,
+	fightIndex,
 	fight,
 	backfillStates,
 	loadingIds,
 	jobProgress,
+	predictions,
+	predictionLoadingIds,
+	predictionErrors,
 	onCompare,
 	onLoadBackfill,
 }: {
+	eventId: string;
+	fightIndex: number;
 	fight: FightCardEntry;
 	backfillStates: Record<string, BackfillState>;
 	loadingIds: Set<string>;
 	jobProgress: Record<string, string>;
+	predictions: Record<string, FightPrediction>;
+	predictionLoadingIds: Set<string>;
+	predictionErrors: Record<string, string>;
 	onCompare: (
 		a: { id: string; name: string },
 		b: { id: string; name: string },
@@ -300,6 +408,7 @@ function FightRow({
 }) {
 	const [a, b] = fight.fighters;
 	const canCompare = !!a?.id && !!b?.id;
+	const fightId = resolveFightId(eventId, fightIndex, fight);
 	return (
 		<div className="flex items-center gap-3 px-3 sm:px-4 py-3 text-left hover:bg-muted/50 transition-colors min-h-[52px]">
 			<div className="flex-1 min-w-0 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
@@ -324,6 +433,13 @@ function FightRow({
 			<Badge variant="outline" className="text-xs flex-shrink-0 hidden sm:inline-flex">
 				{fight.weightClass}
 			</Badge>
+			<PredictionChip
+				fight={fight}
+				prediction={predictions[fightId]}
+				loading={predictionLoadingIds.has(fightId)}
+				error={predictionErrors[fightId]}
+				backfillStates={backfillStates}
+			/>
 			<Button
 				type="button"
 				size="icon"
@@ -340,6 +456,73 @@ function FightRow({
 				<ChevronRight className="w-4 h-4 text-muted-foreground" aria-hidden />
 			</Button>
 		</div>
+	);
+}
+
+function PredictionChip({
+	fight,
+	prediction,
+	loading,
+	error,
+	backfillStates,
+	className = '',
+}: {
+	fight: FightCardEntry;
+	prediction: FightPrediction | undefined;
+	loading: boolean;
+	error: string | undefined;
+	backfillStates: Record<string, BackfillState>;
+	className?: string;
+}) {
+	const [a, b] = fight.fighters;
+	const ready = Boolean(
+		a?.id &&
+			b?.id &&
+			backfillStates[a.id]?.status === 'current' &&
+			backfillStates[b.id]?.status === 'current',
+	);
+
+	if (!ready) {
+		return (
+			<Badge
+				variant="secondary"
+				className={`text-xs text-muted-foreground bg-muted/60 whitespace-nowrap ${className}`}
+			>
+				Backfill required
+			</Badge>
+		);
+	}
+
+	if (loading) {
+		return (
+			<Badge variant="secondary" className={`text-xs gap-1 whitespace-nowrap ${className}`}>
+				<Loader2 className="w-3 h-3 animate-spin" />
+				Predicting
+			</Badge>
+		);
+	}
+
+	if (!prediction || error) {
+		return (
+			<Badge
+				variant="secondary"
+				className={`text-xs text-muted-foreground whitespace-nowrap ${className}`}
+			>
+				Unavailable
+			</Badge>
+		);
+	}
+
+	const winner = fight.fighters.find((fighter) => fighter.id === prediction.predicted_winner_id);
+	return (
+		<Badge
+			className={`text-xs gap-1 bg-emerald-600 hover:bg-emerald-600 text-white whitespace-nowrap ${className}`}
+		>
+			<span className="truncate max-w-32">
+				{Math.round(prediction.win_prob * 100)}% {winner?.name ?? 'Pick'}
+			</span>
+			<Check className="w-3 h-3" />
+		</Badge>
 	);
 }
 
@@ -438,6 +621,16 @@ function backfillActionLabel(state: BackfillState | undefined): string {
 	if (state?.status === 'stale_stats') return 'Update';
 	if (state?.status === 'failed') return 'Retry';
 	return 'Load';
+}
+
+function resolveFightId(eventId: string, fightIndex: number, fight: FightCardEntry): string {
+	if (fight.fightId) return fight.fightId;
+	const [a, b] = fight.fighters;
+	if (!a?.id || !b?.id) {
+		return `ufcstats:pending-fight:${eventId}:${fightIndex}:tba`;
+	}
+	const pair = [a.id, b.id].sort().join('-vs-');
+	return `ufcstats:pending-fight:${eventId}:${fightIndex}:${pair}`;
 }
 
 async function pollBackfillJob(
