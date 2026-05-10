@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from typing import Iterator
 
 import psycopg
+from psycopg.pq import TransactionStatus
 from psycopg_pool import ConnectionPool
 
 
@@ -33,6 +34,8 @@ class DatabasePool:
         try:
             yield connection
         finally:
+            if connection.info.transaction_status != TransactionStatus.IDLE:
+                connection.rollback()
             self.release(connection)
 
     def close(self) -> None:
