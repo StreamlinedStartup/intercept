@@ -60,10 +60,23 @@ def build_features(fight_id: str) -> tuple[np.ndarray, float]:
             fighter_a = _row_dict(cur.description, rows[0])
             fighter_b = _row_dict(cur.description, rows[1])
             target_date = fighter_a["event_date"]
-            stats_a = _career_stats(cur, fighter_a["fighter_id"], target_date)
-            stats_b = _career_stats(cur, fighter_b["fighter_id"], target_date)
 
-    features = np.array(
+    return (
+        build_feature_row(fighter_a["fighter_id"], fighter_b["fighter_id"], target_date),
+        _label(fighter_a["outcome"], fighter_b["outcome"]),
+    )
+
+
+def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) -> np.ndarray:
+    """Build features for a caller-specified fighter order."""
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            fighter_a = _load_fighter(cur, fighter_a_id)
+            fighter_b = _load_fighter(cur, fighter_b_id)
+            stats_a = _career_stats(cur, fighter_a_id, fight_date)
+            stats_b = _career_stats(cur, fighter_b_id, fight_date)
+
+    return np.array(
         [
             _diff(stats_a["slpm"], stats_b["slpm"]),
             _diff(stats_a["str_acc"], stats_b["str_acc"]),
@@ -75,11 +88,25 @@ def build_features(fight_id: str) -> tuple[np.ndarray, float]:
             _diff(stats_a["sub_avg"], stats_b["sub_avg"]),
             _diff(_maybe_float(fighter_a["height_in"]), _maybe_float(fighter_b["height_in"])),
             _diff(_maybe_float(fighter_a["reach_in"]), _maybe_float(fighter_b["reach_in"])),
-            _diff(_age_years(fighter_a["dob"], target_date), _age_years(fighter_b["dob"], target_date)),
+            _diff(_age_years(fighter_a["dob"], fight_date), _age_years(fighter_b["dob"], fight_date)),
         ],
         dtype=float,
     )
-    return features, _label(fighter_a["outcome"], fighter_b["outcome"])
+
+
+def _load_fighter(cur: Any, fighter_id: str) -> dict[str, Any]:
+    cur.execute(
+        """
+        SELECT id, dob, height_in, reach_in
+        FROM fighters
+        WHERE id = %s
+        """,
+        (fighter_id,),
+    )
+    row = cur.fetchone()
+    if row is None:
+        raise ValueError(f"fighter_id {fighter_id!r} was not found")
+    return _row_dict(cur.description, row)
 
 
 def _career_stats(cur: Any, fighter_id: str, target_date: date) -> dict[str, float]:

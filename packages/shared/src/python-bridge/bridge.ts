@@ -70,8 +70,8 @@ export class PythonBridge {
 		}
 
 		const workerPath = this.config.workerPath;
-		// PYTHONPATH = parent of parent of worker.py (e.g., services/python)
-		const pythonPath = dirname(dirname(workerPath));
+		// PYTHONPATH = directory containing worker.py (e.g., services/python)
+		const pythonPath = dirname(workerPath);
 
 		DEBUG('PythonBridge.start', 'spawning worker', () => ({ workerPath }));
 

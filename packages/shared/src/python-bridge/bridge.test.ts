@@ -1,9 +1,19 @@
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PythonBridge } from './bridge';
 import { BridgeError } from './types';
 
 const WORKER_PATH = resolve(__dirname, '../../../../services/python/worker.py');
+const PYTHON_VENV = resolve(__dirname, '../../../../services/python/.venv/bin/python');
+const EXPECTED_METHODS = [
+	'health',
+	'compute',
+	'classify_headlines',
+	'ml.train',
+	'ml.predict',
+	'ml.list_models',
+];
 
 describe('PythonBridge', () => {
 	let bridge: PythonBridge;
@@ -19,7 +29,7 @@ describe('PythonBridge', () => {
 		await bridge.start();
 
 		expect(bridge.isConnected()).toBe(true);
-		expect(bridge.getAvailableMethods()).toEqual(['health', 'compute', 'classify_headlines']);
+		expect(bridge.getAvailableMethods()).toEqual(EXPECTED_METHODS);
 	});
 
 	it('calls health and gets a response', async () => {
@@ -103,4 +113,26 @@ describe('PythonBridge', () => {
 
 		await expect(bridge.start()).rejects.toThrow('Bridge already started');
 	});
+
+	it.runIf(process.env.DATABASE_URL && existsSync(PYTHON_VENV))(
+		'calls ml.list_models through the bridge',
+		async () => {
+			bridge = new PythonBridge({
+				workerPath: WORKER_PATH,
+				pythonPath: PYTHON_VENV,
+				timeoutMs: 15000,
+				startupTimeoutMs: 15000,
+			});
+			await bridge.start();
+
+			const result = await bridge.call<{
+				models: Array<{ id: string; model_path: string; log_loss: number }>;
+			}>('ml.list_models', { limit: 1 });
+
+			expect(result.models.length).toBeGreaterThan(0);
+			expect(result.models[0].id).toBeTruthy();
+			expect(result.models[0].model_path).toMatch(/^data\/models\/.+\.json$/);
+			expect(typeof result.models[0].log_loss).toBe('number');
+		},
+	);
 });
