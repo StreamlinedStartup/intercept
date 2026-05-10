@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const E2E_PORT = 3002;
+const E2E_PORT = Number.parseInt(process.env.E2E_PORT ?? '3004', 10);
 const IS_CI = !!process.env.CI;
 
 export default defineConfig({
