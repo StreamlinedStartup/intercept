@@ -25,6 +25,17 @@ FEATURE_NAMES = [
     "ufc_fight_count_b",
     "ufc_fight_count_diff",
     "ufc_debut",
+    "wins_last_3_diff",
+    "wins_last_5_diff",
+    "loss_streak_a",
+    "loss_streak_b",
+    "coming_off_loss_a",
+    "coming_off_loss_b",
+    "days_since_last_fight_a",
+    "days_since_last_fight_b",
+    "days_since_last_fight_diff",
+    "long_layoff_a",
+    "long_layoff_b",
     "stance_orthodox_orthodox",
     "stance_orthodox_southpaw",
     "stance_southpaw_orthodox",
@@ -87,6 +98,8 @@ def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) ->
             stats_b = _career_stats(cur, fighter_b_id, fight_date)
             ufc_fight_count_a = _ufc_fight_count(cur, fighter_a_id, fight_date)
             ufc_fight_count_b = _ufc_fight_count(cur, fighter_b_id, fight_date)
+            form_a = _recent_form(cur, fighter_a_id, fight_date)
+            form_b = _recent_form(cur, fighter_b_id, fight_date)
 
     return np.array(
         [
@@ -105,6 +118,17 @@ def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) ->
             float(ufc_fight_count_b),
             float(ufc_fight_count_a - ufc_fight_count_b),
             1.0 if ufc_fight_count_a == 0 or ufc_fight_count_b == 0 else 0.0,
+            _diff(form_a["wins_last_3"], form_b["wins_last_3"]),
+            _diff(form_a["wins_last_5"], form_b["wins_last_5"]),
+            form_a["loss_streak"],
+            form_b["loss_streak"],
+            form_a["coming_off_loss"],
+            form_b["coming_off_loss"],
+            form_a["days_since_last_fight"],
+            form_b["days_since_last_fight"],
+            _diff(form_a["days_since_last_fight"], form_b["days_since_last_fight"]),
+            form_a["long_layoff"],
+            form_b["long_layoff"],
             *_stance_one_hot(fighter_a["stance"], fighter_b["stance"]),
         ],
         dtype=float,
@@ -182,6 +206,57 @@ def _ufc_fight_count(cur: Any, fighter_id: str, target_date: date) -> int:
         (fighter_id, target_date),
     )
     return int(cur.fetchone()[0])
+
+
+def _recent_form(cur: Any, fighter_id: str, target_date: date) -> dict[str, float]:
+    cur.execute(
+        """
+        SELECT
+            fr.outcome,
+            e.date AS event_date
+        FROM fight_results fr
+        JOIN fights f ON f.id = fr.fight_id
+        JOIN events e ON e.id = f.event_id
+        WHERE fr.fighter_id = %s
+            AND e.date < %s
+            AND fr.outcome IN ('win', 'loss')
+        ORDER BY e.date DESC, fr.fight_id DESC
+        """,
+        (fighter_id, target_date),
+    )
+    rows = [_row_dict(cur.description, row) for row in cur.fetchall()]
+    if not rows:
+        return {
+            "wins_last_3": math.nan,
+            "wins_last_5": math.nan,
+            "loss_streak": math.nan,
+            "coming_off_loss": math.nan,
+            "days_since_last_fight": math.nan,
+            "long_layoff": math.nan,
+        }
+
+    days_since_last_fight = float((target_date - rows[0]["event_date"]).days)
+    return {
+        "wins_last_3": float(_wins_in_window(rows, 3)),
+        "wins_last_5": float(_wins_in_window(rows, 5)),
+        "loss_streak": float(_loss_streak(rows)),
+        "coming_off_loss": 1.0 if rows[0]["outcome"] == "loss" else 0.0,
+        "days_since_last_fight": days_since_last_fight,
+        "long_layoff": 1.0 if days_since_last_fight > 365 else 0.0,
+    }
+
+
+def _wins_in_window(rows: list[dict[str, Any]], window_size: int) -> int:
+    return sum(1 for row in rows[:window_size] if row["outcome"] == "win")
+
+
+def _loss_streak(rows: list[dict[str, Any]]) -> int:
+    streak = 0
+    for row in rows:
+        if row["outcome"] != "loss":
+            break
+        streak += 1
+    return streak
 
 
 def _row_dict(description: Any, row: Any) -> dict[str, Any]:
