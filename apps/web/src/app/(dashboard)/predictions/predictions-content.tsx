@@ -138,12 +138,93 @@ export function PredictionsContent() {
 				<>
 					<MetricsGrid model={model} history={history} />
 					<RoiChart rows={history.rows} filter={roiFilter} onFilterChange={setRoiFilter} />
+					<CalibrationChart rows={history.rows} />
 					<PredictionsTable rows={history.rows} />
 				</>
 			) : (
 				<EmptyState />
 			)}
 		</div>
+	);
+}
+
+function CalibrationChart({ rows }: { rows: HistoryRow[] }) {
+	const buckets = useMemo(() => buildCalibrationBuckets(rows), [rows]);
+	const hasData = buckets.some((bucket) => bucket.count > 0);
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="text-base">Calibration</CardTitle>
+			</CardHeader>
+			<CardContent>
+				{hasData ? (
+					<div className="h-72 w-full">
+						<svg className="h-full w-full overflow-visible" viewBox="0 0 640 260" role="img">
+							<title>Actual win rate by predicted probability bucket</title>
+							<line
+								x1={46}
+								y1={226}
+								x2={606}
+								y2={18}
+								stroke="currentColor"
+								strokeDasharray="4 4"
+								className="text-muted-foreground/70"
+							/>
+							<text x={52} y={34} className="fill-muted-foreground text-[10px]">
+								perfect
+							</text>
+							{buckets.map((bucket) => {
+								const barHeight = bucket.actualRate * 208;
+								const x = 52 + bucket.index * 56;
+								const y = 226 - barHeight;
+								return (
+									<g key={bucket.label}>
+										<rect x={x} y={18} width={38} height={208} className="fill-transparent">
+											<title>
+												{bucket.label}: {bucket.count} picks, {formatPercent(bucket.actualRate)}{' '}
+												actual
+											</title>
+										</rect>
+										<rect
+											x={x}
+											y={y}
+											width={38}
+											height={barHeight}
+											rx={3}
+											className="fill-emerald-600"
+										>
+											<title>
+												{bucket.label}: {bucket.count} picks, {formatPercent(bucket.actualRate)}{' '}
+												actual
+											</title>
+										</rect>
+										<text
+											x={x + 19}
+											y={244}
+											textAnchor="middle"
+											className="fill-muted-foreground text-[9px]"
+										>
+											{bucket.shortLabel}
+										</text>
+									</g>
+								);
+							})}
+							<text x={40} y={20} textAnchor="end" className="fill-muted-foreground text-[10px]">
+								100%
+							</text>
+							<text x={40} y={230} textAnchor="end" className="fill-muted-foreground text-[10px]">
+								0%
+							</text>
+						</svg>
+					</div>
+				) : (
+					<div className="h-40 flex items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
+						No resolved predictions to calibrate
+					</div>
+				)}
+			</CardContent>
+		</Card>
 	);
 }
 
@@ -408,6 +489,27 @@ function estimateBetUnits(row: HistoryRow): number {
 	if (row.hit === false) return -1;
 	if (row.hit === true && row.market_prob && row.market_prob > 0) return 1 / row.market_prob - 1;
 	return 0;
+}
+
+function buildCalibrationBuckets(rows: HistoryRow[]) {
+	return Array.from({ length: 10 }, (_, index) => {
+		const min = index / 10;
+		const max = (index + 1) / 10;
+		const bucketRows = rows.filter((row) => {
+			if (row.hit === null) return false;
+			if (index === 9) return row.win_prob >= min && row.win_prob <= max;
+			return row.win_prob >= min && row.win_prob < max;
+		});
+		const wins = bucketRows.filter((row) => row.hit === true).length;
+		const actualRate = bucketRows.length > 0 ? wins / bucketRows.length : 0;
+		return {
+			index,
+			label: `${Math.round(min * 100)}-${Math.round(max * 100)}%`,
+			shortLabel: `${Math.round(min * 10)}`,
+			count: bucketRows.length,
+			actualRate,
+		};
+	});
 }
 
 function HitIcon({ hit }: { hit: boolean | null }) {
