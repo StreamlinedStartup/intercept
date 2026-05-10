@@ -55,6 +55,21 @@ type MarketOdds = {
 	market_prob: number;
 };
 
+type PredictionHistoryRow = {
+	fight_id: string;
+	event_name: string;
+	event_date: string | Date;
+	predicted_at: string | Date;
+	predicted_winner_id: string;
+	predicted_winner_name: string;
+	win_prob: number;
+	market_prob: number | null;
+	edge_pct: number | null;
+	actual_winner_id: string | null;
+	actual_winner_name: string | null;
+	best_decimal_odds: number | null;
+};
+
 export function registerPredictRoutes(app: Hono): void {
 	app.get('/api/predict/fight/:id', async (c) => {
 		const fightId = c.req.param('id');
@@ -136,6 +151,17 @@ export function registerPredictRoutes(app: Hono): void {
 		}
 
 		return c.json({ event_id: eventId, predictions: results, skipped });
+	});
+
+	app.get('/api/predict/history', async (c) => {
+		const url = new URL(c.req.url);
+		const from = url.searchParams.get('from');
+		const to = url.searchParams.get('to');
+		const rawLimit = Number.parseInt(url.searchParams.get('limit') ?? '100', 10);
+		const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(rawLimit, 500)) : 100;
+		const rows = await loadPredictionHistory({ from, to, limit });
+		const serialized = rows.map(serializeHistoryRow);
+		return c.json({ aggregate: aggregateHistory(serialized), rows: serialized });
 	});
 }
 
@@ -251,7 +277,144 @@ async function loadMarketOdds(fightId: string): Promise<MarketOdds[]> {
 	}));
 }
 
+async function loadPredictionHistory({
+	from,
+	to,
+	limit,
+}: {
+	from: string | null;
+	to: string | null;
+	limit: number;
+}): Promise<PredictionHistoryRow[]> {
+	return (await sql`
+		WITH actual_winners AS (
+			SELECT
+				fr.fight_id,
+				fr.fighter_id AS actual_winner_id,
+				f.name AS actual_winner_name
+			FROM fight_results fr
+			JOIN fighters f ON f.id = fr.fighter_id
+			WHERE fr.outcome = 'win'
+		),
+		best_odds AS (
+			SELECT DISTINCT ON (fight_id, fighter_id)
+				fight_id,
+				fighter_id,
+				decimal_odds
+			FROM odds_snapshots
+			ORDER BY fight_id, fighter_id, snapshot_at DESC, decimal_odds DESC
+		)
+		SELECT
+			p.fight_id,
+			e.name AS event_name,
+			e.date AS event_date,
+			p.predicted_at,
+			p.predicted_winner_id,
+			pf.name AS predicted_winner_name,
+			p.win_prob,
+			p.edge_pct,
+			CASE WHEN p.edge_pct IS NULL THEN NULL ELSE p.win_prob - p.edge_pct END AS market_prob,
+			aw.actual_winner_id,
+			aw.actual_winner_name,
+			bo.decimal_odds AS best_decimal_odds
+		FROM predictions p
+		JOIN fights fi ON fi.id = p.fight_id
+		JOIN events e ON e.id = fi.event_id
+		JOIN fighters pf ON pf.id = p.predicted_winner_id
+		LEFT JOIN actual_winners aw ON aw.fight_id = p.fight_id
+		LEFT JOIN best_odds bo
+			ON bo.fight_id = p.fight_id
+			AND bo.fighter_id = p.predicted_winner_id
+		WHERE (${from}::date IS NULL OR e.date >= ${from}::date)
+			AND (${to}::date IS NULL OR e.date <= ${to}::date)
+		ORDER BY e.date DESC, p.predicted_at DESC
+		LIMIT ${limit}
+	`) as PredictionHistoryRow[];
+}
+
+type SerializedHistoryRow = {
+	fight_id: string;
+	event_name: string;
+	event_date: string;
+	predicted_at: string;
+	predicted_winner_id: string;
+	predicted_winner_name: string;
+	win_prob: number;
+	market_prob: number | null;
+	edge_pct: number | null;
+	actual_winner_id: string | null;
+	actual_winner_name: string | null;
+	hit: boolean | null;
+	bet_pl_units: number | null;
+};
+
+function serializeHistoryRow(row: PredictionHistoryRow): SerializedHistoryRow {
+	const hit = row.actual_winner_id ? row.actual_winner_id === row.predicted_winner_id : null;
+	const betPlaced = typeof row.edge_pct === 'number' && row.edge_pct > 0.05;
+	const betPlUnits =
+		betPlaced && hit !== null ? (hit ? (row.best_decimal_odds ?? 2) - 1 : -1) : null;
+	return {
+		fight_id: row.fight_id,
+		event_name: row.event_name,
+		event_date: formatDbDate(row.event_date),
+		predicted_at: formatDbTimestamp(row.predicted_at),
+		predicted_winner_id: row.predicted_winner_id,
+		predicted_winner_name: row.predicted_winner_name,
+		win_prob: row.win_prob,
+		market_prob: row.market_prob,
+		edge_pct: row.edge_pct,
+		actual_winner_id: row.actual_winner_id,
+		actual_winner_name: row.actual_winner_name,
+		hit,
+		bet_pl_units: betPlUnits,
+	};
+}
+
+function aggregateHistory(rows: SerializedHistoryRow[]): {
+	n_predictions: number;
+	n_with_result: number;
+	accuracy: number | null;
+	log_loss: number | null;
+	brier: number | null;
+	n_bets: number;
+	roi_units: number;
+	roi_pct: number | null;
+} {
+	const withResult = rows.filter((row) => row.hit !== null);
+	const hits = withResult.filter((row) => row.hit).length;
+	const probabilities = withResult.map((row) => (row.hit ? row.win_prob : 1 - row.win_prob));
+	const bets = rows.filter((row) => row.bet_pl_units !== null);
+	const roiUnits = bets.reduce((sum, row) => sum + (row.bet_pl_units ?? 0), 0);
+	return {
+		n_predictions: rows.length,
+		n_with_result: withResult.length,
+		accuracy: withResult.length ? hits / withResult.length : null,
+		log_loss: probabilities.length
+			? probabilities.reduce(
+					(sum, probability) => sum - Math.log(clampProbability(probability)),
+					0,
+				) / probabilities.length
+			: null,
+		brier: probabilities.length
+			? probabilities.reduce((sum, probability) => sum + (1 - probability) ** 2, 0) /
+				probabilities.length
+			: null,
+		n_bets: bets.length,
+		roi_units: roiUnits,
+		roi_pct: bets.length ? roiUnits / bets.length : null,
+	};
+}
+
+function clampProbability(value: number): number {
+	return Math.max(0.000001, Math.min(0.999999, value));
+}
+
 function formatDbDate(value: string | Date): string {
 	if (value instanceof Date) return value.toISOString().slice(0, 10);
+	return value;
+}
+
+function formatDbTimestamp(value: string | Date): string {
+	if (value instanceof Date) return value.toISOString();
 	return value;
 }
