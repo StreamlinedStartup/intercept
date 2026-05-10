@@ -135,11 +135,12 @@ beans update <id> -s completed --body-replace-old "- [ ] X" --body-replace-new "
 
 - Before starting an epic, verify the current ready epic with `beans list --ready` and `beans show <epic-id>`.
 - Create or switch to a dedicated branch for that epic before making code changes. Branch format: `epic/<epic-id>-<short-slug>`; if a historical branch already exists for the epic, use that exact branch.
-- The epic branch must start from the project-owned base branch after the previous epic's PR has merged. Do not branch from an old epic branch unless explicitly repairing that old epic.
+- The project-owned base branch is `fork/main` (`StreamlinedStartup/intercept`). Local `main` must track `fork/main`, not `origin/main`.
+- The epic branch must start from updated local `main` after the previous epic's PR has merged. Do not branch from an old epic branch unless explicitly repairing that old epic.
 - If the current branch name does not match the active epic, stop feature work immediately and fix the branch/PR state first.
 - Complete all child beans for the epic, including verification and required smoke gate, with one commit per completed bean.
-- When the epic is confirmed complete, push the epic branch to the project fork/repo, open exactly one PR for that epic, and merge it before starting the next epic.
-- After the PR merges, switch back to the project base branch, update it from the project remote, then create the next epic's branch from that updated base.
+- When the epic is confirmed complete, push the epic branch to `fork`, open exactly one PR targeting `StreamlinedStartup/intercept:main`, and merge it before starting the next epic.
+- After the PR merges, switch back to `main`, update it from `fork/main`, delete the merged local epic branch, prune deleted `fork/epic/*` remote refs, remove any temp worktree for that branch, then create the next epic's branch from updated `main`.
 - Do not reuse a branch after its epic PR has merged. The next epic gets a new branch even if the prior branch is still checked out locally.
 - If local commits for multiple epics are already stacked on one branch, stop and split or merge the completed epic PR before continuing; do not add more epic work to the stack.
 
@@ -152,6 +153,8 @@ beans update <id> -s completed --body-replace-old "- [ ] X" --body-replace-new "
 - Do not fork upstream Interceptor for contribution purposes, and do not create cross-repo PRs targeting upstream Interceptor.
 - Do not merge, squash, rebase, or otherwise land this project’s work into upstream Interceptor.
 - Treat any remote named `origin` or `upstream` that points at original Interceptor as read-only historical context only.
+- The expected project remote is `fork=https://github.com/StreamlinedStartup/intercept.git`; use `git remote -v` before any push, PR, or merge operation if remote state is uncertain.
+- If local `main` tracks `origin/main`, fix it with `git branch --set-upstream-to=fork/main main` after fetching `fork`.
 - If a PR is required for an epic, create it only inside this project’s own GitHub repository/fork. If that remote does not exist, create a new project-owned remote and use that as the destination.
 - If the user asks to “push remote,” “open PR,” or “merge PR,” first verify the destination is not upstream Interceptor. Refuse and explain if the only available destination is upstream Interceptor.
 
