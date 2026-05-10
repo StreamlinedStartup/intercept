@@ -51,6 +51,7 @@ import { getBridge } from './bridge';
 import { browserMcp } from './browser-mcp';
 import { formatStartupBanner } from './format';
 import { registerBackfillRoutes } from './routes/backfill';
+import { registerPredictRoutes } from './routes/predict';
 import { registerUpcomingSyncRoutes } from './routes/upcoming-sync';
 import { addClient, getState, removeClient, resetState, setMultiplier, setRunning } from './state';
 
@@ -169,6 +170,7 @@ for (const name of listDomains()) {
 }
 
 registerBackfillRoutes(app);
+registerPredictRoutes(app);
 registerUpcomingSyncRoutes(app);
 
 // Python bridge REST endpoint — dashboard pages call Python methods via HTTP
