@@ -198,6 +198,8 @@ def test_weight_class_change_after_three_lightweight_fights_then_welterweight() 
     decision_rate_diff = FEATURE_NAMES.index("decision_rate_diff")
     time_in_cage_a = FEATURE_NAMES.index("time_in_cage_a")
     time_in_cage_b = FEATURE_NAMES.index("time_in_cage_b")
+    damage_index_a = FEATURE_NAMES.index("damage_index_a")
+    damage_index_b = FEATURE_NAMES.index("damage_index_b")
 
     assert features[weight_class_change] == 1.0
     assert features[same_weight_class_count_diff] == -1.0
@@ -205,6 +207,8 @@ def test_weight_class_change_after_three_lightweight_fights_then_welterweight() 
     assert features[decision_rate_diff] == pytest.approx(-0.5)
     assert features[time_in_cage_a] == 900.0
     assert features[time_in_cage_b] == 300.0
+    assert features[damage_index_a] == 60.0
+    assert features[damage_index_b] == 10.0
 
     with pool.borrow() as conn:
         with conn.cursor() as cur:
@@ -383,7 +387,7 @@ def _insert_weight_class_fixture(cur, prefix: str) -> None:
         fighter_b_outcome="win",
         fighter_a_sig_landed=10,
         fighter_b_sig_landed=20,
-        fighter_b_method="Submission",
+        fighter_b_method="KO/TKO",
     )
     _insert_result_pair_for_fighters(
         cur,

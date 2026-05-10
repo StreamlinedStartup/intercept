@@ -42,6 +42,8 @@ FEATURE_NAMES = [
     "decision_rate_diff",
     "time_in_cage_a",
     "time_in_cage_b",
+    "damage_index_a",
+    "damage_index_b",
     "stance_orthodox_orthodox",
     "stance_orthodox_southpaw",
     "stance_southpaw_orthodox",
@@ -120,6 +122,8 @@ def build_feature_row(
             form_b = _recent_form(cur, fighter_b_id, fight_date)
             profile_a = _career_profile(cur, fighter_a_id, fight_date, target_weight_class)
             profile_b = _career_profile(cur, fighter_b_id, fight_date, target_weight_class)
+            damage_index_a = _damage_index(cur, fighter_a_id, fight_date)
+            damage_index_b = _damage_index(cur, fighter_b_id, fight_date)
 
     return np.array(
         [
@@ -155,6 +159,8 @@ def build_feature_row(
             _diff(profile_a["decision_rate"], profile_b["decision_rate"]),
             profile_a["time_in_cage"],
             profile_b["time_in_cage"],
+            damage_index_a,
+            damage_index_b,
             *_stance_one_hot(fighter_a["stance"], fighter_b["stance"]),
         ],
         dtype=float,
@@ -364,6 +370,52 @@ def _any_true_or_nan(a: float, b: float) -> float:
     if not values:
         return math.nan
     return 1.0 if any(value == 1.0 for value in values) else 0.0
+
+
+def _damage_index(cur: Any, fighter_id: str, target_date: date) -> float:
+    cur.execute(
+        """
+        SELECT
+            fr.outcome,
+            fr.method,
+            opp.method AS opp_method,
+            opp.sig_strikes_landed AS sig_strikes_absorbed
+        FROM fight_results fr
+        JOIN fights f ON f.id = fr.fight_id
+        JOIN events e ON e.id = f.event_id
+        LEFT JOIN fight_results opp
+            ON opp.fight_id = fr.fight_id
+            AND opp.fighter_id = fr.opponent_id
+        WHERE fr.fighter_id = %s
+            AND e.date < %s
+        ORDER BY e.date DESC, fr.fight_id DESC
+        LIMIT 3
+        """,
+        (fighter_id, target_date),
+    )
+    rows = [_row_dict(cur.description, row) for row in cur.fetchall()]
+    if not rows:
+        return math.nan
+
+    total = 0.0
+    has_absorbed = False
+    for row in rows:
+        absorbed = row["sig_strikes_absorbed"]
+        if absorbed is None:
+            continue
+        has_absorbed = True
+        multiplier = 2.0 if _is_ko_tko_loss(row) else 1.0
+        total += float(absorbed) * multiplier
+    return total if has_absorbed else math.nan
+
+
+def _is_ko_tko_loss(row: dict[str, Any]) -> bool:
+    if row["outcome"] != "loss":
+        return False
+    return _method_matches(row["method"], {"ko", "tko"}) or _method_matches(
+        row["opp_method"],
+        {"ko", "tko"},
+    )
 
 
 def _row_dict(description: Any, row: Any) -> dict[str, Any]:
