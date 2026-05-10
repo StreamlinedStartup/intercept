@@ -129,6 +129,20 @@ beans update <id> -s completed --body-replace-old "- [ ] X" --body-replace-new "
 
 **Every completed bean task gets its own commit. Every completed epic gets its own PR. No exceptions.**
 
+### Epic branch cadence — one epic, one branch, one PR
+
+**Never continue a new epic on a previous epic's branch.** Branch names are part of the workflow contract, not cosmetic labels.
+
+- Before starting an epic, verify the current ready epic with `beans list --ready` and `beans show <epic-id>`.
+- Create or switch to a dedicated branch for that epic before making code changes. Branch format: `epic/<epic-id>-<short-slug>`; if a historical branch already exists for the epic, use that exact branch.
+- The epic branch must start from the project-owned base branch after the previous epic's PR has merged. Do not branch from an old epic branch unless explicitly repairing that old epic.
+- If the current branch name does not match the active epic, stop feature work immediately and fix the branch/PR state first.
+- Complete all child beans for the epic, including verification and required smoke gate, with one commit per completed bean.
+- When the epic is confirmed complete, push the epic branch to the project fork/repo, open exactly one PR for that epic, and merge it before starting the next epic.
+- After the PR merges, switch back to the project base branch, update it from the project remote, then create the next epic's branch from that updated base.
+- Do not reuse a branch after its epic PR has merged. The next epic gets a new branch even if the prior branch is still checked out locally.
+- If local commits for multiple epics are already stacked on one branch, stop and split or merge the completed epic PR before continuing; do not add more epic work to the stack.
+
 ### Remote boundary — never submit upstream to original Interceptor
 
 **This repo is now a separate UFC Fight Predictor product. It must never submit work upstream to the original `intercept` project. No exceptions.**
@@ -143,7 +157,7 @@ beans update <id> -s completed --body-replace-old "- [ ] X" --body-replace-new "
 
 - Do not batch multiple completed tasks into one commit unless a bean explicitly defines them as one task.
 - Do not close a bean until its code/docs/fixtures, bean file update, and verification evidence are committed together.
-- Do not close an epic until every child task is committed, the smoke gate is committed, and a PR exists for the epic.
+- Do not close an epic until every child task is committed, the smoke gate is committed, a PR exists for the epic, and that PR has been merged into the project base branch.
 - Commit immediately after each task passes its verification gate. If verification is blocked, commit only when the bean clearly records the blocker and the user explicitly approves the partial commit.
 - PR scope is exactly one epic. If another epic's work is needed, open a separate PR or split the beans first.
 - Stage files explicitly by path. Never use `git add -A`.
