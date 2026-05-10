@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarRange, Globe, LayoutDashboard } from 'lucide-react';
+import { CalendarRange, Globe, LayoutDashboard, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -15,6 +15,7 @@ import {
 const items = [
 	{ title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
 	{ title: 'Upcoming Fights', href: '/upcoming', icon: CalendarRange },
+	{ title: 'Predictions', href: '/predictions', icon: TrendingUp },
 	{ title: 'Browser', href: '/browser', icon: Globe },
 ];
 
