@@ -29,6 +29,7 @@ type EventState = {
 };
 
 type CompareTarget = {
+	fightId: string;
 	fighterA: { id: string; name: string };
 	fighterB: { id: string; name: string };
 	weightClass: string;
@@ -167,8 +168,8 @@ export function UpcomingContent() {
 							key={ev.meta.id}
 							ev={ev}
 							today={today}
-							onCompare={(fighterA, fighterB, weightClass) =>
-								setCompare({ fighterA, fighterB, weightClass, eventName: ev.meta.name })
+							onCompare={(fightId, fighterA, fighterB, weightClass) =>
+								setCompare({ fightId, fighterA, fighterB, weightClass, eventName: ev.meta.name })
 							}
 						/>
 					))}
@@ -239,6 +240,7 @@ function EventBlock({
 	ev: EventState;
 	today: Date;
 	onCompare: (
+		fightId: string,
 		a: { id: string; name: string },
 		b: { id: string; name: string },
 		weightClass: string,

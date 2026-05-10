@@ -62,6 +62,7 @@ export function EventFightCard({
 }: {
 	detail: EventDetail;
 	onCompare: (
+		fightId: string,
 		a: { id: string; name: string },
 		b: { id: string; name: string },
 		weightClass: string,
@@ -268,6 +269,7 @@ function HeadlinerRow({
 	predictionsLoading: boolean;
 	predictionErrors: Record<string, string>;
 	onCompare: (
+		fightId: string,
 		a: { id: string; name: string },
 		b: { id: string; name: string },
 		weightClass: string,
@@ -325,7 +327,12 @@ function HeadlinerRow({
 					disabled={compareDisabled}
 					onClick={() => {
 						if (a?.id && b?.id) {
-							onCompare({ id: a.id, name: a.name }, { id: b.id, name: b.name }, fight.weightClass);
+							onCompare(
+								fightId,
+								{ id: a.id, name: a.name },
+								{ id: b.id, name: b.name },
+								fight.weightClass,
+							);
 						}
 					}}
 				>
@@ -411,6 +418,7 @@ function FightRow({
 	predictionsLoading: boolean;
 	predictionErrors: Record<string, string>;
 	onCompare: (
+		fightId: string,
 		a: { id: string; name: string },
 		b: { id: string; name: string },
 		weightClass: string,
@@ -460,7 +468,12 @@ function FightRow({
 				aria-label={canCompare ? `Compare ${a?.name} vs ${b?.name}` : `${a?.name} vs ${b?.name}`}
 				onClick={() => {
 					if (canCompare && a?.id && b?.id) {
-						onCompare({ id: a.id, name: a.name }, { id: b.id, name: b.name }, fight.weightClass);
+						onCompare(
+							fightId,
+							{ id: a.id, name: a.name },
+							{ id: b.id, name: b.name },
+							fight.weightClass,
+						);
 					}
 				}}
 			>

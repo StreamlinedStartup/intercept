@@ -27,6 +27,7 @@ import {
 } from './upcoming-types';
 
 type Target = {
+	fightId: string;
 	fighterA: { id: string; name: string };
 	fighterB: { id: string; name: string };
 	weightClass: string;
@@ -61,6 +62,20 @@ type BackfillJob = {
 	completed_at: string | null;
 };
 
+type FightPrediction = {
+	fight_id: string;
+	fighter_a_id: string;
+	fighter_b_id: string;
+	predicted_winner_id: string;
+	win_prob: number;
+	model_version: string;
+	contributing_features: Array<{
+		name: string;
+		value: number | null;
+		shap: number;
+	}>;
+};
+
 const INITIAL: FighterState = { data: null, loading: false, error: null };
 
 export function CompareSheet({
@@ -77,6 +92,9 @@ export function CompareSheet({
 	const [backfillStates, setBackfillStates] = useState<Record<string, BackfillState>>({});
 	const [loadingIds, setLoadingIds] = useState<Set<string>>(() => new Set());
 	const [jobProgress, setJobProgress] = useState<Record<string, string>>({});
+	const [prediction, setPrediction] = useState<FightPrediction | null>(null);
+	const [predictionLoading, setPredictionLoading] = useState(false);
+	const [predictionError, setPredictionError] = useState<string | null>(null);
 	const open = !!target;
 
 	const fetchBackfillState = useCallback(async (fighterId: string) => {
@@ -132,6 +150,9 @@ export function CompareSheet({
 			setBackfillStates({});
 			setLoadingIds(new Set());
 			setJobProgress({});
+			setPrediction(null);
+			setPredictionLoading(false);
+			setPredictionError(null);
 			return;
 		}
 		let cancelled = false;
@@ -156,6 +177,23 @@ export function CompareSheet({
 		void fetchOne(target.fighterB.id, setB);
 		void fetchBackfillState(target.fighterA.id);
 		void fetchBackfillState(target.fighterB.id);
+		setPrediction(null);
+		setPredictionError(null);
+		setPredictionLoading(true);
+		void fetch(`/api/predict/fight/${target.fightId}`)
+			.then(async (res) => {
+				const body = await res.json();
+				if (!res.ok) {
+					throw new Error(body.error ?? `Prediction ${target.fightId} returned ${res.status}`);
+				}
+				if (!cancelled) setPrediction(body as FightPrediction);
+			})
+			.catch((err) => {
+				if (!cancelled) setPredictionError(err instanceof Error ? err.message : String(err));
+			})
+			.finally(() => {
+				if (!cancelled) setPredictionLoading(false);
+			});
 		return () => {
 			cancelled = true;
 		};
@@ -202,6 +240,8 @@ export function CompareSheet({
 						bBackfill={bBackfill}
 						aLoading={aLoading}
 						bLoading={bLoading}
+						prediction={prediction}
+						predictionLoading={predictionLoading}
 					/>
 					{target && (
 						<BackfillActionPanel
@@ -215,9 +255,12 @@ export function CompareSheet({
 							onLoadBackfill={loadBackfill}
 						/>
 					)}
-					<div className="rounded-md border border-border/60 px-3 py-2 text-center text-xs text-muted-foreground">
-						Predictions ready when both fighters loaded
-					</div>
+					<ModelPickRow
+						target={target}
+						prediction={prediction}
+						loading={predictionLoading}
+						error={predictionError}
+					/>
 					<PhysicalsBlock a={a} b={b} today={today} />
 					<StatsBlock a={a} b={b} />
 					{(a.data || b.data) && (
@@ -255,6 +298,8 @@ function FighterHeaderRow({
 	bBackfill,
 	aLoading,
 	bLoading,
+	prediction,
+	predictionLoading,
 }: {
 	a: FighterState;
 	b: FighterState;
@@ -264,16 +309,21 @@ function FighterHeaderRow({
 	bBackfill: BackfillState | undefined;
 	aLoading: boolean;
 	bLoading: boolean;
+	prediction: FightPrediction | null;
+	predictionLoading: boolean;
 }) {
 	return (
 		<div className="grid grid-cols-[1fr_auto_1fr] gap-2 sm:gap-3 items-stretch">
 			<HeaderCell
 				state={a}
 				fallbackName={target?.fighterA.name ?? 'Fighter A'}
+				fighterId={target?.fighterA.id}
 				accent="red"
 				today={today}
 				backfillState={aBackfill}
 				backfillLoading={aLoading}
+				prediction={prediction}
+				predictionLoading={predictionLoading}
 			/>
 			<div className="flex items-center justify-center">
 				<span className="text-xl sm:text-2xl font-extrabold text-muted-foreground tracking-widest">
@@ -283,11 +333,14 @@ function FighterHeaderRow({
 			<HeaderCell
 				state={b}
 				fallbackName={target?.fighterB.name ?? 'Fighter B'}
+				fighterId={target?.fighterB.id}
 				accent="blue"
 				today={today}
 				align="right"
 				backfillState={bBackfill}
 				backfillLoading={bLoading}
+				prediction={prediction}
+				predictionLoading={predictionLoading}
 			/>
 		</div>
 	);
@@ -296,19 +349,25 @@ function FighterHeaderRow({
 function HeaderCell({
 	state,
 	fallbackName,
+	fighterId,
 	accent,
 	align = 'left',
 	today,
 	backfillState,
 	backfillLoading,
+	prediction,
+	predictionLoading,
 }: {
 	state: FighterState;
 	fallbackName: string;
+	fighterId: string | undefined;
 	accent: 'red' | 'blue';
 	align?: 'left' | 'right';
 	today: Date;
 	backfillState: BackfillState | undefined;
 	backfillLoading: boolean;
+	prediction: FightPrediction | null;
+	predictionLoading: boolean;
 }) {
 	const accentClasses =
 		accent === 'red' ? 'border-red-500/40 bg-red-500/5' : 'border-blue-500/40 bg-blue-500/5';
@@ -329,6 +388,13 @@ function HeaderCell({
 				{accent === 'red' ? 'Corner A' : 'Corner B'}
 			</div>
 			<BackfillStatusBadge state={backfillState} loading={backfillLoading} />
+			<ModelProbabilityBar
+				fighterId={fighterId}
+				prediction={prediction}
+				loading={predictionLoading}
+				align={align}
+				accent={accent}
+			/>
 			{state.loading ? (
 				<>
 					<Skeleton className="h-5 w-32" />
@@ -457,6 +523,96 @@ function BackfillStatusBadge({
 			{label}
 		</Badge>
 	);
+}
+
+function ModelProbabilityBar({
+	fighterId,
+	prediction,
+	loading,
+	align,
+	accent,
+}: {
+	fighterId: string | undefined;
+	prediction: FightPrediction | null;
+	loading: boolean;
+	align: 'left' | 'right';
+	accent: 'red' | 'blue';
+}) {
+	if (loading) {
+		return (
+			<div className="w-full max-w-36 flex flex-col gap-1 py-1">
+				<Skeleton className="h-3 w-12" />
+				<Skeleton className="h-2 w-full" />
+			</div>
+		);
+	}
+	const probability = fighterId && prediction ? probabilityForFighter(prediction, fighterId) : null;
+	if (probability === null) return null;
+	const fillClass = accent === 'red' ? 'bg-red-500' : 'bg-blue-500';
+	return (
+		<div
+			className={`w-full max-w-36 flex flex-col gap-1 py-1 ${align === 'right' ? 'items-end' : 'items-start'}`}
+		>
+			<span className="text-xs font-mono font-semibold text-foreground">
+				{Math.round(probability * 100)}%
+			</span>
+			<div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+				<div
+					className={`h-full ${fillClass} transition-all duration-500`}
+					style={{ width: `${Math.round(probability * 100)}%` }}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function ModelPickRow({
+	target,
+	prediction,
+	loading,
+	error,
+}: {
+	target: Target;
+	prediction: FightPrediction | null;
+	loading: boolean;
+	error: string | null;
+}) {
+	if (!target) return null;
+	if (loading) {
+		return (
+			<div className="rounded-md border border-border/60 px-3 py-3">
+				<Skeleton className="h-4 w-28 mx-auto" />
+				<Skeleton className="h-3 w-44 mx-auto mt-2" />
+			</div>
+		);
+	}
+	if (!prediction) {
+		return (
+			<div className="rounded-md border border-border/60 px-3 py-2 text-center text-xs text-muted-foreground">
+				{error ? 'Model pick unavailable' : 'Predictions ready when both fighters loaded'}
+			</div>
+		);
+	}
+	const winner =
+		prediction.predicted_winner_id === target.fighterA.id ? target.fighterA : target.fighterB;
+	const probability = probabilityForFighter(prediction, winner.id);
+	return (
+		<div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-3 text-center">
+			<div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+				Model Pick
+			</div>
+			<div className="text-sm font-semibold text-foreground mt-1">
+				{winner.name} · {Math.round(probability * 100)}%
+			</div>
+			<div className="text-xs text-muted-foreground mt-0.5">Model {prediction.model_version}</div>
+		</div>
+	);
+}
+
+function probabilityForFighter(prediction: FightPrediction, fighterId: string): number {
+	return prediction.predicted_winner_id === fighterId
+		? prediction.win_prob
+		: 1 - prediction.win_prob;
 }
 
 function PhysicalsBlock({ a, b, today }: { a: FighterState; b: FighterState; today: Date }) {
