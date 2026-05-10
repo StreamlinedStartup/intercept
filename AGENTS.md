@@ -129,9 +129,35 @@ beans update <id> -s completed --body-replace-old "- [ ] X" --body-replace-new "
 
 **Every completed bean task gets its own commit. Every completed epic gets its own PR. No exceptions.**
 
+### Epic branch cadence — one epic, one branch, one PR
+
+**Never continue a new epic on a previous epic's branch.** Branch names are part of the workflow contract, not cosmetic labels.
+
+- Before starting an epic, verify the current ready epic with `beans list --ready` and `beans show <epic-id>`.
+- Create or switch to a dedicated branch for that epic before making code changes. Branch format: `epic/<epic-id>-<short-slug>`; if a historical branch already exists for the epic, use that exact branch.
+- The epic branch must start from the project-owned base branch after the previous epic's PR has merged. Do not branch from an old epic branch unless explicitly repairing that old epic.
+- If the current branch name does not match the active epic, stop feature work immediately and fix the branch/PR state first.
+- Complete all child beans for the epic, including verification and required smoke gate, with one commit per completed bean.
+- When the epic is confirmed complete, push the epic branch to the project fork/repo, open exactly one PR for that epic, and merge it before starting the next epic.
+- After the PR merges, switch back to the project base branch, update it from the project remote, then create the next epic's branch from that updated base.
+- Do not reuse a branch after its epic PR has merged. The next epic gets a new branch even if the prior branch is still checked out locally.
+- If local commits for multiple epics are already stacked on one branch, stop and split or merge the completed epic PR before continuing; do not add more epic work to the stack.
+
+### Remote boundary — never submit upstream to original Interceptor
+
+**This repo is now a separate UFC Fight Predictor product. It must never submit work upstream to the original `intercept` project. No exceptions.**
+
+- Do not open pull requests against `adam-s/intercept` or any other original/upstream Interceptor repository.
+- Do not push branches to an upstream Interceptor remote, even if credentials appear to allow it.
+- Do not fork upstream Interceptor for contribution purposes, and do not create cross-repo PRs targeting upstream Interceptor.
+- Do not merge, squash, rebase, or otherwise land this project’s work into upstream Interceptor.
+- Treat any remote named `origin` or `upstream` that points at original Interceptor as read-only historical context only.
+- If a PR is required for an epic, create it only inside this project’s own GitHub repository/fork. If that remote does not exist, create a new project-owned remote and use that as the destination.
+- If the user asks to “push remote,” “open PR,” or “merge PR,” first verify the destination is not upstream Interceptor. Refuse and explain if the only available destination is upstream Interceptor.
+
 - Do not batch multiple completed tasks into one commit unless a bean explicitly defines them as one task.
 - Do not close a bean until its code/docs/fixtures, bean file update, and verification evidence are committed together.
-- Do not close an epic until every child task is committed, the smoke gate is committed, and a PR exists for the epic.
+- Do not close an epic until every child task is committed, the smoke gate is committed, a PR exists for the epic, and that PR has been merged into the project base branch.
 - Commit immediately after each task passes its verification gate. If verification is blocked, commit only when the bean clearly records the blocker and the user explicitly approves the partial commit.
 - PR scope is exactly one epic. If another epic's work is needed, open a separate PR or split the beans first.
 - Stage files explicitly by path. Never use `git add -A`.
@@ -305,3 +331,95 @@ These are read by Claude Code's skill system. Other harnesses can read them as p
 - Use `file_path:line_number` when pointing at code.
 - One- to two-sentence end-of-turn summaries: what changed + what's next.
 - Never claim a task is done until you have evidence (curl output, screenshot, green test). Saying "should work" doesn't count.
+
+
+<claude-mem-context>
+# Memory Context
+
+# [intercept] recent context, 2026-05-09 5:10pm MST
+
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
+Format: ID TIME TYPE TITLE
+Fetch details: get_observations([IDs]) | Search: mem-search skill
+
+Stats: 50 obs (19,490t read) | 1,952,930t work | 99% savings
+
+### May 9, 2026
+S527 UFC Fight Predictor v1 project bootstrap complete; agent-browser CLI confirmed available for ufcstats.com API discovery (May 9 at 11:31 AM)
+1919 11:59a 🟣 Phase 4 Predict API + UI task graph completed — full 46-task beans graph verified
+1921 12:16p 🔴 Cross-phase blocking dependencies added — beans list --ready now enforces sequential phase execution
+S529 UFC Fight Predictor v1 full bootstrap complete — beans graph finalized with smoke gates, context handoff prompt generated for next session (May 9 at 12:16 PM)
+S525 Bootstrap /Users/vulturestudio/intercept UFC Fight Predictor v1 project with beans task graph and coding agent documentation (May 9 at 12:16 PM)
+S526 UFC Fight Predictor v1 project bootstrap complete — beginning Phase 0 implementation with agent-browser discovery (May 9 at 12:16 PM)
+1922 12:22p ⚖️ agent-browser smoke gate policy added to CLAUDE.md
+1923 12:24p 🟣 Smoke gate beans created for Phases 0, 1, 2, and 4
+1924 12:25p 🔵 beans update supports explicit edge removal via --remove-blocked-by and --remove-blocking
+1925 " ✅ Cross-phase blocking chain rewired through smoke gate tasks
+1926 " ✅ Final beans graph state: 56 beans, 50 tasks, 4 smoke gates, roadmap regenerated
+S530 UFC Fight Predictor Phase 0 infra: completed tasks intercept-tmtz (Postgres+TimescaleDB), intercept-dvmr (@interceptor/db skeleton), and intercept-dwtm (events+fighters schema + first migration) (May 9 at 12:25 PM)
+S528 UFC Fight Predictor v1 beans graph finalized with agent-browser smoke gates; all cross-phase dependencies rewired; ready to begin Phase 0 implementation (May 9 at 12:25 PM)
+1927 12:27p 🔵 UFC Fight Predictor Project Session Resumed in /intercept
+S531 UFC Fight Predictor Phase 0 — Postgres/TimescaleDB/Drizzle infra + API DB wiring + smoke gate (completed full epic) (May 9 at 12:32 PM)
+1928 12:33p 🟣 Drizzle Schema for events + fighters Completed with First Migration
+1929 " 🟣 @interceptor/db Client Singleton and Migration Runner Created
+1930 " 🟣 Migration Applied to Live TimescaleDB — events and fighters Tables Confirmed
+1931 12:34p 🟣 Phase 0 End-to-End Smoke Script Created
+1932 " 🟣 Phase 0 Vertical Slice Proven — Smoke Test Passes End-to-End
+1933 " ✅ @interceptor/db README Documents Hypertable Architecture Constraint
+1934 " 🔵 Phase 0-E Completion Unblocks Two Parallel Tasks: 0-F and 0-H
+1935 12:35p 🔵 Phase 0 Remaining Schema Tables Specified — 7 Tables for Task 0-F
+1936 " 🟣 Full Database Schema Written — All 9 Tables Defined in schema.ts
+1937 " 🟣 Second Migration Generated and Applied — All 10 Tables Now Live in Database
+1939 " 🟣 Smoke Script Extended to Round-Trip All 10 Tables
+1938 12:36p 🔵 All 10 Tables Confirmed Present in Live interceptor-postgres Container
+1940 " 🟣 Full 10-Table Smoke Test Passes — Phase 0-F Complete
+1941 " 🔵 Drizzle Composite PK Deprecation Warning Deferred — TS6387 extraConfig Callback Form
+1942 12:37p 🔵 Task 0-G: TimescaleDB Hypertable Conversion Pattern Specified
+1943 " 🟣 TimescaleDB Hypertables Created via Post-Migration Hook in migrate.ts
+1944 " 🔵 Hypertables Confirmed Active and migrate.ts Idempotency Verified
+1945 " 🔵 migrate_data => TRUE Required When Hypertable Table Already Has Rows
+1946 12:38p 🔵 apps/api Existing Structure Examined Before DATABASE_URL Wiring
+1947 " ✅ @interceptor/db Added as Workspace Dependency to apps/api
+S532 Resume UFC Fight Predictor — Phase 0 commit prep, schema cleanup (varchar→text), migration, and CI verification before proceeding to Phase 1/2 (May 9 at 12:38 PM)
+S533 Phase 0 schema cleanup: varchar→text migration + full clean-install verification on fresh DB (May 9 at 12:43 PM)
+S534 Phase 0 schema fix fully verified: varchar→text migration confirmed clean on fresh DB, bean 0-G updated to reflect deferred warning now resolved (May 9 at 12:50 PM)
+1948 4:41p ⚖️ Intercept Fork: Upstream PR Ban and Workflow Constraints Established
+1949 4:42p 🔵 CLAUDE.md and AGENTS.md Are Not Byte-Identical — Constraint Violation
+1950 " 🔵 Phase 2 Odds-MMA Plugin Fully Implemented — Only Verification Bean Remains
+1951 " 🔵 Local Branch and Fork/Main Have Diverged — Squash vs Detailed History
+1952 " 🔵 Ready Beans at Session Start: Phase 2 Verification and Phase 3 Python Setup
+1953 " 🔵 cp CLAUDE.md AGENTS.md Silently Fails — AGENTS.md Remains 32 KB Despite Copy
+1962 " ⚖️ Intercept Fork: Upstream PR Submission Permanently Banned
+1955 4:52p 🔵 Phase 2 odds-mma domain plugin: full route and env var map
+1956 " 🔵 Bean intercept-1fhe verification commands and test targets mapped
+1957 " 🔵 DB schema for odds-mma: odds_snapshots and unmatched_odds tables
+1958 " 🔵 Files to stage if only bean status or summary changes in intercept-1fhe
+1954 4:53p 🔵 UFC Fight Predictor Beads Task Queue State
+1959 4:54p 🔵 Intercept Project Phase Completion Status — Phases 0–2 Done, Phase 3 Next
+1960 " 🔵 Intercept Monorepo Structure with Existing Python Service Directory
+1961 " 🟣 Sub-agent "Jason" Spawned to Implement Bean 3-A: Python DB Plumbing
+**1963** 4:58p 🔵 **CLAUDE.md and AGENTS.md Diverged: AGENTS.md Had Extra Trailing Content**
+At session start, the required byte-identity invariant between CLAUDE.md and AGENTS.md was violated. AGENTS.md had grown to 32183 bytes (vs CLAUDE.md at 20733) due to trailing blank lines added by commit f657b6f. The fix is simple — cp CLAUDE.md AGENTS.md — but the first cp attempt during the session also showed DIFFER because cmp was run before the file was flushed (or because CLAUDE.md itself had unstaged modifications). The second cp at session end confirmed IDENTICAL. Future agents must always verify with cmp after any edit to either file.
+~325t 🔍 176,477
+
+**1964** " 🔵 **Phase 2 Odds-MMA Implementation Already Shipped in fork/main**
+The session discovered that the fork's squash merge had already included Phase 2 implementation work. The local detailed commit history on epic/phase-1-backfill-pr contains individual commits for each Phase 2 task, but the fork's main is a squash. The remaining Phase 2 work was purely verification and smoke gate beans, not new implementation. This means the session could skip straight to running the API and proving the endpoints work.
+~335t 🔍 176,477
+
+**1965** " 🔵 **API Server Binds IPv6-Only: curl to 127.0.0.1:3001 Fails Without Elevated Permissions**
+The Hono API server, started with tsx, binds to IPv6 wildcard (*:3001) on macOS. Claude Code's sandbox blocks loopback TCP connections by default. Two workarounds were used: (1) adding sandbox_permissions=require_escalated to curl commands, and (2) using agent-browser which is an external process not subject to the sandbox. This is a recurring pattern for any API verification work in this project.
+~318t 🔍 176,477
+
+**1966** " 🟣 **Phase 2 Verification Bean (intercept-1fhe) Completed**
+The Phase 2 verification bean required live evidence from the running API. The 0/288 match rate for odds rows against canonical fights is expected and correct — the live-betting odds API returns upcoming fights whose dates don't align with the existing local seed data (historical results). The unmatched path is fully exercised and logged to unmatched_odds, which is the designed behavior for v1. All test/typecheck/lint gates passed.
+~350t 🛠️ 176,477
+
+**1967** " 🟣 **Phase 2 Smoke Gate (intercept-qjks) Completed with agent-browser**
+The Phase 2 smoke gate verifies HTTP endpoints using agent-browser as a real browser client (since Phase 2 ships no UI). The API server needed to be restarted to get a fresh cache for the MISS/HIT cycle (the first server session had a warm cache from previous verification runs). The agent-browser workaround for the sandbox loopback restriction worked cleanly. The smoke produced the required screenshots and closed the Phase 2 epic.
+~369t 🛠️ 176,477
+
+1968 " 🟣 Phase 2 PR #2 Created at StreamlinedStartup/intercept
+1969 " 🔵 Odds Matching Always Returns 0 Matches Against Local Seed Data
+
+Access 1953k tokens of past work via get_observations([IDs]) or mem-search skill.
+</claude-mem-context>

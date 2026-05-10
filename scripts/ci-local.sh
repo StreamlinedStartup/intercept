@@ -3,13 +3,14 @@ set -euo pipefail
 
 # Run the same checks as GitHub Actions CI locally.
 # Usage:
-#   ./scripts/ci-local.sh          # full pipeline
-#   ./scripts/ci-local.sh --quick  # skip docker build
+#   ./scripts/ci-local.sh          # local pipeline, no registry pulls
+#   ./scripts/ci-local.sh --docker # include Docker image builds
 
-QUICK=false
+WITH_DOCKER=false
 for arg in "$@"; do
   case $arg in
-    --quick) QUICK=true ;;
+    --docker) WITH_DOCKER=true ;;
+    --quick) WITH_DOCKER=false ;;
   esac
 done
 
@@ -39,6 +40,7 @@ pass "Test"
 
 step "Python test"
 PYTHON_VENV="services/python/.venv/bin/python3"
+export DATABASE_URL="${DATABASE_URL:-postgres://interceptor:interceptor@localhost:5434/interceptor}"
 if [ -x "$PYTHON_VENV" ]; then
   $PYTHON_VENV -m pytest services/python/ -v || fail "Python tests failed"
 elif python3 -m pytest --version >/dev/null 2>&1; then
@@ -50,8 +52,9 @@ pass "Python test"
 
 step "E2E tests (Playwright)"
 if [ -f "playwright.config.ts" ] && [ -d "tests/e2e" ]; then
-  # Kill any stale server on port 3002
-  lsof -ti:3002 | xargs kill 2>/dev/null || true
+  export E2E_PORT="${E2E_PORT:-3004}"
+  # Kill any stale app server on the E2E port.
+  lsof -ti:"$E2E_PORT" | xargs kill 2>/dev/null || true
   sleep 1
   PLAYWRIGHT_HTML_OPEN=never npx playwright test || fail "E2E tests failed"
   pass "E2E tests"
@@ -59,7 +62,7 @@ else
   printf "\033[33m⊘ E2E tests skipped (no playwright config or test directory)\033[0m\n"
 fi
 
-if [ "$QUICK" = false ]; then
+if [ "$WITH_DOCKER" = true ]; then
   step "Docker build (api)"
   docker build -f apps/api/Dockerfile . || fail "Docker build (api) failed"
   pass "Docker build (api)"
@@ -68,7 +71,7 @@ if [ "$QUICK" = false ]; then
   docker build -f apps/web/Dockerfile . || fail "Docker build (web) failed"
   pass "Docker build (web)"
 else
-  printf "\n\033[33m⊘ Docker build skipped (--quick)\033[0m\n"
+  printf "\n\033[33m⊘ Docker build skipped (use --docker to include registry-backed image builds)\033[0m\n"
 fi
 
 printf "\n\033[32m✓ All checks passed.\033[0m\n"

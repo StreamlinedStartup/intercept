@@ -1,8 +1,8 @@
 'use client';
 
-import { Globe, LayoutDashboard } from 'lucide-react';
+import { CalendarRange, Globe, LayoutDashboard, Shield, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
 	SidebarGroup,
 	SidebarGroupLabel,
@@ -14,22 +14,35 @@ import {
 
 const items = [
 	{ title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+	{ title: 'Upcoming Fights', href: '/upcoming', icon: CalendarRange },
+	{ title: 'Predictions', href: '/predictions', icon: TrendingUp },
 	{ title: 'Browser', href: '/browser', icon: Globe },
+];
+
+const adminItems = [
+	{
+		title: 'Predictor Admin',
+		href: '/admin/predict-train?admin=1',
+		path: '/admin/predict-train',
+		icon: Shield,
+	},
 ];
 
 export function NavMain() {
 	const pathname = usePathname();
+	const searchParams = useSearchParams();
 	const { setOpenMobile } = useSidebar();
+	const visibleItems = searchParams.get('admin') === '1' ? [...items, ...adminItems] : items;
 
 	return (
 		<SidebarGroup>
 			<SidebarGroupLabel>Navigation</SidebarGroupLabel>
 			<SidebarMenu>
-				{items.map((item) => (
+				{visibleItems.map((item) => (
 					<SidebarMenuItem key={item.href}>
 						<SidebarMenuButton
 							asChild
-							isActive={pathname === item.href}
+							isActive={pathname === ('path' in item ? item.path : item.href)}
 							onClick={() => setOpenMobile(false)}
 						>
 							<Link href={item.href}>

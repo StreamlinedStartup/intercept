@@ -17,7 +17,9 @@ __pycache__/
 .DS_Store
 
 # Runtime data (browser profiles, cache, logs — all generated at runtime)
-/data/
+/data/*
+# Smoke-gate screenshots are evidence — keep them tracked.
+!/data/smoke/
 
 # Sub-agent worktrees (temporary, per-session)
 .claude/worktrees/

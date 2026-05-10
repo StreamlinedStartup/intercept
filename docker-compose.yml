@@ -9,3 +9,21 @@ services:
       - .env.local
     environment:
       NODE_ENV: development
+
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: interceptor-postgres
+    restart: unless-stopped
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_DB: interceptor
+      POSTGRES_USER: interceptor
+      POSTGRES_PASSWORD: interceptor
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U interceptor -d interceptor']
+      interval: 5s
+      timeout: 5s
+      retries: 10

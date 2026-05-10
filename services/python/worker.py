@@ -91,6 +91,9 @@ METHODS: dict[str, str] = {
     "health": "handle_health",
     "compute": "handle_compute",
     "classify_headlines": "handle_classify_headlines",
+    "ml.train": "handle_ml_train",
+    "ml.predict": "handle_ml_predict",
+    "ml.list_models": "handle_ml_list_models",
 }
 
 
@@ -215,6 +218,32 @@ def handle_classify_headlines(params: dict[str, Any]) -> dict[str, Any]:
             "topics": topic_counts,
         },
     }
+
+
+def handle_ml_train(_params: dict[str, Any]) -> dict[str, Any]:
+    from ml.train import train
+
+    return train()
+
+
+def handle_ml_predict(params: dict[str, Any]) -> dict[str, Any]:
+    from ml.predict import predict_pair
+
+    fighter_a_id = params.get("fighter_a_id")
+    fighter_b_id = params.get("fighter_b_id")
+    fight_date = params.get("fight_date")
+    if not all(isinstance(value, str) and value for value in [fighter_a_id, fighter_b_id, fight_date]):
+        raise ValueError("fighter_a_id, fighter_b_id, and fight_date are required strings")
+    return predict_pair(fighter_a_id, fighter_b_id, fight_date)
+
+
+def handle_ml_list_models(params: dict[str, Any]) -> dict[str, Any]:
+    from ml.predict import list_models
+
+    raw_limit = params.get("limit", 10)
+    if not isinstance(raw_limit, int):
+        raise ValueError("limit must be an integer")
+    return {"models": list_models(max(1, min(raw_limit, 50)))}
 
 
 def send(obj: dict[str, Any]) -> None:

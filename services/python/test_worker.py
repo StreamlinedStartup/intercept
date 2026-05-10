@@ -11,6 +11,15 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent))
 from worker import handle_health, handle_compute, handle_classify_headlines
 
+EXPECTED_METHODS = [
+    "health",
+    "compute",
+    "classify_headlines",
+    "ml.train",
+    "ml.predict",
+    "ml.list_models",
+]
+
 
 # ---------------------------------------------------------------------------
 # Unit tests — handler functions
@@ -135,6 +144,7 @@ class TestJsonRpc:
         ready_line = proc.stdout.readline()
         ready = json.loads(ready_line)
         assert ready["type"] == "ready"
+        assert ready["methods"] == EXPECTED_METHODS
 
         yield proc
 

@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10.11.0 --activate
 RUN npm install -g turbo

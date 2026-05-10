@@ -52,6 +52,16 @@ type MatchedFight = {
 	fighters: Array<{ id: string; name: string; normalizedName: string }>;
 };
 
+type UpcomingSyncResult = {
+	events_seen: number;
+	events_upserted: number;
+	fights_seen: number;
+	fights_upserted: number;
+	fighters_upserted: number;
+	pending_participants_upserted: number;
+	skipped_fights: Array<{ event_id: string; reason: string; fighters: string[] }>;
+};
+
 function parseJsonOrText(text: string): unknown {
 	try {
 		return JSON.parse(text) as unknown;
@@ -210,6 +220,17 @@ async function loadFightMatchIndex(): Promise<Map<string, MatchedFight>> {
 	return index;
 }
 
+async function syncUpcomingCards(origin: string): Promise<UpcomingSyncResult> {
+	const res = await fetch(`${origin}/api/predict/sync/upcoming-cards`, { method: 'POST' });
+	const text = await res.text();
+	if (!res.ok) {
+		throw new Error(
+			`/api/predict/sync/upcoming-cards returned ${res.status}: ${text.slice(0, 300)}`,
+		);
+	}
+	return JSON.parse(text) as UpcomingSyncResult;
+}
+
 async function snapshotOdds(c: RouteCtx): Promise<Response> {
 	const snapshotAt = new Date();
 	const snapshotId = snapshotAt.toISOString();
@@ -226,6 +247,8 @@ async function snapshotOdds(c: RouteCtx): Promise<Response> {
 		return c.json({ error: 'Unexpected odds API response shape' }, 502);
 	}
 
+	const origin = new URL(c.req.url).origin;
+	const upcomingSync = await syncUpcomingCards(origin);
 	const fightIndex = await loadFightMatchIndex();
 	const fighterRows = new Map<string, { id: string; name: string }>();
 	const oddsRows: (typeof oddsSnapshots.$inferInsert)[] = [];
@@ -290,6 +313,7 @@ async function snapshotOdds(c: RouteCtx): Promise<Response> {
 			rows_written: 0,
 			matched_rows: 0,
 			unmatched_logged: unmatchedValues.length,
+			upcoming_sync: upcomingSync,
 			requests_remaining: result.requestsRemaining,
 		});
 	}
@@ -312,6 +336,7 @@ async function snapshotOdds(c: RouteCtx): Promise<Response> {
 		rows_written: inserted.length,
 		matched_rows: matchedRows,
 		unmatched_logged: unmatchedValues.length,
+		upcoming_sync: upcomingSync,
 		requests_remaining: result.requestsRemaining,
 	});
 }
