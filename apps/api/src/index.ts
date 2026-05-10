@@ -49,6 +49,7 @@ connectBrowserRateLimiter({
 import { getBridge } from './bridge';
 import { browserMcp } from './browser-mcp';
 import { formatStartupBanner } from './format';
+import { registerUpcomingSyncRoutes } from './routes/upcoming-sync';
 import { addClient, getState, removeClient, resetState, setMultiplier, setRunning } from './state';
 
 const config = validateConfig({
@@ -147,6 +148,8 @@ for (const name of listDomains()) {
 		app.route(`/api/${name}`, proxy);
 	}
 }
+registerUpcomingSyncRoutes(app);
+
 
 // Python bridge REST endpoint — dashboard pages call Python methods via HTTP
 app.post('/api/python/:method', async (c) => {
