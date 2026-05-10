@@ -21,6 +21,12 @@ FEATURE_NAMES = [
     "height_diff",
     "reach_diff",
     "age_diff",
+    "stance_orthodox_orthodox",
+    "stance_orthodox_southpaw",
+    "stance_southpaw_orthodox",
+    "stance_southpaw_southpaw",
+    "stance_switch_involved",
+    "stance_unknown",
 ]
 
 
@@ -89,6 +95,7 @@ def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) ->
             _diff(_maybe_float(fighter_a["height_in"]), _maybe_float(fighter_b["height_in"])),
             _diff(_maybe_float(fighter_a["reach_in"]), _maybe_float(fighter_b["reach_in"])),
             _diff(_age_years(fighter_a["dob"], fight_date), _age_years(fighter_b["dob"], fight_date)),
+            *_stance_one_hot(fighter_a["stance"], fighter_b["stance"]),
         ],
         dtype=float,
     )
@@ -97,7 +104,7 @@ def build_feature_row(fighter_a_id: str, fighter_b_id: str, fight_date: date) ->
 def _load_fighter(cur: Any, fighter_id: str) -> dict[str, Any]:
     cur.execute(
         """
-        SELECT id, dob, height_in, reach_in
+        SELECT id, dob, height_in, reach_in, stance
         FROM fighters
         WHERE id = %s
         """,
@@ -207,3 +214,37 @@ def _label(outcome_a: str, outcome_b: str) -> float:
     if outcome_a == "loss" and outcome_b == "win":
         return 0.0
     return math.nan
+
+
+def _stance_one_hot(stance_a: str | None, stance_b: str | None) -> list[float]:
+    stance_match = _stance_match(stance_a, stance_b)
+    categories = [
+        "orthodox_orthodox",
+        "orthodox_southpaw",
+        "southpaw_orthodox",
+        "southpaw_southpaw",
+        "switch_involved",
+        "unknown",
+    ]
+    return [1.0 if stance_match == category else 0.0 for category in categories]
+
+
+def _stance_match(stance_a: str | None, stance_b: str | None) -> str:
+    normalized_a = _normalize_stance(stance_a)
+    normalized_b = _normalize_stance(stance_b)
+    if normalized_a is None or normalized_b is None:
+        return "unknown"
+    if normalized_a == "switch" or normalized_b == "switch":
+        return "switch_involved"
+    if normalized_a in {"orthodox", "southpaw"} and normalized_b in {"orthodox", "southpaw"}:
+        return f"{normalized_a}_{normalized_b}"
+    return "unknown"
+
+
+def _normalize_stance(stance: str | None) -> str | None:
+    if stance is None:
+        return None
+    normalized = stance.strip().lower()
+    if normalized in {"orthodox", "southpaw", "switch"}:
+        return normalized
+    return None

@@ -49,6 +49,27 @@ def test_no_leakage() -> None:
         conn.commit()
 
 
+def test_stance_direction_is_asymmetric() -> None:
+    prefix = "test-pcuc-stance"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_fixture(cur, prefix, alpha_stance="orthodox", beta_stance="southpaw")
+        conn.commit()
+
+    features, _label = build_features(f"{prefix}-target-early")
+
+    orthodox_southpaw = FEATURE_NAMES.index("stance_orthodox_southpaw")
+    southpaw_orthodox = FEATURE_NAMES.index("stance_southpaw_orthodox")
+    assert features[orthodox_southpaw] == 1.0
+    assert features[southpaw_orthodox] == 0.0
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
 def _delete_fixture(cur, prefix: str) -> None:
     cur.execute("DELETE FROM fight_results WHERE fight_id LIKE %s", (f"{prefix}-%",))
     cur.execute("DELETE FROM fights WHERE id LIKE %s", (f"{prefix}-%",))
@@ -56,15 +77,21 @@ def _delete_fixture(cur, prefix: str) -> None:
     cur.execute("DELETE FROM fighters WHERE id LIKE %s", (f"{prefix}-%",))
 
 
-def _insert_fixture(cur, prefix: str) -> None:
+def _insert_fixture(
+    cur,
+    prefix: str,
+    *,
+    alpha_stance: str | None = None,
+    beta_stance: str | None = None,
+) -> None:
     cur.execute(
         """
-        INSERT INTO fighters (id, name, dob, height_in, reach_in)
+        INSERT INTO fighters (id, name, dob, height_in, reach_in, stance)
         VALUES
-            (%s, 'Fixture Alpha', '1990-01-01', 72, 74),
-            (%s, 'Fixture Beta', '1992-01-01', 70, 73)
+            (%s, 'Fixture Alpha', '1990-01-01', 72, 74, %s),
+            (%s, 'Fixture Beta', '1992-01-01', 70, 73, %s)
         """,
-        (f"{prefix}-alpha", f"{prefix}-beta"),
+        (f"{prefix}-alpha", alpha_stance, f"{prefix}-beta", beta_stance),
     )
     cur.execute(
         """
