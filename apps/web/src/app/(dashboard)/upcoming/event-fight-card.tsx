@@ -40,6 +40,16 @@ type FightPrediction = {
 	}>;
 };
 
+type EventPredictionResponse = {
+	event_id: string;
+	predictions: FightPrediction[];
+	skipped: Array<{
+		fight_id: string;
+		reason: string;
+		fighters?: Array<{ fighter_id: string; backfill_status: string }>;
+	}>;
+};
+
 /**
  * Renders the list of fights on an event card. The first row is the
  * headlining matchup and gets visual emphasis; the rest collapse into a
@@ -70,7 +80,7 @@ export function EventFightCard({
 	const [loadingIds, setLoadingIds] = useState<Set<string>>(() => new Set());
 	const [jobProgress, setJobProgress] = useState<Record<string, string>>({});
 	const [predictions, setPredictions] = useState<Record<string, FightPrediction>>({});
-	const [predictionLoadingIds, setPredictionLoadingIds] = useState<Set<string>>(() => new Set());
+	const [predictionsLoading, setPredictionsLoading] = useState(false);
 	const [predictionErrors, setPredictionErrors] = useState<Record<string, string>>({});
 
 	const fetchBackfillState = useCallback(async (fighterId: string) => {
@@ -87,58 +97,59 @@ export function EventFightCard({
 	}, [fetchBackfillState, fighterIds]);
 
 	useEffect(() => {
-		for (let i = 0; i < detail.fights.length; i++) {
-			const fight = detail.fights[i];
-			const [a, b] = fight.fighters;
-			if (!a?.id || !b?.id) continue;
-			if (
-				backfillStates[a.id]?.status !== 'current' ||
-				backfillStates[b.id]?.status !== 'current'
-			) {
-				continue;
-			}
+		const readyFightIds = detail.fights
+			.map((fight, index) => {
+				const [a, b] = fight.fighters;
+				if (!a?.id || !b?.id) return null;
+				if (
+					backfillStates[a.id]?.status !== 'current' ||
+					backfillStates[b.id]?.status !== 'current'
+				) {
+					return null;
+				}
+				return resolveFightId(detail.id, index, fight);
+			})
+			.filter((fightId): fightId is string => Boolean(fightId));
 
-			const fightId = resolveFightId(detail.id, i, fight);
-			if (predictions[fightId] || predictionLoadingIds.has(fightId) || predictionErrors[fightId]) {
-				continue;
-			}
-
-			setPredictionLoadingIds((prev) => new Set(prev).add(fightId));
-			void fetch(`/api/predict/fight/${fightId}`)
-				.then(async (res) => {
-					const body = await res.json();
-					if (!res.ok) {
-						throw new Error(body.error ?? `Prediction ${fightId} returned ${res.status}`);
-					}
-					setPredictions((prev) => ({ ...prev, [fightId]: body as FightPrediction }));
-					setPredictionErrors((prev) => {
-						const next = { ...prev };
-						delete next[fightId];
-						return next;
-					});
-				})
-				.catch((err) => {
-					setPredictionErrors((prev) => ({
-						...prev,
-						[fightId]: err instanceof Error ? err.message : String(err),
-					}));
-				})
-				.finally(() => {
-					setPredictionLoadingIds((prev) => {
-						const next = new Set(prev);
-						next.delete(fightId);
-						return next;
-					});
-				});
+		if (readyFightIds.length === 0 || predictionsLoading) return;
+		if (readyFightIds.every((fightId) => predictions[fightId] || predictionErrors[fightId])) {
+			return;
 		}
-	}, [
-		backfillStates,
-		detail.fights,
-		detail.id,
-		predictionErrors,
-		predictionLoadingIds,
-		predictions,
-	]);
+
+		setPredictionsLoading(true);
+		void fetch(`/api/predict/event/${detail.id}`)
+			.then(async (res) => {
+				const body = await res.json();
+				if (!res.ok) {
+					throw new Error(body.error ?? `Event predictions ${detail.id} returned ${res.status}`);
+				}
+				const result = body as EventPredictionResponse;
+				setPredictions((prev) => ({
+					...prev,
+					...Object.fromEntries(
+						result.predictions.map((prediction) => [prediction.fight_id, prediction]),
+					),
+				}));
+				setPredictionErrors((prev) => {
+					const next = { ...prev };
+					for (const prediction of result.predictions) {
+						delete next[prediction.fight_id];
+					}
+					for (const skipped of result.skipped) {
+						next[skipped.fight_id] = skipped.reason;
+					}
+					return next;
+				});
+			})
+			.catch((err) => {
+				const message = err instanceof Error ? err.message : String(err);
+				setPredictionErrors((prev) => ({
+					...prev,
+					...Object.fromEntries(readyFightIds.map((fightId) => [fightId, message])),
+				}));
+			})
+			.finally(() => setPredictionsLoading(false));
+	}, [backfillStates, detail.fights, detail.id, predictionErrors, predictions, predictionsLoading]);
 
 	const loadBackfill = useCallback(
 		async (fighterId: string) => {
@@ -198,7 +209,7 @@ export function EventFightCard({
 				loadingIds={loadingIds}
 				jobProgress={jobProgress}
 				predictions={predictions}
-				predictionLoadingIds={predictionLoadingIds}
+				predictionsLoading={predictionsLoading}
 				predictionErrors={predictionErrors}
 				onCompare={onCompare}
 				onLoadBackfill={loadBackfill}
@@ -221,7 +232,7 @@ export function EventFightCard({
 								loadingIds={loadingIds}
 								jobProgress={jobProgress}
 								predictions={predictions}
-								predictionLoadingIds={predictionLoadingIds}
+								predictionsLoading={predictionsLoading}
 								predictionErrors={predictionErrors}
 								onCompare={onCompare}
 								onLoadBackfill={loadBackfill}
@@ -242,7 +253,7 @@ function HeadlinerRow({
 	loadingIds,
 	jobProgress,
 	predictions,
-	predictionLoadingIds,
+	predictionsLoading,
 	predictionErrors,
 	onCompare,
 	onLoadBackfill,
@@ -254,7 +265,7 @@ function HeadlinerRow({
 	loadingIds: Set<string>;
 	jobProgress: Record<string, string>;
 	predictions: Record<string, FightPrediction>;
-	predictionLoadingIds: Set<string>;
+	predictionsLoading: boolean;
 	predictionErrors: Record<string, string>;
 	onCompare: (
 		a: { id: string; name: string },
@@ -280,7 +291,7 @@ function HeadlinerRow({
 					className="ml-0"
 					fight={fight}
 					prediction={predictions[fightId]}
-					loading={predictionLoadingIds.has(fightId)}
+					loading={predictionsLoading && !predictions[fightId] && !predictionErrors[fightId]}
 					error={predictionErrors[fightId]}
 					backfillStates={backfillStates}
 				/>
@@ -385,7 +396,7 @@ function FightRow({
 	loadingIds,
 	jobProgress,
 	predictions,
-	predictionLoadingIds,
+	predictionsLoading,
 	predictionErrors,
 	onCompare,
 	onLoadBackfill,
@@ -397,7 +408,7 @@ function FightRow({
 	loadingIds: Set<string>;
 	jobProgress: Record<string, string>;
 	predictions: Record<string, FightPrediction>;
-	predictionLoadingIds: Set<string>;
+	predictionsLoading: boolean;
 	predictionErrors: Record<string, string>;
 	onCompare: (
 		a: { id: string; name: string },
@@ -436,7 +447,7 @@ function FightRow({
 			<PredictionChip
 				fight={fight}
 				prediction={predictions[fightId]}
-				loading={predictionLoadingIds.has(fightId)}
+				loading={predictionsLoading && !predictions[fightId] && !predictionErrors[fightId]}
 				error={predictionErrors[fightId]}
 				backfillStates={backfillStates}
 			/>
