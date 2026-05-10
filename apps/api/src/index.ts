@@ -46,11 +46,30 @@ connectBrowserRateLimiter({
 	release: releaseRateLimitSlot,
 });
 
+import { sql } from '@interceptor/db';
 import { getBridge } from './bridge';
 import { browserMcp } from './browser-mcp';
 import { formatStartupBanner } from './format';
+import { registerBackfillRoutes } from './routes/backfill';
 import { registerUpcomingSyncRoutes } from './routes/upcoming-sync';
 import { addClient, getState, removeClient, resetState, setMultiplier, setRunning } from './state';
+
+async function assertDatabaseReachable(): Promise<void> {
+	try {
+		const rows = await sql`SELECT 1 AS ok`;
+		if (rows[0]?.ok !== 1) throw new Error('SELECT 1 returned an unexpected shape');
+		console.log('[startup] database reachable');
+	} catch (err) {
+		console.error(
+			'[FATAL] Could not connect to the database.\n' +
+				'  DATABASE_URL=' +
+				(process.env.DATABASE_URL?.replace(/:[^@/]+@/, ':***@') ?? '<unset>') +
+				'\n  See .env.example and packages/db/README.md.\n  ' +
+				(err instanceof Error ? err.message : String(err)),
+		);
+		process.exit(1);
+	}
+}
 
 const config = validateConfig({
 	name: 'interceptor-api',
@@ -148,8 +167,9 @@ for (const name of listDomains()) {
 		app.route(`/api/${name}`, proxy);
 	}
 }
-registerUpcomingSyncRoutes(app);
 
+registerBackfillRoutes(app);
+registerUpcomingSyncRoutes(app);
 
 // Python bridge REST endpoint — dashboard pages call Python methods via HTTP
 app.post('/api/python/:method', async (c) => {
@@ -329,6 +349,8 @@ server.on('upgrade', async (req: IncomingMessage, socket: Socket, head: Buffer) 
 });
 
 console.log(formatStartupBanner(config));
+
+await assertDatabaseReachable();
 
 const port = parseInt(process.env.PORT ?? '3001', 10);
 server.listen(port, () => {
