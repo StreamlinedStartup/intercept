@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from datetime import date
 from typing import Any
 
@@ -57,8 +58,24 @@ FEATURE_NAMES = [
     "stance_unknown",
 ]
 
+WEIGHT_CLASS_RECORD_FEATURE_NAMES = [
+    "same_weight_class_fight_count_a",
+    "same_weight_class_fight_count_b",
+    "same_weight_class_fight_count_diff",
+    "same_weight_class_win_rate_diff",
+    "other_weight_class_win_rate_diff",
+    "weight_class_move_lbs_a",
+    "weight_class_move_lbs_b",
+    "weight_class_move_lbs_diff",
+]
 
-def build_features(fight_id: str) -> tuple[np.ndarray, float]:
+EXPERIMENT_FEATURE_NAMES = [*FEATURE_NAMES, *WEIGHT_CLASS_RECORD_FEATURE_NAMES]
+
+
+def build_features(
+    fight_id: str,
+    feature_names: Sequence[str] | None = None,
+) -> tuple[np.ndarray, float]:
     """Build the minimal Phase 3 feature row for one fight.
 
     Aggregates only fights whose event date is strictly before the target fight
@@ -103,6 +120,7 @@ def build_features(fight_id: str) -> tuple[np.ndarray, float]:
             fighter_b["fighter_id"],
             target_date,
             target_weight_class,
+            feature_names=feature_names,
         ),
         _label(fighter_a["outcome"], fighter_b["outcome"]),
     )
@@ -113,8 +131,29 @@ def build_feature_row(
     fighter_b_id: str,
     fight_date: date,
     target_weight_class: str | None = None,
+    feature_names: Sequence[str] | None = None,
 ) -> np.ndarray:
     """Build features for a caller-specified fighter order."""
+    selected_feature_names = list(feature_names or FEATURE_NAMES)
+    feature_values = build_feature_dict(
+        fighter_a_id,
+        fighter_b_id,
+        fight_date,
+        target_weight_class,
+    )
+    unknown = sorted(set(selected_feature_names) - set(feature_values))
+    if unknown:
+        raise ValueError(f"Unknown feature names: {', '.join(unknown)}")
+    return np.array([feature_values[name] for name in selected_feature_names], dtype=float)
+
+
+def build_feature_dict(
+    fighter_a_id: str,
+    fighter_b_id: str,
+    fight_date: date,
+    target_weight_class: str | None = None,
+) -> dict[str, float]:
+    """Build all known point-in-time feature values keyed by feature name."""
     with pool.borrow() as conn:
         with conn.cursor() as cur:
             fighter_a = _load_fighter(cur, fighter_a_id)
@@ -132,52 +171,100 @@ def build_feature_row(
             common_opponents = _common_opponent_profile(cur, fighter_a_id, fighter_b_id, fight_date)
             damage_index_a = _damage_index(cur, fighter_a_id, fight_date)
             damage_index_b = _damage_index(cur, fighter_b_id, fight_date)
+            weight_record_a = _weight_class_record_profile(
+                cur,
+                fighter_a_id,
+                fight_date,
+                target_weight_class,
+            )
+            weight_record_b = _weight_class_record_profile(
+                cur,
+                fighter_b_id,
+                fight_date,
+                target_weight_class,
+            )
 
-    return np.array(
-        [
-            _diff(stats_a["slpm"], stats_b["slpm"]),
-            _diff(stats_a["str_acc"], stats_b["str_acc"]),
-            _diff(stats_a["sapm"], stats_b["sapm"]),
-            _diff(stats_a["str_def"], stats_b["str_def"]),
-            _diff(stats_a["td_avg"], stats_b["td_avg"]),
-            _diff(stats_a["td_acc"], stats_b["td_acc"]),
-            _diff(stats_a["td_def"], stats_b["td_def"]),
-            _diff(stats_a["sub_avg"], stats_b["sub_avg"]),
-            _diff(_maybe_float(fighter_a["height_in"]), _maybe_float(fighter_b["height_in"])),
-            _diff(_maybe_float(fighter_a["reach_in"]), _maybe_float(fighter_b["reach_in"])),
-            _diff(_age_years(fighter_a["dob"], fight_date), _age_years(fighter_b["dob"], fight_date)),
-            float(ufc_fight_count_a),
-            float(ufc_fight_count_b),
-            float(ufc_fight_count_a - ufc_fight_count_b),
-            1.0 if ufc_fight_count_a == 0 or ufc_fight_count_b == 0 else 0.0,
-            _diff(form_a["wins_last_3"], form_b["wins_last_3"]),
-            _diff(form_a["wins_last_5"], form_b["wins_last_5"]),
-            form_a["loss_streak"],
-            form_b["loss_streak"],
-            form_a["coming_off_loss"],
-            form_b["coming_off_loss"],
-            form_a["days_since_last_fight"],
-            form_b["days_since_last_fight"],
-            _diff(form_a["days_since_last_fight"], form_b["days_since_last_fight"]),
-            form_a["long_layoff"],
-            form_b["long_layoff"],
-            _any_true_or_nan(profile_a["weight_class_change"], profile_b["weight_class_change"]),
-            _diff(profile_a["same_weight_class_count"], profile_b["same_weight_class_count"]),
-            _diff(profile_a["finish_rate"], profile_b["finish_rate"]),
-            _diff(profile_a["decision_rate"], profile_b["decision_rate"]),
-            profile_a["time_in_cage"],
-            profile_b["time_in_cage"],
-            _diff(round_tendency_a["avg_ending_round"], round_tendency_b["avg_ending_round"]),
-            _diff(round_tendency_a["decision_rate"], round_tendency_b["decision_rate"]),
-            _diff(round_tendency_a["late_exposure_rate"], round_tendency_b["late_exposure_rate"]),
-            common_opponents["shared_count"],
-            common_opponents["win_diff"],
-            damage_index_a,
-            damage_index_b,
-            *_stance_one_hot(fighter_a["stance"], fighter_b["stance"]),
-        ],
-        dtype=float,
-    )
+    stance_features = _stance_one_hot(fighter_a["stance"], fighter_b["stance"])
+    feature_values = {
+        "slpm_diff": _diff(stats_a["slpm"], stats_b["slpm"]),
+        "str_acc_diff": _diff(stats_a["str_acc"], stats_b["str_acc"]),
+        "sapm_diff": _diff(stats_a["sapm"], stats_b["sapm"]),
+        "str_def_diff": _diff(stats_a["str_def"], stats_b["str_def"]),
+        "td_avg_diff": _diff(stats_a["td_avg"], stats_b["td_avg"]),
+        "td_acc_diff": _diff(stats_a["td_acc"], stats_b["td_acc"]),
+        "td_def_diff": _diff(stats_a["td_def"], stats_b["td_def"]),
+        "sub_avg_diff": _diff(stats_a["sub_avg"], stats_b["sub_avg"]),
+        "height_diff": _diff(_maybe_float(fighter_a["height_in"]), _maybe_float(fighter_b["height_in"])),
+        "reach_diff": _diff(_maybe_float(fighter_a["reach_in"]), _maybe_float(fighter_b["reach_in"])),
+        "age_diff": _diff(_age_years(fighter_a["dob"], fight_date), _age_years(fighter_b["dob"], fight_date)),
+        "ufc_fight_count_a": float(ufc_fight_count_a),
+        "ufc_fight_count_b": float(ufc_fight_count_b),
+        "ufc_fight_count_diff": float(ufc_fight_count_a - ufc_fight_count_b),
+        "ufc_debut": 1.0 if ufc_fight_count_a == 0 or ufc_fight_count_b == 0 else 0.0,
+        "wins_last_3_diff": _diff(form_a["wins_last_3"], form_b["wins_last_3"]),
+        "wins_last_5_diff": _diff(form_a["wins_last_5"], form_b["wins_last_5"]),
+        "loss_streak_a": form_a["loss_streak"],
+        "loss_streak_b": form_b["loss_streak"],
+        "coming_off_loss_a": form_a["coming_off_loss"],
+        "coming_off_loss_b": form_b["coming_off_loss"],
+        "days_since_last_fight_a": form_a["days_since_last_fight"],
+        "days_since_last_fight_b": form_b["days_since_last_fight"],
+        "days_since_last_fight_diff": _diff(form_a["days_since_last_fight"], form_b["days_since_last_fight"]),
+        "long_layoff_a": form_a["long_layoff"],
+        "long_layoff_b": form_b["long_layoff"],
+        "weight_class_change": _any_true_or_nan(
+            profile_a["weight_class_change"],
+            profile_b["weight_class_change"],
+        ),
+        "same_weight_class_count_diff": _diff(
+            profile_a["same_weight_class_count"],
+            profile_b["same_weight_class_count"],
+        ),
+        "finish_rate_diff": _diff(profile_a["finish_rate"], profile_b["finish_rate"]),
+        "decision_rate_diff": _diff(profile_a["decision_rate"], profile_b["decision_rate"]),
+        "time_in_cage_a": profile_a["time_in_cage"],
+        "time_in_cage_b": profile_b["time_in_cage"],
+        "avg_ending_round_diff": _diff(
+            round_tendency_a["avg_ending_round"],
+            round_tendency_b["avg_ending_round"],
+        ),
+        "decision_tendency_diff": _diff(
+            round_tendency_a["decision_rate"],
+            round_tendency_b["decision_rate"],
+        ),
+        "late_round_exposure_diff": _diff(
+            round_tendency_a["late_exposure_rate"],
+            round_tendency_b["late_exposure_rate"],
+        ),
+        "common_opponent_count": common_opponents["shared_count"],
+        "common_opponent_win_diff": common_opponents["win_diff"],
+        "damage_index_a": damage_index_a,
+        "damage_index_b": damage_index_b,
+        "stance_orthodox_orthodox": stance_features[0],
+        "stance_orthodox_southpaw": stance_features[1],
+        "stance_southpaw_orthodox": stance_features[2],
+        "stance_southpaw_southpaw": stance_features[3],
+        "stance_switch_involved": stance_features[4],
+        "stance_unknown": stance_features[5],
+        "same_weight_class_fight_count_a": weight_record_a["same_class_count"],
+        "same_weight_class_fight_count_b": weight_record_b["same_class_count"],
+        "same_weight_class_fight_count_diff": _diff(
+            weight_record_a["same_class_count"],
+            weight_record_b["same_class_count"],
+        ),
+        "same_weight_class_win_rate_diff": _diff(
+            weight_record_a["same_class_win_rate"],
+            weight_record_b["same_class_win_rate"],
+        ),
+        "other_weight_class_win_rate_diff": _diff(
+            weight_record_a["other_class_win_rate"],
+            weight_record_b["other_class_win_rate"],
+        ),
+        "weight_class_move_lbs_a": weight_record_a["move_lbs"],
+        "weight_class_move_lbs_b": weight_record_b["move_lbs"],
+        "weight_class_move_lbs_diff": _diff(weight_record_a["move_lbs"], weight_record_b["move_lbs"]),
+    }
+    return feature_values
 
 
 def build_decision_signals(
@@ -379,6 +466,77 @@ def _same_weight_class_count(rows: list[dict[str, Any]], target_weight_class: st
     if target_weight_class is None:
         return math.nan
     return float(sum(1 for row in rows if row["weight_class"] == target_weight_class))
+
+
+def _weight_class_record_profile(
+    cur: Any,
+    fighter_id: str,
+    target_date: date,
+    target_weight_class: str | None,
+) -> dict[str, float]:
+    cur.execute(
+        """
+        SELECT
+            fr.outcome,
+            f.weight_class,
+            e.date AS event_date
+        FROM fight_results fr
+        JOIN fights f ON f.id = fr.fight_id
+        JOIN events e ON e.id = f.event_id
+        WHERE fr.fighter_id = %s
+            AND e.date < %s
+            AND fr.outcome IN ('win', 'loss')
+        ORDER BY e.date DESC, fr.fight_id DESC
+        """,
+        (fighter_id, target_date),
+    )
+    rows = [_row_dict(cur.description, row) for row in cur.fetchall()]
+    same_rows = [
+        row for row in rows if target_weight_class is not None and row["weight_class"] == target_weight_class
+    ]
+    other_rows = [
+        row for row in rows if target_weight_class is not None and row["weight_class"] != target_weight_class
+    ]
+    recent_weight_class = rows[0]["weight_class"] if rows else None
+    target_limit = _weight_class_limit_lbs(target_weight_class)
+    recent_limit = _weight_class_limit_lbs(recent_weight_class)
+    return {
+        "same_class_count": float(len(same_rows)) if target_weight_class else math.nan,
+        "same_class_win_rate": _win_rate(same_rows),
+        "other_class_win_rate": _win_rate(other_rows),
+        "move_lbs": _diff(target_limit, recent_limit),
+    }
+
+
+def _win_rate(rows: list[dict[str, Any]]) -> float:
+    if not rows:
+        return math.nan
+    return sum(1 for row in rows if row["outcome"] == "win") / len(rows)
+
+
+def _weight_class_limit_lbs(weight_class: str | None) -> float:
+    if weight_class is None:
+        return math.nan
+    normalized = weight_class.strip().lower()
+    for prefix in ["ufc ", "women's ", "womens ", "women "]:
+        normalized = normalized.removeprefix(prefix)
+    normalized = normalized.removeprefix("interim ")
+    normalized = normalized.removeprefix("title ")
+    if normalized.startswith("catch") or normalized.startswith("open"):
+        return math.nan
+    limits = {
+        "strawweight": 115.0,
+        "flyweight": 125.0,
+        "bantamweight": 135.0,
+        "featherweight": 145.0,
+        "lightweight": 155.0,
+        "welterweight": 170.0,
+        "middleweight": 185.0,
+        "light heavyweight": 205.0,
+        "heavyweight": 265.0,
+    }
+    normalized = normalized.replace(" bout", "").replace(" title", "").strip()
+    return limits.get(normalized, math.nan)
 
 
 def _method_rate(wins: list[dict[str, Any]], method_tokens: set[str]) -> float:
