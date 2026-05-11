@@ -15,6 +15,7 @@
 		"import:ufcstats": "tsx src/import-ufcstats-snapshot.ts",
 		"match:fightodds:event": "tsx src/match-historical-odds.ts",
 		"migrate": "tsx src/migrate.ts",
+		"report:odds-aware:event": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.odds_aware_report",
 		"smoke": "tsx src/smoke.ts",
 		"test": "vitest run"
 	},
