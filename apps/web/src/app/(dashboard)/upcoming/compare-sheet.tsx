@@ -80,6 +80,11 @@ type FightPrediction = {
 			summary: string;
 			advantage: 'fighter_a' | 'fighter_b' | 'neutral';
 		};
+		common_opponents?: {
+			label: string;
+			summary: string;
+			advantage: 'fighter_a' | 'fighter_b' | 'neutral';
+		};
 	};
 	odds?: Array<{
 		fighter_id: string;
@@ -620,10 +625,11 @@ function ModelPickRow({
 	const modelPickEdge = valueRows.find((row) => row.fighter.id === winner.id)?.edge ?? null;
 	const valueDiffers = valuePick ? valuePick.fighter.id !== winner.id : false;
 	const roundTendency = prediction.decision_signals?.round_tendency;
+	const commonOpponents = prediction.decision_signals?.common_opponents;
 
 	return (
 		<div className="rounded-md border border-border/70 bg-muted/20 px-3 py-3">
-			<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 				<SignalTile
 					label="Model Pick"
 					name={winner.name}
@@ -646,6 +652,19 @@ function ModelPickRow({
 							? {
 									text: signalAdvantageLabel(target, roundTendency.advantage),
 									tone: signalAdvantageTone(roundTendency.advantage),
+								}
+							: null
+					}
+				/>
+				<SignalTile
+					label="Common opponents"
+					name={commonOpponents?.label ?? 'Signal unavailable'}
+					primary={commonOpponents?.summary ?? 'Need shared prior opponents'}
+					badge={
+						commonOpponents
+							? {
+									text: signalAdvantageLabel(target, commonOpponents.advantage),
+									tone: signalAdvantageTone(commonOpponents.advantage),
 								}
 							: null
 					}

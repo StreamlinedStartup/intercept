@@ -36,6 +36,7 @@ type DecisionSignal = {
 
 type DecisionSignals = {
 	round_tendency?: DecisionSignal;
+	common_opponents?: DecisionSignal;
 };
 
 type EventFightRow = FightParticipantRow & {

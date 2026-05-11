@@ -248,6 +248,80 @@ def test_round_tendency_uses_only_prior_round_stats() -> None:
         conn.commit()
 
 
+def test_common_opponent_features_compare_shared_prior_results() -> None:
+    prefix = "test-c483-common"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_common_opponent_fixture(cur, prefix)
+        conn.commit()
+
+    features, _label = build_features(f"{prefix}-target")
+    signals = build_decision_signals(
+        f"{prefix}-alpha",
+        f"{prefix}-beta",
+        date.fromisoformat("2020-04-01"),
+    )
+
+    common_opponent_count = FEATURE_NAMES.index("common_opponent_count")
+    common_opponent_win_diff = FEATURE_NAMES.index("common_opponent_win_diff")
+
+    assert features[common_opponent_count] == 2.0
+    assert features[common_opponent_win_diff] == 1.0
+    assert signals["common_opponents"]["label"] == "A stronger vs shared opponents"
+    assert signals["common_opponents"]["advantage"] == "fighter_a"
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
+def test_common_opponent_features_ignore_future_shared_results() -> None:
+    prefix = "test-c483-future"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_common_opponent_fixture(cur, prefix)
+        conn.commit()
+
+    features, _label = build_features(f"{prefix}-target")
+
+    common_opponent_count = FEATURE_NAMES.index("common_opponent_count")
+    common_opponent_win_diff = FEATURE_NAMES.index("common_opponent_win_diff")
+
+    assert features[common_opponent_count] == 2.0
+    assert features[common_opponent_win_diff] == 1.0
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
+def test_common_opponent_signal_handles_no_shared_opponents() -> None:
+    prefix = "test-c483-none"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_fixture(cur, prefix)
+        conn.commit()
+
+    signals = build_decision_signals(
+        f"{prefix}-alpha",
+        f"{prefix}-beta",
+        date.fromisoformat("2020-01-01"),
+    )
+
+    assert signals["common_opponents"]["label"] == "No shared opponents"
+    assert signals["common_opponents"]["advantage"] == "neutral"
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
 def _delete_fixture(cur, prefix: str) -> None:
     cur.execute("DELETE FROM fight_round_stats WHERE fight_id LIKE %s", (f"{prefix}-%",))
     cur.execute("DELETE FROM fight_results WHERE fight_id LIKE %s", (f"{prefix}-%",))
@@ -556,6 +630,121 @@ def _insert_round_tendency_fixture(cur, prefix: str) -> None:
     )
     _insert_round_rows(cur, f"{prefix}-future-noise", f"{prefix}-gamma", 3)
     _insert_round_rows(cur, f"{prefix}-future-noise", f"{prefix}-delta", 3)
+
+
+def _insert_common_opponent_fixture(cur, prefix: str) -> None:
+    cur.execute(
+        """
+        INSERT INTO fighters (id, name, dob, height_in, reach_in, stance)
+        VALUES
+            (%s, 'Fixture Alpha', '1990-01-01', 72, 74, null),
+            (%s, 'Fixture Beta', '1992-01-01', 70, 73, null),
+            (%s, 'Fixture Shared One', '1991-01-01', 71, 72, null),
+            (%s, 'Fixture Shared Two', '1993-01-01', 69, 71, null)
+        """,
+        (
+            f"{prefix}-alpha",
+            f"{prefix}-beta",
+            f"{prefix}-shared-one",
+            f"{prefix}-shared-two",
+        ),
+    )
+    cur.execute(
+        """
+        INSERT INTO events (id, name, date, completed, promotion)
+        VALUES
+            (%s, 'Alpha Shared One', '2020-01-01', true, 'ufc'),
+            (%s, 'Alpha Shared Two', '2020-02-01', true, 'ufc'),
+            (%s, 'Beta Shared One', '2020-01-15', true, 'ufc'),
+            (%s, 'Beta Shared Two', '2020-02-15', true, 'ufc'),
+            (%s, 'Target', '2020-04-01', true, 'ufc'),
+            (%s, 'Future Shared Noise', '2020-05-01', true, 'ufc')
+        """,
+        (
+            f"{prefix}-event-alpha-shared-one",
+            f"{prefix}-event-alpha-shared-two",
+            f"{prefix}-event-beta-shared-one",
+            f"{prefix}-event-beta-shared-two",
+            f"{prefix}-event-target",
+            f"{prefix}-event-future-noise",
+        ),
+    )
+    fights = [
+        (f"{prefix}-alpha-shared-one", f"{prefix}-event-alpha-shared-one"),
+        (f"{prefix}-alpha-shared-two", f"{prefix}-event-alpha-shared-two"),
+        (f"{prefix}-beta-shared-one", f"{prefix}-event-beta-shared-one"),
+        (f"{prefix}-beta-shared-two", f"{prefix}-event-beta-shared-two"),
+        (f"{prefix}-target", f"{prefix}-event-target"),
+        (f"{prefix}-future-noise", f"{prefix}-event-future-noise"),
+    ]
+    for fight_id, event_id in fights:
+        cur.execute(
+            """
+            INSERT INTO fights (id, event_id, weight_class, scheduled_rounds, is_headliner)
+            VALUES (%s, %s, 'welterweight', 3, false)
+            """,
+            (fight_id, event_id),
+        )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-alpha-shared-one",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-shared-one",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=10,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-alpha-shared-two",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-shared-two",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=10,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-beta-shared-one",
+        fighter_a_id=f"{prefix}-beta",
+        fighter_b_id=f"{prefix}-shared-one",
+        fighter_a_outcome="loss",
+        fighter_b_outcome="win",
+        fighter_a_sig_landed=10,
+        fighter_b_sig_landed=20,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-beta-shared-two",
+        fighter_a_id=f"{prefix}-beta",
+        fighter_b_id=f"{prefix}-shared-two",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=10,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-target",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-beta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=1,
+        fighter_b_sig_landed=1,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-future-noise",
+        fighter_a_id=f"{prefix}-beta",
+        fighter_b_id=f"{prefix}-shared-one",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=40,
+        fighter_b_sig_landed=10,
+    )
 
 
 def _insert_recent_form_fixture(cur, prefix: str) -> None:
