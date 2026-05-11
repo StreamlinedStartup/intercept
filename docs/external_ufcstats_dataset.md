@@ -192,6 +192,15 @@ For quick checks, limit the number of scored events:
 DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor PYTHONPATH=services/python services/python/.venv/bin/python -m ml.backtest --start-date 2024-01-01 --max-events 2 --output data/backtests/smoke-walk-forward.json
 ```
 
+Summarize saved reports for model-tuning comparisons with:
+
+```bash
+PYTHONPATH=services/python services/python/.venv/bin/python -m ml.backtest_report
+PYTHONPATH=services/python services/python/.venv/bin/python -m ml.backtest_report data/backtests/smoke-walk-forward.json --format json
+```
+
+Backtest reports stay ignored under `data/backtests/` by default. Commit a report only when we intentionally want to preserve an evaluation artifact for review.
+
 Report outputs should include:
 
 - accuracy;
@@ -202,6 +211,8 @@ Report outputs should include:
 - performance by confidence bucket;
 - performance by feature regime, such as debut fights, long layoffs, and weight-class changes;
 - ROI by edge bucket when odds exist.
+
+The current runner reports model-edge buckets from model confidence. Betting ROI should remain absent until the dataset has odds snapshots that can be proven to exist before the simulated event date.
 
 The rule is the same as our model scope doc: every simulated prediction must use only data that would have existed before that event.
 
