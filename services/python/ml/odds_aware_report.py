@@ -17,6 +17,8 @@ DEFAULT_EVENT_ID = "902ab9197b83d0db"
 DEFAULT_SOURCE_EVENT_ID = "5362"
 DEFAULT_JSON_OUTPUT = REPO_ROOT / "data" / "experiments" / "odds-aware-one-event.json"
 DEFAULT_MARKDOWN_OUTPUT = REPO_ROOT / "data" / "experiments" / "odds-aware-one-event.md"
+DEFAULT_EVALUATION_JSON_OUTPUT = REPO_ROOT / "data" / "experiments" / "odds-aware-evaluation.json"
+DEFAULT_EVALUATION_MARKDOWN_OUTPUT = REPO_ROOT / "data" / "experiments" / "odds-aware-evaluation.md"
 
 
 def american_to_implied_probability(american_odds: int) -> float:
@@ -68,6 +70,91 @@ def run_odds_aware_report(
     markdown_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
     markdown_path.write_text(render_markdown(report) + "\n")
+    return report
+
+
+def run_odds_aware_evaluation(
+    *,
+    output_path: Path = DEFAULT_EVALUATION_JSON_OUTPUT,
+    markdown_path: Path = DEFAULT_EVALUATION_MARKDOWN_OUTPUT,
+    min_train_samples: int = 200,
+) -> dict[str, Any]:
+    coverage = _load_source_coverage()
+    scored_events = []
+    for event in coverage["events"]:
+        if event["match_status"] != "matched" or event["canonical_event_id"] is None:
+            continue
+        event_predictions = _build_event_predictions(event["canonical_event_id"], min_train_samples)
+        market = _load_consensus_market(event["source_event_id"])
+        scored_events.append(
+            _build_report(
+                event_predictions,
+                market,
+                event["source_event_id"],
+                min_train_samples,
+            )
+        )
+    fights = [fight for event_report in scored_events for fight in event_report["fights"]]
+    model_edge_bets = [row["model_pick"] for row in fights if row["model_pick"]["edge"] > 0]
+    market_favorite_bets = [row["market_favorite"] for row in fights]
+    report = {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "report": "odds-aware-evaluation",
+        "args": {"min_train_samples": min_train_samples},
+        "summary": {
+            "source_events_imported": coverage["summary"]["source_events_imported"],
+            "source_events_matched": coverage["summary"]["source_events_matched"],
+            "source_events_unmatched": coverage["summary"]["source_events_unmatched"],
+            "source_fights_imported": coverage["summary"]["source_fights_imported"],
+            "source_fights_matched": coverage["summary"]["source_fights_matched"],
+            "source_fights_unmatched": coverage["summary"]["source_fights_unmatched"],
+            "moneyline_rows_imported": coverage["summary"]["moneyline_rows_imported"],
+            "moneyline_rows_linked": coverage["summary"]["moneyline_rows_linked"],
+            "scored_events": len(scored_events),
+            "scored_fights": len(fights),
+        },
+        "source_coverage": coverage,
+        "timestamp_semantics": {
+            "observed_values": sorted(
+                {
+                    value
+                    for event_report in scored_events
+                    for value in event_report["timestamp_semantics"]["observed_values"]
+                }
+            ),
+            "label": (
+                "FightOdds source_current lines are captured at import scrape time. "
+                "Use them as close/current market consensus only. "
+                "FightOdds source_previous lines do not include timestamps, so closing-line value is not reported."
+            ),
+            "closing_line_value": "not_available_without_timestamped_or_open_close_lines",
+        },
+        "roi": {
+            "model_edge": _roi_summary(model_edge_bets),
+            "market_favorite": _roi_summary(market_favorite_bets),
+        },
+        "calibration_vs_market": _market_calibration(fights),
+        "by_confidence_bucket": _bucket_summaries(fights, "confidence_bucket"),
+        "by_edge_bucket": _bucket_summaries(fights, "edge_bucket"),
+        "secondary_model_metrics": _combined_secondary_metrics(scored_events),
+        "recommendation": {
+            "fightodds_remains_recommended": True,
+            "reason": (
+                "FightOdds remains the best discovered historical source because it exposes stable event IDs, "
+                "GraphQL event pagination, sportsbook-level moneylines, and repeatable direct HTTP access. "
+                "Current limitation is canonical matching coverage, not source availability."
+            ),
+        },
+        "smoke_gate": {
+            "required": False,
+            "reason": "This epic added DB/Python research commands and generated artifacts only; no HTTP route or UI surface was added.",
+        },
+        "events": scored_events,
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    markdown_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+    markdown_path.write_text(render_evaluation_markdown(report) + "\n")
     return report
 
 
@@ -132,6 +219,94 @@ def render_markdown(report: dict[str, Any]) -> str:
                 brier=_format_metric(report["secondary_model_metrics"]["brier_score"]),
                 roc_auc=_format_metric(report["secondary_model_metrics"]["roc_auc"]),
             ),
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_evaluation_markdown(report: dict[str, Any]) -> str:
+    summary = report["summary"]
+    lines = [
+        "# Odds-Aware Evaluation",
+        "",
+        f"- Source events imported: {summary['source_events_imported']}",
+        f"- Source events matched: {summary['source_events_matched']}",
+        f"- Source fights imported: {summary['source_fights_imported']}",
+        f"- Source fights matched: {summary['source_fights_matched']}",
+        f"- Moneyline rows imported: {summary['moneyline_rows_imported']}",
+        f"- Moneyline rows linked to canonical fighters: {summary['moneyline_rows_linked']}",
+        f"- Scored events: {summary['scored_events']}",
+        f"- Scored fights: {summary['scored_fights']}",
+        f"- Model-edge ROI: {_format_pct(report['roi']['model_edge']['roi'])}",
+        f"- Market-favorite ROI: {_format_pct(report['roi']['market_favorite']['roi'])}",
+        "",
+        "## Timestamp And CLV",
+        "",
+        report["timestamp_semantics"]["label"],
+        "",
+        "## ROI",
+        "",
+        "| Strategy | Bets | Wins | Net profit | ROI |",
+        "|---|---:|---:|---:|---:|",
+        _strategy_row("Model edge", report["roi"]["model_edge"]),
+        _strategy_row("Market favorite", report["roi"]["market_favorite"]),
+        "",
+        "## Confidence Buckets",
+        "",
+        "| Bucket | Count | Accuracy | ROI |",
+        "|---|---:|---:|---:|",
+    ]
+    lines.extend(_bucket_row(bucket) for bucket in report["by_confidence_bucket"])
+    lines.extend(["", "## Edge Buckets", "", "| Bucket | Count | Accuracy | ROI |", "|---|---:|---:|---:|"])
+    lines.extend(_bucket_row(bucket) for bucket in report["by_edge_bucket"])
+    lines.extend(
+        [
+            "",
+            "## Market Calibration",
+            "",
+            f"- Market favorite accuracy: {_format_pct(report['calibration_vs_market']['market_favorite_accuracy'])}",
+            f"- Average market favorite no-vig probability: {_format_pct(report['calibration_vs_market']['average_market_favorite_probability'])}",
+            f"- Calibration gap: {_format_signed_pct(report['calibration_vs_market']['calibration_gap'])}",
+            "",
+            "## Secondary Model Metrics",
+            "",
+            "| Accuracy | Log loss | Brier | ROC AUC |",
+            "|---:|---:|---:|---:|",
+            "| {accuracy} | {log_loss} | {brier} | {roc_auc} |".format(
+                accuracy=_format_metric(report["secondary_model_metrics"]["accuracy"]),
+                log_loss=_format_metric(report["secondary_model_metrics"]["log_loss"]),
+                brier=_format_metric(report["secondary_model_metrics"]["brier_score"]),
+                roc_auc=_format_metric(report["secondary_model_metrics"]["roc_auc"]),
+            ),
+            "",
+            "## Source Coverage",
+            "",
+            "| Source event | Canonical event | Status | Source fights | Matched fights | Moneylines | Linked moneylines |",
+            "|---|---|---|---:|---:|---:|---:|",
+        ]
+    )
+    for event in report["source_coverage"]["events"]:
+        lines.append(
+            "| {source} | {canonical} | {status} | {fights} | {matched_fights} | {moneylines} | {linked} |".format(
+                source=f"{event['source_event_id']} {event['raw_name']}",
+                canonical=event["canonical_event_id"] or "",
+                status=event["match_status"],
+                fights=event["source_fights"],
+                matched_fights=event["matched_source_fights"],
+                moneylines=event["moneyline_rows"],
+                linked=event["linked_moneyline_rows"],
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## Recommendation",
+            "",
+            report["recommendation"]["reason"],
+            "",
+            "## Smoke Gate",
+            "",
+            report["smoke_gate"]["reason"],
         ]
     )
     return "\n".join(lines)
@@ -214,6 +389,56 @@ def _load_fight_fighters(event_id: str) -> dict[str, dict[str, Any]]:
         for fight_id, rows_for_fight in by_fight.items()
         if len(rows_for_fight) == 2
     }
+
+
+def _load_source_coverage() -> dict[str, Any]:
+    from ml.db import pool
+
+    with pool.borrow() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT
+                    hoe.source_event_id,
+                    hoe.raw_name,
+                    hoe.event_date,
+                    hoe.canonical_event_id,
+                    hoe.match_status,
+                    count(DISTINCT hof.id) AS source_fights,
+                    count(DISTINCT hof.id) FILTER (WHERE hof.match_status = 'matched') AS matched_source_fights,
+                    count(hmo.id) AS moneyline_rows,
+                    count(hmo.id) FILTER (WHERE hmo.canonical_fighter_id IS NOT NULL) AS linked_moneyline_rows
+                FROM historical_odds_events hoe
+                LEFT JOIN historical_odds_fights hof ON hof.historical_event_id = hoe.id
+                LEFT JOIN historical_moneyline_odds hmo ON hmo.historical_fight_id = hof.id
+                WHERE hoe.source = 'fightodds'
+                GROUP BY
+                    hoe.source_event_id,
+                    hoe.raw_name,
+                    hoe.event_date,
+                    hoe.canonical_event_id,
+                    hoe.match_status
+                ORDER BY hoe.event_date, hoe.source_event_id
+                """
+            )
+            events = []
+            for row in cur.fetchall():
+                event = dict(row)
+                event["event_date"] = event["event_date"].isoformat()
+                events.append(event)
+    summary = {
+        "source_events_imported": len(events),
+        "source_events_matched": sum(1 for event in events if event["match_status"] == "matched"),
+        "source_events_unmatched": sum(1 for event in events if event["match_status"] != "matched"),
+        "source_fights_imported": sum(int(event["source_fights"]) for event in events),
+        "source_fights_matched": sum(int(event["matched_source_fights"]) for event in events),
+        "source_fights_unmatched": sum(
+            int(event["source_fights"]) - int(event["matched_source_fights"]) for event in events
+        ),
+        "moneyline_rows_imported": sum(int(event["moneyline_rows"]) for event in events),
+        "moneyline_rows_linked": sum(int(event["linked_moneyline_rows"]) for event in events),
+    }
+    return {"summary": summary, "events": events}
 
 
 def _load_consensus_market(source_event_id: str) -> dict[str, Any]:
@@ -338,6 +563,7 @@ def _build_report(
         "by_confidence_bucket": _bucket_summaries(fights, "confidence_bucket"),
         "by_edge_bucket": _bucket_summaries(fights, "edge_bucket"),
         "secondary_model_metrics": {
+            "count": event_predictions["metrics"]["count"],
             "accuracy": event_predictions["metrics"]["accuracy"],
             "log_loss": event_predictions["metrics"]["log_loss"],
             "brier_score": event_predictions["metrics"]["brier_score"],
@@ -405,6 +631,29 @@ def _roi_summary(bets: list[dict[str, Any]]) -> dict[str, Any]:
         "net_profit": net_profit,
         "roi": None if staked == 0 else net_profit / staked,
     }
+
+
+def _combined_secondary_metrics(event_reports: list[dict[str, Any]]) -> dict[str, Any]:
+    if not event_reports:
+        return {"accuracy": None, "log_loss": None, "brier_score": None, "roc_auc": None}
+    total = sum(event["secondary_model_metrics"]["count"] for event in event_reports)
+    return {
+        "accuracy": _weighted_metric(event_reports, "accuracy", total),
+        "log_loss": _weighted_metric(event_reports, "log_loss", total),
+        "brier_score": _weighted_metric(event_reports, "brier_score", total),
+        "roc_auc": _weighted_metric(event_reports, "roc_auc", total),
+    }
+
+
+def _weighted_metric(event_reports: list[dict[str, Any]], key: str, total: int) -> float | None:
+    values = [
+        (event["secondary_model_metrics"][key], event["secondary_model_metrics"]["count"])
+        for event in event_reports
+        if event["secondary_model_metrics"][key] is not None
+    ]
+    if total == 0 or not values:
+        return None
+    return sum(float(value) * int(count) for value, count in values) / total
 
 
 def _market_calibration(fights: list[dict[str, Any]]) -> dict[str, Any]:
@@ -486,6 +735,16 @@ def _bucket_row(bucket: dict[str, Any]) -> str:
     )
 
 
+def _strategy_row(label: str, summary: dict[str, Any]) -> str:
+    return "| {label} | {bets} | {wins} | {profit} | {roi} |".format(
+        label=label,
+        bets=summary["bets"],
+        wins=summary["wins"],
+        profit=_format_metric(summary["net_profit"]),
+        roi=_format_pct(summary["roi"]),
+    )
+
+
 def _format_metric(value: Any) -> str:
     return "" if value is None else f"{float(value):.4f}"
 
@@ -499,32 +758,47 @@ def _format_signed_pct(value: Any) -> str:
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Produce one-event odds-aware model report")
+    parser = argparse.ArgumentParser(description="Produce odds-aware model reports")
+    parser.add_argument("--final", action="store_true", help="Write final multi-event evaluation artifacts")
     parser.add_argument("--event-id", default=DEFAULT_EVENT_ID)
     parser.add_argument("--source-event-id", default=DEFAULT_SOURCE_EVENT_ID)
-    parser.add_argument("--output", type=Path, default=DEFAULT_JSON_OUTPUT)
-    parser.add_argument("--markdown", type=Path, default=DEFAULT_MARKDOWN_OUTPUT)
+    parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--markdown", type=Path, default=None)
     parser.add_argument("--min-train-samples", type=int, default=200)
     return parser.parse_args()
 
 
 def main() -> None:
     args = _parse_args()
-    output_path = args.output if args.output.is_absolute() else REPO_ROOT / args.output
-    markdown_path = args.markdown if args.markdown.is_absolute() else REPO_ROOT / args.markdown
-    report = run_odds_aware_report(
-        event_id=args.event_id,
-        source_event_id=args.source_event_id,
-        output_path=output_path,
-        markdown_path=markdown_path,
-        min_train_samples=args.min_train_samples,
+    default_output = args.output or (
+        DEFAULT_EVALUATION_JSON_OUTPUT if args.final else DEFAULT_JSON_OUTPUT
+    )
+    default_markdown = args.markdown or (
+        DEFAULT_EVALUATION_MARKDOWN_OUTPUT if args.final else DEFAULT_MARKDOWN_OUTPUT
+    )
+    output_path = default_output if default_output.is_absolute() else REPO_ROOT / default_output
+    markdown_path = default_markdown if default_markdown.is_absolute() else REPO_ROOT / default_markdown
+    report = (
+        run_odds_aware_evaluation(
+            output_path=output_path,
+            markdown_path=markdown_path,
+            min_train_samples=args.min_train_samples,
+        )
+        if args.final
+        else run_odds_aware_report(
+            event_id=args.event_id,
+            source_event_id=args.source_event_id,
+            output_path=output_path,
+            markdown_path=markdown_path,
+            min_train_samples=args.min_train_samples,
+        )
     )
     print(
         json.dumps(
             {
                 "output_path": str(output_path.relative_to(REPO_ROOT)),
                 "markdown_path": str(markdown_path.relative_to(REPO_ROOT)),
-                "fights_scored": report["summary"]["fights_scored"],
+                "fights_scored": report["summary"].get("fights_scored", report["summary"].get("scored_fights")),
                 "model_edge_roi": report["roi"]["model_edge"]["roi"],
                 "market_favorite_roi": report["roi"]["market_favorite"]["roi"],
             },
