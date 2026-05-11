@@ -13,8 +13,10 @@
 		"generate": "drizzle-kit generate",
 		"import:fightodds:event": "tsx src/import-fightodds-event.ts",
 		"import:ufcstats": "tsx src/import-ufcstats-snapshot.ts",
+		"match:fightodds:event": "tsx src/match-historical-odds.ts",
 		"migrate": "tsx src/migrate.ts",
-		"smoke": "tsx src/smoke.ts"
+		"smoke": "tsx src/smoke.ts",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"drizzle-orm": "0.36.4",
