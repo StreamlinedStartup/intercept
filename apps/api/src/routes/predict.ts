@@ -25,6 +25,17 @@ type MlPredictResult = {
 		value: number | null;
 		shap: number;
 	}>;
+	decision_signals?: DecisionSignals;
+};
+
+type DecisionSignal = {
+	label: string;
+	summary: string;
+	advantage: 'fighter_a' | 'fighter_b' | 'neutral';
+};
+
+type DecisionSignals = {
+	round_tendency?: DecisionSignal;
 };
 
 type EventFightRow = FightParticipantRow & {
@@ -44,6 +55,7 @@ type StoredPrediction = {
 		value: number | null;
 		shap: number;
 	}>;
+	decision_signals?: DecisionSignals;
 	odds?: MarketOdds[];
 	edge_pct?: number;
 	market_prob?: number;
@@ -330,6 +342,7 @@ async function predictAndPersist(
 		win_prob: result.win_prob,
 		model_version: result.model_version,
 		contributing_features: result.contributing_features ?? [],
+		...(result.decision_signals ? { decision_signals: result.decision_signals } : {}),
 		...(market.length === 2 && edgePct !== null
 			? { odds: market, edge_pct: edgePct, market_prob: predictedMarketOdds?.market_prob }
 			: {}),

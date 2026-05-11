@@ -10,7 +10,7 @@ from xgboost import DMatrix
 from xgboost import XGBClassifier
 
 from ml.db import pool
-from ml.features import FEATURE_NAMES, build_feature_row
+from ml.features import FEATURE_NAMES, build_decision_signals, build_feature_row
 from ml.train import REPO_ROOT
 
 
@@ -27,6 +27,7 @@ def predict_pair(
     model.load_model(REPO_ROOT / model_row["model_path"])
 
     features = build_feature_row(fighter_a_id, fighter_b_id, parsed_date, target_weight_class)
+    decision_signals = build_decision_signals(fighter_a_id, fighter_b_id, parsed_date)
     fighter_a_win_prob = float(model.predict_proba(features.reshape(1, -1))[0][1])
     contributing_features = _contributing_features(model, features)
     if fighter_a_win_prob >= 0.5:
@@ -35,12 +36,14 @@ def predict_pair(
             "win_prob": fighter_a_win_prob,
             "model_version": model_row["id"],
             "contributing_features": contributing_features,
+            "decision_signals": decision_signals,
         }
     return {
         "predicted_winner_id": fighter_b_id,
         "win_prob": 1.0 - fighter_a_win_prob,
         "model_version": model_row["id"],
         "contributing_features": contributing_features,
+        "decision_signals": decision_signals,
     }
 
 

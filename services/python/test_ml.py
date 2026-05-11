@@ -4,6 +4,7 @@ from __future__ import annotations
 import math
 import os
 import sys
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -16,7 +17,7 @@ pytestmark = pytest.mark.skipif(
 sys.path.insert(0, str(Path(__file__).parent))
 
 from ml.db import pool
-from ml.features import FEATURE_NAMES, build_features
+from ml.features import FEATURE_NAMES, build_decision_signals, build_features
 
 
 def test_no_leakage() -> None:
@@ -216,7 +217,39 @@ def test_weight_class_change_after_three_lightweight_fights_then_welterweight() 
         conn.commit()
 
 
+def test_round_tendency_uses_only_prior_round_stats() -> None:
+    prefix = "test-x1vw-round"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_round_tendency_fixture(cur, prefix)
+        conn.commit()
+
+    features, _label = build_features(f"{prefix}-target")
+    signals = build_decision_signals(
+        f"{prefix}-alpha",
+        f"{prefix}-gamma",
+        date.fromisoformat("2020-04-01"),
+    )
+
+    avg_ending_round_diff = FEATURE_NAMES.index("avg_ending_round_diff")
+    decision_tendency_diff = FEATURE_NAMES.index("decision_tendency_diff")
+    late_round_exposure_diff = FEATURE_NAMES.index("late_round_exposure_diff")
+
+    assert features[avg_ending_round_diff] == pytest.approx(2.0)
+    assert features[decision_tendency_diff] == pytest.approx(1.0)
+    assert features[late_round_exposure_diff] == pytest.approx(1.0)
+    assert signals["round_tendency"]["label"] == "Late/decision lean"
+    assert signals["round_tendency"]["advantage"] == "fighter_a"
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
 def _delete_fixture(cur, prefix: str) -> None:
+    cur.execute("DELETE FROM fight_round_stats WHERE fight_id LIKE %s", (f"{prefix}-%",))
     cur.execute("DELETE FROM fight_results WHERE fight_id LIKE %s", (f"{prefix}-%",))
     cur.execute("DELETE FROM fights WHERE id LIKE %s", (f"{prefix}-%",))
     cur.execute("DELETE FROM events WHERE id LIKE %s", (f"{prefix}-%",))
@@ -411,6 +444,118 @@ def _insert_weight_class_fixture(cur, prefix: str) -> None:
         fighter_b_sig_landed=1,
         fighter_a_method="Decision - Unanimous",
     )
+
+
+def _insert_round_tendency_fixture(cur, prefix: str) -> None:
+    cur.execute(
+        """
+        INSERT INTO fighters (id, name, dob, height_in, reach_in, stance)
+        VALUES
+            (%s, 'Fixture Alpha', '1990-01-01', 72, 74, null),
+            (%s, 'Fixture Beta', '1992-01-01', 70, 73, null),
+            (%s, 'Fixture Gamma', '1991-01-01', 71, 72, null),
+            (%s, 'Fixture Delta', '1993-01-01', 69, 71, null)
+        """,
+        (
+            f"{prefix}-alpha",
+            f"{prefix}-beta",
+            f"{prefix}-gamma",
+            f"{prefix}-delta",
+        ),
+    )
+    cur.execute(
+        """
+        INSERT INTO events (id, name, date, completed, promotion)
+        VALUES
+            (%s, 'Fixture Alpha Decision 1', '2020-01-01', true, 'ufc'),
+            (%s, 'Fixture Alpha Decision 2', '2020-02-01', true, 'ufc'),
+            (%s, 'Fixture Gamma Early 1', '2020-01-15', true, 'ufc'),
+            (%s, 'Fixture Gamma Early 2', '2020-02-15', true, 'ufc'),
+            (%s, 'Fixture Target', '2020-04-01', true, 'ufc'),
+            (%s, 'Fixture Future Noise', '2020-05-01', true, 'ufc')
+        """,
+        (
+            f"{prefix}-event-alpha-decision-1",
+            f"{prefix}-event-alpha-decision-2",
+            f"{prefix}-event-gamma-early-1",
+            f"{prefix}-event-gamma-early-2",
+            f"{prefix}-event-target",
+            f"{prefix}-event-future-noise",
+        ),
+    )
+    fights = [
+        (f"{prefix}-alpha-decision-1", f"{prefix}-event-alpha-decision-1"),
+        (f"{prefix}-alpha-decision-2", f"{prefix}-event-alpha-decision-2"),
+        (f"{prefix}-gamma-early-1", f"{prefix}-event-gamma-early-1"),
+        (f"{prefix}-gamma-early-2", f"{prefix}-event-gamma-early-2"),
+        (f"{prefix}-target", f"{prefix}-event-target"),
+        (f"{prefix}-future-noise", f"{prefix}-event-future-noise"),
+    ]
+    for fight_id, event_id in fights:
+        cur.execute(
+            """
+            INSERT INTO fights (id, event_id, weight_class, scheduled_rounds, is_headliner)
+            VALUES (%s, %s, 'welterweight', 3, false)
+            """,
+            (fight_id, event_id),
+        )
+    for fight_id in [f"{prefix}-alpha-decision-1", f"{prefix}-alpha-decision-2"]:
+        _insert_result_pair_for_fighters(
+            cur,
+            fight_id=fight_id,
+            fighter_a_id=f"{prefix}-alpha",
+            fighter_b_id=f"{prefix}-beta",
+            fighter_a_outcome="win",
+            fighter_b_outcome="loss",
+            fighter_a_sig_landed=30,
+            fighter_b_sig_landed=20,
+            fighter_a_method="Decision - Unanimous",
+            fighter_a_round=3,
+            fighter_b_round=3,
+        )
+        _insert_round_rows(cur, fight_id, f"{prefix}-alpha", 3)
+        _insert_round_rows(cur, fight_id, f"{prefix}-beta", 3)
+    for fight_id in [f"{prefix}-gamma-early-1", f"{prefix}-gamma-early-2"]:
+        _insert_result_pair_for_fighters(
+            cur,
+            fight_id=fight_id,
+            fighter_a_id=f"{prefix}-gamma",
+            fighter_b_id=f"{prefix}-delta",
+            fighter_a_outcome="win",
+            fighter_b_outcome="loss",
+            fighter_a_sig_landed=10,
+            fighter_b_sig_landed=5,
+            fighter_a_method="KO/TKO",
+            fighter_a_round=1,
+            fighter_b_round=1,
+        )
+        _insert_round_rows(cur, fight_id, f"{prefix}-gamma", 1)
+        _insert_round_rows(cur, fight_id, f"{prefix}-delta", 1)
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-target",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-gamma",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=1,
+        fighter_b_sig_landed=1,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-future-noise",
+        fighter_a_id=f"{prefix}-gamma",
+        fighter_b_id=f"{prefix}-delta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=40,
+        fighter_b_sig_landed=10,
+        fighter_a_method="Decision - Unanimous",
+        fighter_a_round=3,
+        fighter_b_round=3,
+    )
+    _insert_round_rows(cur, f"{prefix}-future-noise", f"{prefix}-gamma", 3)
+    _insert_round_rows(cur, f"{prefix}-future-noise", f"{prefix}-delta", 3)
 
 
 def _insert_recent_form_fixture(cur, prefix: str) -> None:
@@ -618,6 +763,8 @@ def _insert_result_pair_for_fighters(
     fighter_b_sig_landed: int,
     fighter_a_method: str | None = None,
     fighter_b_method: str | None = None,
+    fighter_a_round: int | None = None,
+    fighter_b_round: int | None = None,
 ) -> None:
     cur.execute(
         """
@@ -627,6 +774,7 @@ def _insert_result_pair_for_fighters(
             opponent_id,
             outcome,
             method,
+            round,
             time_seconds,
             sig_strikes_landed,
             sig_strikes_attempted,
@@ -635,8 +783,8 @@ def _insert_result_pair_for_fighters(
             sub_attempts
         )
         VALUES
-            (%s, %s, %s, %s, %s, 300, %s, 50, 1, 2, 0),
-            (%s, %s, %s, %s, %s, 300, %s, 50, 0, 1, 0)
+            (%s, %s, %s, %s, %s, %s, 300, %s, 50, 1, 2, 0),
+            (%s, %s, %s, %s, %s, %s, 300, %s, 50, 0, 1, 0)
         """,
         (
             fight_id,
@@ -644,12 +792,33 @@ def _insert_result_pair_for_fighters(
             fighter_b_id,
             fighter_a_outcome,
             fighter_a_method,
+            fighter_a_round,
             fighter_a_sig_landed,
             fight_id,
             fighter_b_id,
             fighter_a_id,
             fighter_b_outcome,
             fighter_b_method,
+            fighter_b_round,
             fighter_b_sig_landed,
         ),
     )
+
+
+def _insert_round_rows(cur, fight_id: str, fighter_id: str, rounds: int) -> None:
+    for round_number in range(1, rounds + 1):
+        cur.execute(
+            """
+            INSERT INTO fight_round_stats (
+                fight_id,
+                fighter_id,
+                round,
+                sig_strikes_landed,
+                sig_strikes_attempted,
+                total_strikes_landed,
+                total_strikes_attempted
+            )
+            VALUES (%s, %s, %s, 10, 20, 15, 25)
+            """,
+            (fight_id, fighter_id, round_number),
+        )
