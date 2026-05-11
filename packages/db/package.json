@@ -12,6 +12,7 @@
 		"typecheck": "tsc --noEmit",
 		"generate": "drizzle-kit generate",
 		"import:fightodds:event": "tsx src/import-fightodds-event.ts",
+		"import:fightodds:range": "FIGHTODDS_RANGE_IMPORT=1 tsx src/import-fightodds-event.ts",
 		"import:ufcstats": "tsx src/import-ufcstats-snapshot.ts",
 		"match:fightodds:event": "tsx src/match-historical-odds.ts",
 		"migrate": "tsx src/migrate.ts",
