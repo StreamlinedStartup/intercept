@@ -48,12 +48,12 @@ Latest local model row at the time this doc was written:
 
 | Field | Value |
 |---|---:|
-| Model version | `20260510T232008704599Z` |
-| Training samples | 80 |
-| Holdout accuracy | 68.75% |
-| Log loss | 0.621 |
-| Brier score | 0.215 |
-| ROC AUC | 0.545 |
+| Model version | `20260511T134646095031Z` |
+| Training samples | 8,538 |
+| Holdout accuracy | 61.24% |
+| Log loss | 0.655 |
+| Brier score | 0.232 |
+| ROC AUC | 0.655 |
 
 Interpretation:
 
@@ -61,7 +61,16 @@ Interpretation:
 - Log loss and Brier score say whether the probabilities are sensible, not just whether the pick was right.
 - ROC AUC says how well the model ranks stronger picks above weaker picks. The current value is modest, so we should avoid over-trusting the model until the training set is larger.
 
-This is a small-data model. Treat the numbers as a working baseline, not as proof of a durable betting edge.
+Compared with the previous external-corpus model, `20260511T011334074447Z`, the Decision Engine v2 core-signal retrain changed the holdout metrics by:
+
+| Metric | Previous | Current | Delta |
+|---|---:|---:|---:|
+| Accuracy | 60.42% | 61.24% | +0.82 pp |
+| Log loss | 0.658 | 0.655 | -0.003 |
+| Brier score | 0.233 | 0.232 | -0.001 |
+| ROC AUC | 0.648 | 0.655 | +0.007 |
+
+This is still an early model. Treat the numbers as a working baseline, not as proof of a durable betting edge.
 
 ## Features The Model Uses
 
@@ -129,6 +138,18 @@ This intentionally counts UFC fights only. Prior Bellator, Strikeforce, or other
 | `decision_rate_diff` | Advantage in winning by decision |
 | `time_in_cage_a` | Fighter A's total prior cage time in seconds |
 | `time_in_cage_b` | Fighter B's total prior cage time in seconds |
+
+### Decision Engine v2 Core Signals
+
+| Feature | Plain-English Meaning |
+|---|---|
+| `avg_ending_round_diff` | Prior average ending-round difference |
+| `decision_tendency_diff` | Prior decision-rate difference |
+| `late_round_exposure_diff` | Prior late-round exposure difference |
+| `common_opponent_count` | Number of shared prior opponents before the target fight |
+| `common_opponent_win_diff` | Fighter A wins minus Fighter B wins against shared prior opponents |
+
+The API also returns these as readable `decision_signals` for the compare sheet. Those labels are review signals, not betting instructions.
 
 ### Damage Proxy
 
@@ -270,9 +291,30 @@ It tracks:
 
 This is the most honest product metric because it only scores predictions that existed before the outcome was known.
 
+### 3. Walk-Forward Backtest
+
+Decision Engine v2 core signals were checked with a 20-event walk-forward run:
+
+```bash
+DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor PYTHONPATH=services/python services/python/.venv/bin/python -m ml.backtest --start-date 2024-01-01 --max-events 20 --min-train-samples 200 --output data/backtests/decision-engine-v2-core-signals.json
+```
+
+Result summary:
+
+| Field | Value |
+|---|---:|
+| Events scored | 20 |
+| Predictions scored | 247 |
+| Accuracy | 54.25% |
+| Log loss | 0.683 |
+| Brier score | 0.245 |
+| ROC AUC | 0.586 |
+
+The 20-event walk-forward is broader than the earlier two-event smoke run in `data/backtests/smoke-walk-forward.json`, so it should be read as the current comparison artifact for this feature slice.
+
 ## Backtesting We Should Add Next
 
-The stronger backtest is a walk-forward backtest.
+The stronger backtest is a longer walk-forward backtest with odds-aware scoring.
 
 Plain-English process:
 
