@@ -97,6 +97,16 @@ The importer should be strict and boring:
 - upsert idempotently so re-importing the same snapshot is safe;
 - never silently drop a fight row.
 
+Import a downloaded snapshot into the canonical predictor tables with:
+
+```bash
+DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor pnpm --filter @interceptor/db import:ufcstats data/external/ufcstats/<snapshot-id>
+```
+
+The importer validates the snapshot hashes from `metadata.json`, derives UFC Stats IDs from source URLs, upserts canonical rows, and refreshes `fighter_backfill_state` so imported fighters are marked `current` with their imported history counts.
+
+Rows that cannot be identified from the CSV snapshot alone, such as duplicate fighter names without fighter URLs in fight rows, are skipped with explicit counts in the command output instead of being guessed.
+
 ## DB Mapping
 
 ### Events
