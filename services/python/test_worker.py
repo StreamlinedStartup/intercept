@@ -3,13 +3,14 @@
 import json
 import subprocess
 import sys
+import types
 from pathlib import Path
 
 import pytest
 
 # Import handler functions directly for unit tests
 sys.path.insert(0, str(Path(__file__).parent))
-from worker import handle_health, handle_compute, handle_classify_headlines
+from worker import handle_health, handle_compute, handle_classify_headlines, handle_ml_predict
 
 EXPECTED_METHODS = [
     "health",
@@ -111,6 +112,29 @@ class TestClassifyHeadlines:
     def test_empty_raises(self):
         with pytest.raises(ValueError, match="non-empty list"):
             handle_classify_headlines({})
+
+
+class TestMlPredictHandler:
+    def test_forwards_weight_class(self, monkeypatch):
+        captured = {}
+        predict_module = types.ModuleType("ml.predict")
+
+        def fake_predict_pair(fighter_a_id, fighter_b_id, fight_date, target_weight_class=None):
+            captured["args"] = (fighter_a_id, fighter_b_id, fight_date, target_weight_class)
+            return {"predicted_winner_id": fighter_a_id, "win_prob": 0.6, "model_version": "test"}
+
+        predict_module.predict_pair = fake_predict_pair
+        monkeypatch.setitem(sys.modules, "ml.predict", predict_module)
+
+        result = handle_ml_predict({
+            "fighter_a_id": "fighter-a",
+            "fighter_b_id": "fighter-b",
+            "fight_date": "2026-06-01",
+            "weight_class": "Welterweight",
+        })
+
+        assert result["predicted_winner_id"] == "fighter-a"
+        assert captured["args"] == ("fighter-a", "fighter-b", "2026-06-01", "Welterweight")
 
 
 # ---------------------------------------------------------------------------

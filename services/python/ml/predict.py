@@ -14,14 +14,19 @@ from ml.features import FEATURE_NAMES, build_feature_row
 from ml.train import REPO_ROOT
 
 
-def predict_pair(fighter_a_id: str, fighter_b_id: str, fight_date: str) -> dict[str, Any]:
+def predict_pair(
+    fighter_a_id: str,
+    fighter_b_id: str,
+    fight_date: str,
+    target_weight_class: str | None = None,
+) -> dict[str, Any]:
     """Predict a fight winner for the supplied fighter order and fight date."""
     parsed_date = date.fromisoformat(fight_date)
     model_row = _latest_model_version()
     model = XGBClassifier()
     model.load_model(REPO_ROOT / model_row["model_path"])
 
-    features = build_feature_row(fighter_a_id, fighter_b_id, parsed_date)
+    features = build_feature_row(fighter_a_id, fighter_b_id, parsed_date, target_weight_class)
     fighter_a_win_prob = float(model.predict_proba(features.reshape(1, -1))[0][1])
     contributing_features = _contributing_features(model, features)
     if fighter_a_win_prob >= 0.5:

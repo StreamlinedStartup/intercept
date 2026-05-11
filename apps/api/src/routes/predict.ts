@@ -4,6 +4,7 @@ import { getBridge } from '../bridge';
 
 type FightParticipantRow = {
 	event_date: string | Date;
+	weight_class: string | null;
 	fighter_id: string;
 	backfill_status:
 		| 'none'
@@ -267,6 +268,7 @@ async function loadFightParticipants(fightId: string): Promise<FightParticipantR
 	return (await sql`
 		SELECT
 			e.date AS event_date,
+			f.weight_class,
 			fr.fighter_id,
 			fbs.status AS backfill_status
 		FROM fights f
@@ -283,6 +285,7 @@ async function loadEventParticipants(eventId: string): Promise<EventFightRow[]> 
 		SELECT
 			f.id AS fight_id,
 			e.date AS event_date,
+			f.weight_class,
 			fr.fighter_id,
 			fbs.status AS backfill_status
 		FROM events e
@@ -296,16 +299,15 @@ async function loadEventParticipants(eventId: string): Promise<EventFightRow[]> 
 
 async function predictAndPersist(
 	fightId: string,
-	rows: Array<{ event_date: string | Date; fighter_id: string }>,
+	rows: Array<{ event_date: string | Date; weight_class: string | null; fighter_id: string }>,
 ): Promise<StoredPrediction> {
 	const [fighterA, fighterB] = rows;
 	const fightDate = formatDbDate(fighterA.event_date);
 	const bridge = await getBridge();
-	const result = await bridge.call<MlPredictResult>('ml.predict', {
-		fighter_a_id: fighterA.fighter_id,
-		fighter_b_id: fighterB.fighter_id,
-		fight_date: fightDate,
-	});
+	const result = await bridge.call<MlPredictResult>(
+		'ml.predict',
+		buildMlPredictParams(fighterA, fighterB),
+	);
 	const market = await loadMarketOdds(fightId);
 	const predictedMarketOdds = market.find((odds) => odds.fighter_id === result.predicted_winner_id);
 	const edgePct = predictedMarketOdds ? result.win_prob - predictedMarketOdds.market_prob : null;
@@ -331,6 +333,24 @@ async function predictAndPersist(
 		...(market.length === 2 && edgePct !== null
 			? { odds: market, edge_pct: edgePct, market_prob: predictedMarketOdds?.market_prob }
 			: {}),
+	};
+}
+
+export function buildMlPredictParams(
+	fighterA: { event_date: string | Date; weight_class: string | null; fighter_id: string },
+	fighterB: { fighter_id: string },
+): {
+	fighter_a_id: string;
+	fighter_b_id: string;
+	fight_date: string;
+	weight_class: string | null;
+} {
+	const fightDate = formatDbDate(fighterA.event_date);
+	return {
+		fighter_a_id: fighterA.fighter_id,
+		fighter_b_id: fighterB.fighter_id,
+		fight_date: fightDate,
+		weight_class: fighterA.weight_class,
 	};
 }
 
