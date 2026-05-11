@@ -112,3 +112,9 @@ Avoid copy that implies certainty:
 - Injury, camp, weight-cut, or short-notice context ingestion.
 - Prop-bet prediction, round prediction, method prediction, or live in-fight logic.
 - Model-training use of contextual intelligence before labels and walk-forward backtests exist.
+
+## Contextual Overlay
+
+Epic 3 defines a separate contextual overlay for injury, camp, weight-cut, and short-notice fight context. The ontology is documented in [contextual_overlay_ontology.md](./contextual_overlay_ontology.md).
+
+The overlay is intentionally outside model training for now. It can support operator review, audit trails, and future label collection, but it must not alter model probabilities, edge calculations, stake sizing, or pick selection until labels and walk-forward backtests exist.
