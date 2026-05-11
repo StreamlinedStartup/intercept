@@ -17,7 +17,14 @@ pytestmark = pytest.mark.skipif(
 sys.path.insert(0, str(Path(__file__).parent))
 
 from ml.db import pool
-from ml.features import FEATURE_NAMES, build_decision_signals, build_features
+from ml.experiments import rank_variant_results
+from ml.features import (
+    FEATURE_NAMES,
+    WEIGHT_CLASS_RECORD_FEATURE_NAMES,
+    build_decision_signals,
+    build_feature_row,
+    build_features,
+)
 
 
 def test_no_leakage() -> None:
@@ -215,6 +222,143 @@ def test_weight_class_change_after_three_lightweight_fights_then_welterweight() 
         with conn.cursor() as cur:
             _delete_fixture(cur, prefix)
         conn.commit()
+
+
+def test_weight_class_record_features_use_only_prior_fights() -> None:
+    prefix = "test-fv-weight-prior"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_weight_class_record_fixture(cur, prefix)
+        conn.commit()
+
+    feature_names = list(WEIGHT_CLASS_RECORD_FEATURE_NAMES)
+    features = build_feature_row(
+        f"{prefix}-alpha",
+        f"{prefix}-beta",
+        date.fromisoformat("2020-05-01"),
+        "welterweight",
+        feature_names=feature_names,
+    )
+
+    values = dict(zip(feature_names, features, strict=True))
+    assert values["same_weight_class_fight_count_a"] == 1.0
+    assert values["same_weight_class_fight_count_b"] == 2.0
+    assert values["same_weight_class_fight_count_diff"] == -1.0
+    assert values["same_weight_class_win_rate_diff"] == pytest.approx(0.5)
+    assert values["other_weight_class_win_rate_diff"] == pytest.approx(1.0)
+    assert values["weight_class_move_lbs_a"] == 0.0
+    assert values["weight_class_move_lbs_b"] == 15.0
+    assert values["weight_class_move_lbs_diff"] == -15.0
+
+    middleweight_features = build_feature_row(
+        f"{prefix}-alpha",
+        f"{prefix}-beta",
+        date.fromisoformat("2020-05-01"),
+        "middleweight",
+        feature_names=feature_names,
+    )
+    middleweight_values = dict(zip(feature_names, middleweight_features, strict=True))
+    assert middleweight_values["same_weight_class_fight_count_a"] == 0.0
+    assert middleweight_values["same_weight_class_fight_count_b"] == 0.0
+    assert math.isnan(middleweight_values["same_weight_class_win_rate_diff"])
+    assert middleweight_values["weight_class_move_lbs_a"] == 15.0
+    assert middleweight_values["weight_class_move_lbs_b"] == 30.0
+
+    future_features = build_feature_row(
+        f"{prefix}-alpha",
+        f"{prefix}-beta",
+        date.fromisoformat("2020-07-01"),
+        "welterweight",
+        feature_names=feature_names,
+    )
+    future_values = dict(zip(feature_names, future_features, strict=True))
+    assert future_values["same_weight_class_fight_count_a"] == 3.0
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
+def test_weight_class_record_features_keep_odd_labels_but_nan_move_lbs() -> None:
+    prefix = "test-fv-catch"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_catch_weight_fixture(cur, prefix)
+        conn.commit()
+
+    feature_names = list(WEIGHT_CLASS_RECORD_FEATURE_NAMES)
+    features = build_feature_row(
+        f"{prefix}-alpha",
+        f"{prefix}-beta",
+        date.fromisoformat("2020-03-01"),
+        "catch weight",
+        feature_names=feature_names,
+    )
+    values = dict(zip(feature_names, features, strict=True))
+
+    assert values["same_weight_class_fight_count_a"] == 1.0
+    assert values["same_weight_class_fight_count_b"] == 1.0
+    assert math.isnan(values["weight_class_move_lbs_a"])
+    assert math.isnan(values["weight_class_move_lbs_b"])
+    assert math.isnan(values["weight_class_move_lbs_diff"])
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
+def test_feature_variant_vectors_stay_length_aligned() -> None:
+    prefix = "test-fv-align"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_fixture(cur, prefix)
+        conn.commit()
+
+    features, _label = build_features(
+        f"{prefix}-target-early",
+        feature_names=[*FEATURE_NAMES, *WEIGHT_CLASS_RECORD_FEATURE_NAMES],
+    )
+
+    assert len(features) == len(FEATURE_NAMES) + len(WEIGHT_CLASS_RECORD_FEATURE_NAMES)
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
+def test_variant_ranking_prefers_log_loss_before_accuracy() -> None:
+    ranked = rank_variant_results(
+        [
+            {
+                "variant": "higher_accuracy",
+                "overall": {
+                    "log_loss": 0.70,
+                    "brier_score": 0.20,
+                    "abs_calibration_error": 0.01,
+                    "roc_auc": 0.90,
+                    "accuracy": 0.90,
+                },
+            },
+            {
+                "variant": "lower_log_loss",
+                "overall": {
+                    "log_loss": 0.60,
+                    "brier_score": 0.25,
+                    "abs_calibration_error": 0.10,
+                    "roc_auc": 0.60,
+                    "accuracy": 0.55,
+                },
+            },
+        ]
+    )
+
+    assert [row["variant"] for row in ranked] == ["lower_log_loss", "higher_accuracy"]
 
 
 def test_round_tendency_uses_only_prior_round_stats() -> None:
@@ -517,6 +661,187 @@ def _insert_weight_class_fixture(cur, prefix: str) -> None:
         fighter_a_sig_landed=1,
         fighter_b_sig_landed=1,
         fighter_a_method="Decision - Unanimous",
+    )
+
+
+def _insert_weight_class_record_fixture(cur, prefix: str) -> None:
+    cur.execute(
+        """
+        INSERT INTO fighters (id, name, dob, height_in, reach_in, stance)
+        VALUES
+            (%s, 'Fixture Alpha', '1990-01-01', 72, 74, null),
+            (%s, 'Fixture Beta', '1992-01-01', 70, 73, null),
+            (%s, 'Fixture Gamma', '1991-01-01', 71, 72, null),
+            (%s, 'Fixture Delta', '1993-01-01', 69, 71, null)
+        """,
+        (
+            f"{prefix}-alpha",
+            f"{prefix}-beta",
+            f"{prefix}-gamma",
+            f"{prefix}-delta",
+        ),
+    )
+    cur.execute(
+        """
+        INSERT INTO events (id, name, date, completed, promotion)
+        VALUES
+            (%s, 'Alpha Lightweight', '2020-01-01', true, 'ufc'),
+            (%s, 'Alpha Welterweight', '2020-02-01', true, 'ufc'),
+            (%s, 'Beta Welterweight 1', '2020-01-15', true, 'ufc'),
+            (%s, 'Beta Welterweight 2', '2020-02-15', true, 'ufc'),
+            (%s, 'Beta Lightweight', '2020-03-01', true, 'ufc'),
+            (%s, 'Target', '2020-05-01', true, 'ufc'),
+            (%s, 'Future Alpha Welterweight', '2020-06-01', true, 'ufc')
+        """,
+        (
+            f"{prefix}-event-alpha-lightweight",
+            f"{prefix}-event-alpha-welterweight",
+            f"{prefix}-event-beta-welterweight-1",
+            f"{prefix}-event-beta-welterweight-2",
+            f"{prefix}-event-beta-lightweight",
+            f"{prefix}-event-target",
+            f"{prefix}-event-future",
+        ),
+    )
+    fights = [
+        (f"{prefix}-alpha-lightweight", f"{prefix}-event-alpha-lightweight", "lightweight"),
+        (f"{prefix}-alpha-welterweight", f"{prefix}-event-alpha-welterweight", "welterweight"),
+        (f"{prefix}-beta-welterweight-1", f"{prefix}-event-beta-welterweight-1", "welterweight"),
+        (f"{prefix}-beta-welterweight-2", f"{prefix}-event-beta-welterweight-2", "welterweight"),
+        (f"{prefix}-beta-lightweight", f"{prefix}-event-beta-lightweight", "lightweight"),
+        (f"{prefix}-target", f"{prefix}-event-target", "welterweight"),
+        (f"{prefix}-future", f"{prefix}-event-future", "welterweight"),
+    ]
+    for fight_id, event_id, weight_class in fights:
+        cur.execute(
+            """
+            INSERT INTO fights (id, event_id, weight_class, scheduled_rounds, is_headliner)
+            VALUES (%s, %s, %s, 3, false)
+            """,
+            (fight_id, event_id, weight_class),
+        )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-alpha-lightweight",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-gamma",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=10,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-alpha-welterweight",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-gamma",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=10,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-beta-welterweight-1",
+        fighter_a_id=f"{prefix}-beta",
+        fighter_b_id=f"{prefix}-delta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=10,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-beta-welterweight-2",
+        fighter_a_id=f"{prefix}-beta",
+        fighter_b_id=f"{prefix}-delta",
+        fighter_a_outcome="loss",
+        fighter_b_outcome="win",
+        fighter_a_sig_landed=10,
+        fighter_b_sig_landed=20,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-beta-lightweight",
+        fighter_a_id=f"{prefix}-beta",
+        fighter_b_id=f"{prefix}-delta",
+        fighter_a_outcome="loss",
+        fighter_b_outcome="win",
+        fighter_a_sig_landed=10,
+        fighter_b_sig_landed=20,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-target",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-beta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=1,
+        fighter_b_sig_landed=1,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-future",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-gamma",
+        fighter_a_outcome="loss",
+        fighter_b_outcome="win",
+        fighter_a_sig_landed=10,
+        fighter_b_sig_landed=20,
+    )
+
+
+def _insert_catch_weight_fixture(cur, prefix: str) -> None:
+    cur.execute(
+        """
+        INSERT INTO fighters (id, name, dob, height_in, reach_in, stance)
+        VALUES
+            (%s, 'Fixture Alpha', '1990-01-01', 72, 74, null),
+            (%s, 'Fixture Beta', '1992-01-01', 70, 73, null)
+        """,
+        (f"{prefix}-alpha", f"{prefix}-beta"),
+    )
+    cur.execute(
+        """
+        INSERT INTO events (id, name, date, completed, promotion)
+        VALUES
+            (%s, 'Catch Prior', '2020-01-01', true, 'ufc'),
+            (%s, 'Target', '2020-03-01', true, 'ufc')
+        """,
+        (f"{prefix}-event-prior", f"{prefix}-event-target"),
+    )
+    cur.execute(
+        """
+        INSERT INTO fights (id, event_id, weight_class, scheduled_rounds, is_headliner)
+        VALUES
+            (%s, %s, 'catch weight', 3, false),
+            (%s, %s, 'catch weight', 3, false)
+        """,
+        (
+            f"{prefix}-prior",
+            f"{prefix}-event-prior",
+            f"{prefix}-target",
+            f"{prefix}-event-target",
+        ),
+    )
+    _insert_result_pair(
+        cur,
+        prefix,
+        fight_id=f"{prefix}-prior",
+        alpha_outcome="win",
+        beta_outcome="loss",
+        alpha_sig_landed=20,
+        beta_sig_landed=10,
+    )
+    _insert_result_pair(
+        cur,
+        prefix,
+        fight_id=f"{prefix}-target",
+        alpha_outcome="win",
+        beta_outcome="loss",
+        alpha_sig_landed=1,
+        beta_sig_landed=1,
     )
 
 

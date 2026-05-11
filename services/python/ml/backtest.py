@@ -7,6 +7,7 @@ import math
 import sys
 import warnings
 from collections import defaultdict
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
@@ -26,15 +27,23 @@ DEFAULT_OUTPUT_DIR = REPO_ROOT / "data" / "backtests"
 def run_walk_forward_backtest(
     *,
     start_date: date | None = None,
+    end_date: date | None = None,
     max_events: int | None = None,
     min_train_samples: int = 200,
     output_path: Path | None = None,
     progress_every: int | None = None,
+    feature_names: Sequence[str] | None = None,
+    write_output: bool = True,
 ) -> dict[str, Any]:
     """Train on fights before each event and predict that event."""
-    completed_fights = _load_completed_fights()
-    samples = _build_samples(completed_fights)
-    events = _target_events(samples, start_date)
+    selected_feature_names = list(feature_names or FEATURE_NAMES)
+    completed_fights = [
+        row
+        for row in _load_completed_fights()
+        if end_date is None or row["event_date"] <= end_date
+    ]
+    samples = _build_samples(completed_fights, selected_feature_names)
+    events = _target_events(samples, start_date, end_date)
     predictions: list[dict[str, Any]] = []
     event_reports: list[dict[str, Any]] = []
 
@@ -83,9 +92,10 @@ def run_walk_forward_backtest(
     report = {
         "generated_at": datetime.now(UTC).isoformat(),
         "start_date": start_date.isoformat() if start_date else None,
+        "end_date": end_date.isoformat() if end_date else None,
         "max_events": max_events,
         "min_train_samples": min_train_samples,
-        "feature_names": FEATURE_NAMES,
+        "feature_names": selected_feature_names,
         "events_scored": len(event_reports),
         "predictions_scored": len(predictions),
         "overall": _metrics(predictions),
@@ -101,10 +111,11 @@ def run_walk_forward_backtest(
         "events": event_reports,
     }
 
-    destination = output_path or _default_output_path()
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
-    report["output_path"] = str(destination.relative_to(REPO_ROOT))
+    if write_output:
+        destination = output_path or _default_output_path()
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+        report["output_path"] = str(destination.relative_to(REPO_ROOT))
     return report
 
 
@@ -133,10 +144,13 @@ def _load_completed_fights() -> list[dict[str, Any]]:
             return [_row_dict(cur.description, row) for row in cur.fetchall()]
 
 
-def _build_samples(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _build_samples(
+    rows: list[dict[str, Any]],
+    feature_names: Sequence[str],
+) -> list[dict[str, Any]]:
     samples: list[dict[str, Any]] = []
     for row in rows:
-        features, label = build_features(row["fight_id"])
+        features, label = build_features(row["fight_id"], feature_names=feature_names)
         if math.isnan(label):
             continue
         samples.append(
@@ -149,10 +163,16 @@ def _build_samples(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return samples
 
 
-def _target_events(samples: list[dict[str, Any]], start_date: date | None) -> list[dict[str, Any]]:
+def _target_events(
+    samples: list[dict[str, Any]],
+    start_date: date | None,
+    end_date: date | None,
+) -> list[dict[str, Any]]:
     events_by_id: dict[str, dict[str, Any]] = {}
     for sample in samples:
         if start_date is not None and sample["event_date"] < start_date:
+            continue
+        if end_date is not None and sample["event_date"] > end_date:
             continue
         events_by_id[sample["event_id"]] = {
             "event_id": sample["event_id"],
@@ -321,6 +341,7 @@ def _cli_summary(report: dict[str, Any]) -> dict[str, Any]:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a UFC Fight Predictor walk-forward backtest")
     parser.add_argument("--start-date", type=date.fromisoformat, default=None)
+    parser.add_argument("--end-date", type=date.fromisoformat, default=None)
     parser.add_argument("--max-events", type=int, default=None)
     parser.add_argument("--min-train-samples", type=int, default=200)
     parser.add_argument("--output", type=Path, default=None)
@@ -346,6 +367,7 @@ def main() -> None:
         output_path = REPO_ROOT / output_path
     report = run_walk_forward_backtest(
         start_date=args.start_date,
+        end_date=args.end_date,
         max_events=args.max_events,
         min_train_samples=args.min_train_samples,
         output_path=output_path,
