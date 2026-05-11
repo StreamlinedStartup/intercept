@@ -333,21 +333,25 @@ Full-corpus result summary:
 | Events scored | 753 |
 | Predictions scored | 8,332 |
 | Accuracy | 59.35% |
+| Average confidence | 59.54% |
+| Calibration gap | -0.19 pp |
 | Log loss | 0.669 |
 | Brier score | 0.238 |
 | ROC AUC | 0.627 |
 
 Confidence buckets:
 
-| Confidence | Predictions | Accuracy | Log loss | Brier | ROC AUC |
-|---|---:|---:|---:|---:|---:|
-| 50-55% | 2,643 | 52.29% | 0.692 | 0.250 | 0.524 |
-| 55-60% | 2,327 | 58.92% | 0.678 | 0.242 | 0.592 |
-| 60-65% | 1,703 | 62.54% | 0.660 | 0.234 | 0.639 |
-| 65-70% | 915 | 66.23% | 0.640 | 0.224 | 0.664 |
-| 70%+ | 744 | 70.03% | 0.618 | 0.213 | 0.706 |
+| Confidence | Predictions | Accuracy | Avg confidence | Calibration gap | Log loss | Brier | ROC AUC |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 50-55% | 2,643 | 52.29% | 52.51% | -0.22 pp | 0.692 | 0.250 | 0.524 |
+| 55-60% | 2,327 | 58.92% | 57.39% | +1.53 pp | 0.678 | 0.242 | 0.592 |
+| 60-65% | 1,703 | 62.54% | 62.41% | +0.13 pp | 0.660 | 0.234 | 0.639 |
+| 65-70% | 915 | 66.23% | 67.20% | -0.97 pp | 0.640 | 0.224 | 0.664 |
+| 70%+ | 744 | 70.03% | 75.20% | -5.18 pp | 0.618 | 0.213 | 0.706 |
 
-This is a useful model-evaluation baseline: confidence rises mostly monotonically with realized accuracy, and the highest-confidence bucket lands near its stated probability. It is not evidence of betting edge because it does not compare against historical market prices.
+This is a useful model-evaluation baseline: confidence rises mostly monotonically with realized accuracy, and the model is well calibrated overall. The important caveat is the `70%+` bucket. Those picks average 75.20% confidence but land at 70.03%, so the model is over-confident by 5.18 percentage points at the top end.
+
+Implication: we should not simply push more picks into `70%+`. First, improve separation for truly high-certainty fights or apply a calibration/capping layer so the UI does not overstate top-end certainty. Useful next diagnostics are feature-regime calibration slices, especially debut fights, long layoffs, weight-class changes, sparse recent-form histories, and era splits. It is not evidence of betting edge because it does not compare against historical market prices.
 
 ## Backtesting We Should Add Next
 

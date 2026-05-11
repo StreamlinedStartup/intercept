@@ -200,6 +200,9 @@ def _metrics(predictions: list[dict[str, Any]]) -> dict[str, Any]:
         return {
             "count": 0,
             "accuracy": None,
+            "avg_confidence": None,
+            "calibration_gap": None,
+            "abs_calibration_error": None,
             "log_loss": None,
             "brier_score": None,
             "roc_auc": None,
@@ -208,9 +211,16 @@ def _metrics(predictions: list[dict[str, Any]]) -> dict[str, Any]:
     y_true = np.array([row["actual_label"] for row in predictions], dtype=int)
     probabilities = np.array([row["fighter_a_win_prob"] for row in predictions], dtype=float)
     predicted = np.array([row["predicted_label"] for row in predictions], dtype=int)
+    confidence = np.array([row["confidence"] for row in predictions], dtype=float)
+    accuracy = float(accuracy_score(y_true, predicted))
+    avg_confidence = float(np.mean(confidence))
+    calibration_gap = accuracy - avg_confidence
     return {
         "count": len(predictions),
-        "accuracy": float(accuracy_score(y_true, predicted)),
+        "accuracy": accuracy,
+        "avg_confidence": avg_confidence,
+        "calibration_gap": calibration_gap,
+        "abs_calibration_error": abs(calibration_gap),
         "log_loss": float(log_loss(y_true, probabilities, labels=[0, 1])),
         "brier_score": float(brier_score_loss(y_true, probabilities)),
         "roc_auc": _safe_roc_auc(y_true, probabilities),
