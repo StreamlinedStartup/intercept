@@ -232,9 +232,12 @@ def handle_ml_predict(params: dict[str, Any]) -> dict[str, Any]:
     fighter_a_id = params.get("fighter_a_id")
     fighter_b_id = params.get("fighter_b_id")
     fight_date = params.get("fight_date")
+    weight_class = params.get("weight_class")
     if not all(isinstance(value, str) and value for value in [fighter_a_id, fighter_b_id, fight_date]):
         raise ValueError("fighter_a_id, fighter_b_id, and fight_date are required strings")
-    return predict_pair(fighter_a_id, fighter_b_id, fight_date)
+    if weight_class is not None and not isinstance(weight_class, str):
+        raise ValueError("weight_class must be a string when provided")
+    return predict_pair(fighter_a_id, fighter_b_id, fight_date, weight_class)
 
 
 def handle_ml_list_models(params: dict[str, Any]) -> dict[str, Any]:

@@ -74,6 +74,18 @@ type FightPrediction = {
 		value: number | null;
 		shap: number;
 	}>;
+	decision_signals?: {
+		round_tendency?: {
+			label: string;
+			summary: string;
+			advantage: 'fighter_a' | 'fighter_b' | 'neutral';
+		};
+		common_opponents?: {
+			label: string;
+			summary: string;
+			advantage: 'fighter_a' | 'fighter_b' | 'neutral';
+		};
+	};
 	odds?: Array<{
 		fighter_id: string;
 		decimal_odds: number;
@@ -612,6 +624,8 @@ function ModelPickRow({
 		: null;
 	const modelPickEdge = valueRows.find((row) => row.fighter.id === winner.id)?.edge ?? null;
 	const valueDiffers = valuePick ? valuePick.fighter.id !== winner.id : false;
+	const roundTendency = prediction.decision_signals?.round_tendency;
+	const commonOpponents = prediction.decision_signals?.common_opponents;
 
 	return (
 		<div className="rounded-md border border-border/70 bg-muted/20 px-3 py-3">
@@ -625,6 +639,32 @@ function ModelPickRow({
 							? {
 									text: `Edge ${formatSignedPct(modelPickEdge)}`,
 									tone: edgeTone(modelPickEdge),
+								}
+							: null
+					}
+				/>
+				<SignalTile
+					label="Round tendency"
+					name={roundTendency?.label ?? 'Signal unavailable'}
+					primary={roundTendency?.summary ?? 'Need prior round data'}
+					badge={
+						roundTendency
+							? {
+									text: signalAdvantageLabel(target, roundTendency.advantage),
+									tone: signalAdvantageTone(roundTendency.advantage),
+								}
+							: null
+					}
+				/>
+				<SignalTile
+					label="Common opponents"
+					name={commonOpponents?.label ?? 'Signal unavailable'}
+					primary={commonOpponents?.summary ?? 'Need shared prior opponents'}
+					badge={
+						commonOpponents
+							? {
+									text: signalAdvantageLabel(target, commonOpponents.advantage),
+									tone: signalAdvantageTone(commonOpponents.advantage),
 								}
 							: null
 					}
@@ -713,6 +753,22 @@ function edgeTone(value: number): 'green' | 'amber' | 'red' | 'neutral' {
 	if (value >= 0.05) return 'amber';
 	if (value < 0) return 'red';
 	return 'neutral';
+}
+
+function signalAdvantageLabel(
+	target: NonNullable<Target>,
+	advantage: 'fighter_a' | 'fighter_b' | 'neutral',
+): string {
+	if (advantage === 'fighter_a') return target.fighterA.name;
+	if (advantage === 'fighter_b') return target.fighterB.name;
+	return 'Review signal';
+}
+
+function signalAdvantageTone(
+	advantage: 'fighter_a' | 'fighter_b' | 'neutral',
+): 'green' | 'amber' | 'red' | 'neutral' {
+	if (advantage === 'neutral') return 'neutral';
+	return 'amber';
 }
 
 function edgeBadgeClass(tone: 'green' | 'amber' | 'red' | 'neutral'): string {

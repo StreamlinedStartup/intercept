@@ -42,6 +42,11 @@ FEATURE_NAMES = [
     "decision_rate_diff",
     "time_in_cage_a",
     "time_in_cage_b",
+    "avg_ending_round_diff",
+    "decision_tendency_diff",
+    "late_round_exposure_diff",
+    "common_opponent_count",
+    "common_opponent_win_diff",
     "damage_index_a",
     "damage_index_b",
     "stance_orthodox_orthodox",
@@ -122,6 +127,9 @@ def build_feature_row(
             form_b = _recent_form(cur, fighter_b_id, fight_date)
             profile_a = _career_profile(cur, fighter_a_id, fight_date, target_weight_class)
             profile_b = _career_profile(cur, fighter_b_id, fight_date, target_weight_class)
+            round_tendency_a = _round_tendency_profile(cur, fighter_a_id, fight_date)
+            round_tendency_b = _round_tendency_profile(cur, fighter_b_id, fight_date)
+            common_opponents = _common_opponent_profile(cur, fighter_a_id, fighter_b_id, fight_date)
             damage_index_a = _damage_index(cur, fighter_a_id, fight_date)
             damage_index_b = _damage_index(cur, fighter_b_id, fight_date)
 
@@ -159,12 +167,34 @@ def build_feature_row(
             _diff(profile_a["decision_rate"], profile_b["decision_rate"]),
             profile_a["time_in_cage"],
             profile_b["time_in_cage"],
+            _diff(round_tendency_a["avg_ending_round"], round_tendency_b["avg_ending_round"]),
+            _diff(round_tendency_a["decision_rate"], round_tendency_b["decision_rate"]),
+            _diff(round_tendency_a["late_exposure_rate"], round_tendency_b["late_exposure_rate"]),
+            common_opponents["shared_count"],
+            common_opponents["win_diff"],
             damage_index_a,
             damage_index_b,
             *_stance_one_hot(fighter_a["stance"], fighter_b["stance"]),
         ],
         dtype=float,
     )
+
+
+def build_decision_signals(
+    fighter_a_id: str,
+    fighter_b_id: str,
+    fight_date: date,
+) -> dict[str, Any]:
+    """Build operator-facing point-in-time signals for a prediction response."""
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            round_tendency_a = _round_tendency_profile(cur, fighter_a_id, fight_date)
+            round_tendency_b = _round_tendency_profile(cur, fighter_b_id, fight_date)
+            common_opponents = _common_opponent_profile(cur, fighter_a_id, fighter_b_id, fight_date)
+    return {
+        "round_tendency": _round_tendency_signal(round_tendency_a, round_tendency_b),
+        "common_opponents": _common_opponent_signal(common_opponents),
+    }
 
 
 def _load_fighter(cur: Any, fighter_id: str) -> dict[str, Any]:
@@ -363,6 +393,190 @@ def _method_matches(method: str | None, method_tokens: set[str]) -> bool:
         return False
     normalized = method.strip().lower()
     return any(token in normalized for token in method_tokens)
+
+
+def _round_tendency_profile(cur: Any, fighter_id: str, target_date: date) -> dict[str, float]:
+    cur.execute(
+        """
+        SELECT
+            fr.fight_id,
+            fr.method,
+            fr.round AS result_round,
+            f.scheduled_rounds,
+            MAX(frs.round) AS max_stat_round
+        FROM fight_results fr
+        JOIN fights f ON f.id = fr.fight_id
+        JOIN events e ON e.id = f.event_id
+        LEFT JOIN fight_round_stats frs
+            ON frs.fight_id = fr.fight_id
+            AND frs.fighter_id = fr.fighter_id
+        WHERE fr.fighter_id = %s
+            AND e.date < %s
+            AND fr.outcome IN ('win', 'loss')
+        GROUP BY fr.fight_id, fr.method, fr.round, f.scheduled_rounds, e.date
+        ORDER BY e.date DESC, fr.fight_id DESC
+        """,
+        (fighter_id, target_date),
+    )
+    rows = [_row_dict(cur.description, row) for row in cur.fetchall()]
+    endings = [_ending_round(row) for row in rows]
+    endings = [ending for ending in endings if not math.isnan(ending)]
+    if not endings:
+        return {
+            "fight_count": 0.0,
+            "avg_ending_round": math.nan,
+            "decision_rate": math.nan,
+            "late_exposure_rate": math.nan,
+        }
+
+    decision_count = sum(1 for row in rows if _method_matches(row["method"], {"decision"}))
+    late_count = sum(1 for row in rows if _is_late_exposure(row))
+    return {
+        "fight_count": float(len(endings)),
+        "avg_ending_round": sum(endings) / len(endings),
+        "decision_rate": decision_count / len(endings),
+        "late_exposure_rate": late_count / len(endings),
+    }
+
+
+def _ending_round(row: dict[str, Any]) -> float:
+    if row["result_round"] is not None:
+        return float(row["result_round"])
+    if row["max_stat_round"] is not None:
+        return float(row["max_stat_round"])
+    return math.nan
+
+
+def _is_late_exposure(row: dict[str, Any]) -> bool:
+    ending_round = _ending_round(row)
+    if math.isnan(ending_round):
+        return False
+    scheduled_rounds = row["scheduled_rounds"]
+    if scheduled_rounds is None:
+        return ending_round >= 3
+    return ending_round >= float(scheduled_rounds)
+
+
+def _common_opponent_profile(
+    cur: Any,
+    fighter_a_id: str,
+    fighter_b_id: str,
+    target_date: date,
+) -> dict[str, Any]:
+    results_a = _prior_results_by_opponent(cur, fighter_a_id, target_date)
+    results_b = _prior_results_by_opponent(cur, fighter_b_id, target_date)
+    shared_opponent_ids = sorted(set(results_a) & set(results_b))
+    if not shared_opponent_ids:
+        return {"shared_count": 0.0, "wins_a": 0.0, "wins_b": 0.0, "win_diff": 0.0}
+
+    wins_a = sum(_wins(results_a[opponent_id]) for opponent_id in shared_opponent_ids)
+    wins_b = sum(_wins(results_b[opponent_id]) for opponent_id in shared_opponent_ids)
+    return {
+        "shared_count": float(len(shared_opponent_ids)),
+        "wins_a": float(wins_a),
+        "wins_b": float(wins_b),
+        "win_diff": float(wins_a - wins_b),
+    }
+
+
+def _prior_results_by_opponent(cur: Any, fighter_id: str, target_date: date) -> dict[str, list[str]]:
+    cur.execute(
+        """
+        SELECT
+            fr.opponent_id,
+            fr.outcome
+        FROM fight_results fr
+        JOIN fights f ON f.id = fr.fight_id
+        JOIN events e ON e.id = f.event_id
+        WHERE fr.fighter_id = %s
+            AND e.date < %s
+            AND fr.outcome IN ('win', 'loss')
+        """,
+        (fighter_id, target_date),
+    )
+    by_opponent: dict[str, list[str]] = {}
+    for row in [_row_dict(cur.description, row) for row in cur.fetchall()]:
+        by_opponent.setdefault(row["opponent_id"], []).append(row["outcome"])
+    return by_opponent
+
+
+def _wins(outcomes: list[str]) -> int:
+    return sum(1 for outcome in outcomes if outcome == "win")
+
+
+def _round_tendency_signal(
+    profile_a: dict[str, float],
+    profile_b: dict[str, float],
+) -> dict[str, Any]:
+    if profile_a["fight_count"] < 2 or profile_b["fight_count"] < 2:
+        return {
+            "label": "Thin history",
+            "summary": "Not enough prior UFC round data for both fighters.",
+            "advantage": "neutral",
+        }
+
+    late_diff = _diff(profile_a["late_exposure_rate"], profile_b["late_exposure_rate"])
+    decision_diff = _diff(profile_a["decision_rate"], profile_b["decision_rate"])
+    avg_round_diff = _diff(profile_a["avg_ending_round"], profile_b["avg_ending_round"])
+    if any(math.isnan(value) for value in [late_diff, decision_diff, avg_round_diff]):
+        return {
+            "label": "Thin history",
+            "summary": "Prior round data is incomplete for this matchup.",
+            "advantage": "neutral",
+        }
+
+    combined = (late_diff + decision_diff + (avg_round_diff / 5.0)) / 3.0
+    if abs(combined) < 0.15:
+        return {
+            "label": "Mixed history",
+            "summary": "Prior round profiles do not clearly favor either fighter.",
+            "advantage": "neutral",
+        }
+
+    if combined > 0:
+        return {
+            "label": "Late/decision lean",
+            "summary": "Fighter A has more prior late-fight and decision exposure.",
+            "advantage": "fighter_a",
+        }
+
+    return {
+        "label": "Late/decision lean",
+        "summary": "Fighter B has more prior late-fight and decision exposure.",
+        "advantage": "fighter_b",
+    }
+
+
+def _common_opponent_signal(profile: dict[str, Any]) -> dict[str, Any]:
+    shared_count = int(profile["shared_count"])
+    if shared_count == 0:
+        return {
+            "label": "No shared opponents",
+            "summary": "No shared prior opponents before this fight date.",
+            "advantage": "neutral",
+        }
+
+    wins_a = int(profile["wins_a"])
+    wins_b = int(profile["wins_b"])
+    if wins_a == wins_b:
+        return {
+            "label": "Split shared history",
+            "summary": f"Both fighters are {wins_a}-{shared_count - wins_a} against shared opponents.",
+            "advantage": "neutral",
+        }
+
+    if wins_a > wins_b:
+        return {
+            "label": "A stronger vs shared opponents",
+            "summary": f"Fighter A is {wins_a}-{shared_count - wins_a}; Fighter B is {wins_b}-{shared_count - wins_b}.",
+            "advantage": "fighter_a",
+        }
+
+    return {
+        "label": "B stronger vs shared opponents",
+        "summary": f"Fighter B is {wins_b}-{shared_count - wins_b}; Fighter A is {wins_a}-{shared_count - wins_a}.",
+        "advantage": "fighter_b",
+    }
 
 
 def _any_true_or_nan(a: float, b: float) -> float:
