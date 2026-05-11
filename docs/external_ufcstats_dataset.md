@@ -59,6 +59,32 @@ GitHub CSV snapshot
 
 The canonical DB remains the source of truth for the model. The external CSVs are an input format, not a new parallel schema.
 
+## Snapshot Download
+
+Download the current upstream CSV snapshot with:
+
+```bash
+pnpm data:ufcstats:snapshot
+```
+
+The command writes only the six published CSVs and `metadata.json` under:
+
+```text
+data/external/ufcstats/<snapshot-id>/
+```
+
+`data/external/` is ignored by git through the existing `/data/*` rule. Do not stage downloaded CSV snapshots unless we make an explicit licensing and reproducibility decision later.
+
+Useful options:
+
+```bash
+pnpm data:ufcstats:snapshot -- --ref main
+pnpm data:ufcstats:snapshot -- --snapshot-id manual-2026-05-11
+pnpm data:ufcstats:snapshot -- --out-dir /tmp/ufcstats-snapshots
+```
+
+Snapshot metadata records the source repository, requested ref, resolved commit SHA, retrieval timestamp, upstream license note, and each file's raw URL, ETag, size, content type, and SHA-256 hash.
+
 ## Import Principles
 
 The importer should be strict and boring:

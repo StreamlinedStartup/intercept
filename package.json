@@ -3,6 +3,7 @@
 	"private": true,
 	"scripts": {
 		"build": "turbo build",
+		"data:ufcstats:snapshot": "node scripts/download-ufcstats-snapshot.mjs",
 		"dev": "turbo dev",
 		"test": "vitest",
 		"typecheck": "turbo typecheck",
