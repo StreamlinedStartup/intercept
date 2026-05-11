@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 import warnings
 from collections import defaultdict
 from datetime import UTC, date, datetime
@@ -28,6 +29,7 @@ def run_walk_forward_backtest(
     max_events: int | None = None,
     min_train_samples: int = 200,
     output_path: Path | None = None,
+    progress_every: int | None = None,
 ) -> dict[str, Any]:
     """Train on fights before each event and predict that event."""
     completed_fights = _load_completed_fights()
@@ -36,10 +38,19 @@ def run_walk_forward_backtest(
     predictions: list[dict[str, Any]] = []
     event_reports: list[dict[str, Any]] = []
 
-    for event in events:
+    for index, event in enumerate(events, start=1):
         train_samples = [sample for sample in samples if sample["event_date"] < event["event_date"]]
         target_samples = [sample for sample in samples if sample["event_id"] == event["event_id"]]
         if len(train_samples) < min_train_samples or not target_samples:
+            _print_progress(
+                progress_every,
+                index,
+                len(events),
+                event,
+                len(event_reports),
+                len(predictions),
+                "skipped",
+            )
             continue
 
         model = _fit_model(train_samples)
@@ -54,6 +65,16 @@ def run_walk_forward_backtest(
                 "predictions": len(event_predictions),
                 **_metrics(event_predictions),
             }
+        )
+
+        _print_progress(
+            progress_every,
+            index,
+            len(events),
+            event,
+            len(event_reports),
+            len(predictions),
+            "scored",
         )
 
         if max_events is not None and len(event_reports) >= max_events:
@@ -240,6 +261,30 @@ def _safe_roc_auc(y_true: np.ndarray, probabilities: np.ndarray) -> float | None
     return value
 
 
+def _print_progress(
+    progress_every: int | None,
+    event_index: int,
+    event_count: int,
+    event: dict[str, Any],
+    events_scored: int,
+    predictions_scored: int,
+    status: str,
+) -> None:
+    if progress_every is None or progress_every <= 0:
+        return
+    if event_index != 1 and event_index % progress_every != 0 and event_index != event_count:
+        return
+    print(
+        "backtest progress: "
+        f"{event_index}/{event_count} candidates, "
+        f"{events_scored} events scored, "
+        f"{predictions_scored} predictions, "
+        f"{status} {event['event_date'].isoformat()} {event['event_name']}",
+        file=sys.stderr,
+        flush=True,
+    )
+
+
 def _default_output_path() -> Path:
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     return DEFAULT_OUTPUT_DIR / f"walk-forward-{stamp}.json"
@@ -249,12 +294,38 @@ def _row_dict(description: Any, row: Any) -> dict[str, Any]:
     return {column.name: value for column, value in zip(description, row, strict=True)}
 
 
+def _cli_summary(report: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "output_path": report.get("output_path"),
+        "start_date": report.get("start_date"),
+        "max_events": report.get("max_events"),
+        "min_train_samples": report.get("min_train_samples"),
+        "events_scored": report.get("events_scored"),
+        "predictions_scored": report.get("predictions_scored"),
+        "overall": report.get("overall"),
+        "by_confidence_bucket": report.get("by_confidence_bucket"),
+        "by_model_edge_bucket": report.get("by_model_edge_bucket"),
+    }
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a UFC Fight Predictor walk-forward backtest")
     parser.add_argument("--start-date", type=date.fromisoformat, default=None)
     parser.add_argument("--max-events", type=int, default=None)
     parser.add_argument("--min-train-samples", type=int, default=200)
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=None,
+        help="Print progress to stderr every N candidate events.",
+    )
+    parser.add_argument(
+        "--stdout",
+        choices=["summary", "full", "none"],
+        default="summary",
+        help="Control the JSON printed after writing the report.",
+    )
     return parser.parse_args()
 
 
@@ -268,8 +339,12 @@ def main() -> None:
         max_events=args.max_events,
         min_train_samples=args.min_train_samples,
         output_path=output_path,
+        progress_every=args.progress_every,
     )
-    print(json.dumps(report, indent=2, allow_nan=False))
+    if args.stdout == "none":
+        return
+    output = report if args.stdout == "full" else _cli_summary(report)
+    print(json.dumps(output, indent=2, allow_nan=False))
 
 
 if __name__ == "__main__":
