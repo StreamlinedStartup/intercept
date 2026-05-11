@@ -1,0 +1,777 @@
+{
+  "generated_at": "2026-05-11T18:29:45.503727+00:00",
+  "report": "one-event-odds-aware",
+  "source_event_id": "5362",
+  "event": {
+    "id": "902ab9197b83d0db",
+    "name": "UFC Fight Night: Moreno vs. Royval 2",
+    "date": "2024-02-24",
+    "train_samples": 7379
+  },
+  "args": {
+    "min_train_samples": 200
+  },
+  "summary": {
+    "fights_scored": 12,
+    "walk_forward_predictions": 12,
+    "historical_moneyline_rows": 310,
+    "complete_offer_pairs": 155
+  },
+  "timestamp_semantics": {
+    "observed_values": [
+      "source_current_at_scrape"
+    ],
+    "label": "FightOdds source_current lines are captured at import scrape time. They are usable as close/current market consensus for this slice, not as true point-in-time historical snapshots."
+  },
+  "roi": {
+    "model_edge": {
+      "bets": 6,
+      "wins": 0,
+      "staked": 6,
+      "net_profit": -6.0,
+      "roi": -1.0
+    },
+    "market_favorite": {
+      "bets": 12,
+      "wins": 10,
+      "staked": 12,
+      "net_profit": 3.7732522232600734,
+      "roi": 0.31443768527167276
+    }
+  },
+  "calibration_vs_market": {
+    "market_favorite_accuracy": 0.8333333333333334,
+    "average_market_favorite_probability": 0.6499730096126229,
+    "calibration_gap": 0.18336032372071043
+  },
+  "by_confidence_bucket": [
+    {
+      "bucket": "50-55",
+      "count": 7,
+      "accuracy": 0.2857142857142857,
+      "bets": 7,
+      "wins": 2,
+      "staked": 7,
+      "net_profit": -4.476650287362638,
+      "roi": -0.639521469623234
+    },
+    {
+      "bucket": "55-60",
+      "count": 2,
+      "accuracy": 1.0,
+      "bets": 2,
+      "wins": 2,
+      "staked": 2,
+      "net_profit": 0.27801584404761903,
+      "roi": 0.13900792202380952
+    },
+    {
+      "bucket": "60-65",
+      "count": 3,
+      "accuracy": 0.3333333333333333,
+      "bets": 3,
+      "wins": 1,
+      "staked": 3,
+      "net_profit": -1.5375124076923077,
+      "roi": -0.5125041358974359
+    }
+  ],
+  "by_edge_bucket": [
+    {
+      "bucket": "negative",
+      "count": 6,
+      "accuracy": 0.8333333333333334,
+      "bets": 6,
+      "wins": 5,
+      "staked": 6,
+      "net_profit": 0.26385314899267387,
+      "roi": 0.04397552483211231
+    },
+    {
+      "bucket": "10+",
+      "count": 1,
+      "accuracy": 0.0,
+      "bets": 1,
+      "wins": 0,
+      "staked": 1,
+      "net_profit": -1.0,
+      "roi": -1.0
+    },
+    {
+      "bucket": "2-5",
+      "count": 2,
+      "accuracy": 0.0,
+      "bets": 2,
+      "wins": 0,
+      "staked": 2,
+      "net_profit": -2.0,
+      "roi": -1.0
+    },
+    {
+      "bucket": "5-10",
+      "count": 3,
+      "accuracy": 0.0,
+      "bets": 3,
+      "wins": 0,
+      "staked": 3,
+      "net_profit": -3.0,
+      "roi": -1.0
+    }
+  ],
+  "secondary_model_metrics": {
+    "accuracy": 0.4166666666666667,
+    "log_loss": 0.7087265846149956,
+    "brier_score": 0.25764870042475924,
+    "roc_auc": 0.45714285714285713
+  },
+  "fights": [
+    {
+      "fight_id": "063e7ce759c52f81",
+      "fighter_a": {
+        "id": "7debc13b36343605",
+        "name": "Cristian Quinonez",
+        "outcome": "loss",
+        "model_probability": 0.5096164345741272,
+        "market_no_vig_probability": 0.4741255913986212,
+        "average_decimal_odds": 2.13185185,
+        "offer_count": 12,
+        "edge": 0.03549084317550599,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "fighter_b": {
+        "id": "b9f28e7045fdfce7",
+        "name": "Raoni Barcelos",
+        "outcome": "win",
+        "model_probability": 0.4903835654258728,
+        "market_no_vig_probability": 0.5258744086013788,
+        "average_decimal_odds": 2.0672576166666667,
+        "offer_count": 12,
+        "edge": -0.03549084317550599,
+        "won": true,
+        "net_profit": 1.0672576166666667
+      },
+      "model_pick": {
+        "id": "7debc13b36343605",
+        "name": "Cristian Quinonez",
+        "outcome": "loss",
+        "model_probability": 0.5096164345741272,
+        "market_no_vig_probability": 0.4741255913986212,
+        "average_decimal_odds": 2.13185185,
+        "offer_count": 12,
+        "edge": 0.03549084317550599,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "market_favorite": {
+        "id": "b9f28e7045fdfce7",
+        "name": "Raoni Barcelos",
+        "outcome": "win",
+        "model_probability": 0.4903835654258728,
+        "market_no_vig_probability": 0.5258744086013788,
+        "average_decimal_odds": 2.0672576166666667,
+        "offer_count": 12,
+        "edge": -0.03549084317550599,
+        "won": true,
+        "net_profit": 1.0672576166666667
+      },
+      "confidence_bucket": "50-55",
+      "edge_bucket": "2-5",
+      "complete_offer_pairs": 12
+    },
+    {
+      "fight_id": "1c03c1bb62f3aed6",
+      "fighter_a": {
+        "id": "31bb0772f21cabd8",
+        "name": "Daniel Lacerda",
+        "outcome": "loss",
+        "model_probability": 0.46543222665786743,
+        "market_no_vig_probability": 0.21026145998915663,
+        "average_decimal_odds": 4.509285714285714,
+        "offer_count": 14,
+        "edge": 0.2551707666687108,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "fighter_b": {
+        "id": "5ef94841c4bc3f86",
+        "name": "Edgar Chairez",
+        "outcome": "win",
+        "model_probability": 0.5345677733421326,
+        "market_no_vig_probability": 0.7897385400108434,
+        "average_decimal_odds": 1.1968441357142856,
+        "offer_count": 14,
+        "edge": -0.25517076666871086,
+        "won": true,
+        "net_profit": 0.1968441357142856
+      },
+      "model_pick": {
+        "id": "5ef94841c4bc3f86",
+        "name": "Edgar Chairez",
+        "outcome": "win",
+        "model_probability": 0.5345677733421326,
+        "market_no_vig_probability": 0.7897385400108434,
+        "average_decimal_odds": 1.1968441357142856,
+        "offer_count": 14,
+        "edge": -0.25517076666871086,
+        "won": true,
+        "net_profit": 0.1968441357142856
+      },
+      "market_favorite": {
+        "id": "5ef94841c4bc3f86",
+        "name": "Edgar Chairez",
+        "outcome": "win",
+        "model_probability": 0.5345677733421326,
+        "market_no_vig_probability": 0.7897385400108434,
+        "average_decimal_odds": 1.1968441357142856,
+        "offer_count": 14,
+        "edge": -0.25517076666871086,
+        "won": true,
+        "net_profit": 0.1968441357142856
+      },
+      "confidence_bucket": "50-55",
+      "edge_bucket": "negative",
+      "complete_offer_pairs": 14
+    },
+    {
+      "fight_id": "3b05a4ced6dd74f5",
+      "fighter_a": {
+        "id": "cbf5e6f231b55443",
+        "name": "Yair Rodriguez",
+        "outcome": "loss",
+        "model_probability": 0.6156108975410461,
+        "market_no_vig_probability": 0.5232634064252253,
+        "average_decimal_odds": 1.8831464538461538,
+        "offer_count": 13,
+        "edge": 0.09234749111582086,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "fighter_b": {
+        "id": "def8166ff24bd237",
+        "name": "Brian Ortega",
+        "outcome": "win",
+        "model_probability": 0.38438910245895386,
+        "market_no_vig_probability": 0.4767365935747747,
+        "average_decimal_odds": 2.073683323076923,
+        "offer_count": 13,
+        "edge": -0.09234749111582086,
+        "won": true,
+        "net_profit": 1.073683323076923
+      },
+      "model_pick": {
+        "id": "cbf5e6f231b55443",
+        "name": "Yair Rodriguez",
+        "outcome": "loss",
+        "model_probability": 0.6156108975410461,
+        "market_no_vig_probability": 0.5232634064252253,
+        "average_decimal_odds": 1.8831464538461538,
+        "offer_count": 13,
+        "edge": 0.09234749111582086,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "market_favorite": {
+        "id": "cbf5e6f231b55443",
+        "name": "Yair Rodriguez",
+        "outcome": "loss",
+        "model_probability": 0.6156108975410461,
+        "market_no_vig_probability": 0.5232634064252253,
+        "average_decimal_odds": 1.8831464538461538,
+        "offer_count": 13,
+        "edge": 0.09234749111582086,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "confidence_bucket": "60-65",
+      "edge_bucket": "5-10",
+      "complete_offer_pairs": 13
+    },
+    {
+      "fight_id": "50dae6b76c9c6490",
+      "fighter_a": {
+        "id": "21b813b919776d90",
+        "name": "Erik Silva",
+        "outcome": "loss",
+        "model_probability": 0.4267672896385193,
+        "market_no_vig_probability": 0.19417619651638696,
+        "average_decimal_odds": 4.887142857142857,
+        "offer_count": 14,
+        "edge": 0.23259109312213233,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "fighter_b": {
+        "id": "8d11d9c13e2ccdf7",
+        "name": "Muhammad Naimov",
+        "outcome": "win",
+        "model_probability": 0.5732327103614807,
+        "market_no_vig_probability": 0.805823803483613,
+        "average_decimal_odds": 1.1740279357142858,
+        "offer_count": 14,
+        "edge": -0.23259109312213233,
+        "won": true,
+        "net_profit": 0.17402793571428576
+      },
+      "model_pick": {
+        "id": "8d11d9c13e2ccdf7",
+        "name": "Muhammad Naimov",
+        "outcome": "win",
+        "model_probability": 0.5732327103614807,
+        "market_no_vig_probability": 0.805823803483613,
+        "average_decimal_odds": 1.1740279357142858,
+        "offer_count": 14,
+        "edge": -0.23259109312213233,
+        "won": true,
+        "net_profit": 0.17402793571428576
+      },
+      "market_favorite": {
+        "id": "8d11d9c13e2ccdf7",
+        "name": "Muhammad Naimov",
+        "outcome": "win",
+        "model_probability": 0.5732327103614807,
+        "market_no_vig_probability": 0.805823803483613,
+        "average_decimal_odds": 1.1740279357142858,
+        "offer_count": 14,
+        "edge": -0.23259109312213233,
+        "won": true,
+        "net_profit": 0.17402793571428576
+      },
+      "confidence_bucket": "55-60",
+      "edge_bucket": "negative",
+      "complete_offer_pairs": 14
+    },
+    {
+      "fight_id": "5e8c710f9f27aff8",
+      "fighter_a": {
+        "id": "2526be54e6a0e62a",
+        "name": "Denys Bondar",
+        "outcome": "loss",
+        "model_probability": 0.5304781198501587,
+        "market_no_vig_probability": 0.4552050288886372,
+        "average_decimal_odds": 2.1560254083333334,
+        "offer_count": 12,
+        "edge": 0.07527309096152152,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "fighter_b": {
+        "id": "f2900678e98f6d6a",
+        "name": "Ronaldo Rodriguez",
+        "outcome": "win",
+        "model_probability": 0.4695218801498413,
+        "market_no_vig_probability": 0.5447949711113629,
+        "average_decimal_odds": 1.7611269083333334,
+        "offer_count": 12,
+        "edge": -0.07527309096152157,
+        "won": true,
+        "net_profit": 0.7611269083333334
+      },
+      "model_pick": {
+        "id": "2526be54e6a0e62a",
+        "name": "Denys Bondar",
+        "outcome": "loss",
+        "model_probability": 0.5304781198501587,
+        "market_no_vig_probability": 0.4552050288886372,
+        "average_decimal_odds": 2.1560254083333334,
+        "offer_count": 12,
+        "edge": 0.07527309096152152,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "market_favorite": {
+        "id": "f2900678e98f6d6a",
+        "name": "Ronaldo Rodriguez",
+        "outcome": "win",
+        "model_probability": 0.4695218801498413,
+        "market_no_vig_probability": 0.5447949711113629,
+        "average_decimal_odds": 1.7611269083333334,
+        "offer_count": 12,
+        "edge": -0.07527309096152157,
+        "won": true,
+        "net_profit": 0.7611269083333334
+      },
+      "confidence_bucket": "50-55",
+      "edge_bucket": "5-10",
+      "complete_offer_pairs": 12
+    },
+    {
+      "fight_id": "673a156925dfb31d",
+      "fighter_a": {
+        "id": "2e7878927067fdca",
+        "name": "Manuel Torres",
+        "outcome": "win",
+        "model_probability": 0.46529456973075867,
+        "market_no_vig_probability": 0.6127182765582077,
+        "average_decimal_odds": 1.5539052928571429,
+        "offer_count": 14,
+        "edge": -0.14742370682744899,
+        "won": true,
+        "net_profit": 0.5539052928571429
+      },
+      "fighter_b": {
+        "id": "fd406a32a6fb3a29",
+        "name": "Chris Duncan",
+        "outcome": "loss",
+        "model_probability": 0.5347054302692413,
+        "market_no_vig_probability": 0.38728172344179235,
+        "average_decimal_odds": 2.459285714285714,
+        "offer_count": 14,
+        "edge": 0.14742370682744899,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "model_pick": {
+        "id": "fd406a32a6fb3a29",
+        "name": "Chris Duncan",
+        "outcome": "loss",
+        "model_probability": 0.5347054302692413,
+        "market_no_vig_probability": 0.38728172344179235,
+        "average_decimal_odds": 2.459285714285714,
+        "offer_count": 14,
+        "edge": 0.14742370682744899,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "market_favorite": {
+        "id": "2e7878927067fdca",
+        "name": "Manuel Torres",
+        "outcome": "win",
+        "model_probability": 0.46529456973075867,
+        "market_no_vig_probability": 0.6127182765582077,
+        "average_decimal_odds": 1.5539052928571429,
+        "offer_count": 14,
+        "edge": -0.14742370682744899,
+        "won": true,
+        "net_profit": 0.5539052928571429
+      },
+      "confidence_bucket": "50-55",
+      "edge_bucket": "10+",
+      "complete_offer_pairs": 14
+    },
+    {
+      "fight_id": "6e4acb2aaa2cee56",
+      "fighter_a": {
+        "id": "40cb680ae1cd331f",
+        "name": "Yazmin Jauregui",
+        "outcome": "win",
+        "model_probability": 0.5763400197029114,
+        "market_no_vig_probability": 0.8636967984875378,
+        "average_decimal_odds": 1.1039879083333333,
+        "offer_count": 12,
+        "edge": -0.2873567787846264,
+        "won": true,
+        "net_profit": 0.10398790833333327
+      },
+      "fighter_b": {
+        "id": "e94085e821bd81de",
+        "name": "Sam Hughes",
+        "outcome": "loss",
+        "model_probability": 0.4236599802970886,
+        "market_no_vig_probability": 0.13630320151246217,
+        "average_decimal_odds": 9.464166666666667,
+        "offer_count": 12,
+        "edge": 0.28735677878462645,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "model_pick": {
+        "id": "40cb680ae1cd331f",
+        "name": "Yazmin Jauregui",
+        "outcome": "win",
+        "model_probability": 0.5763400197029114,
+        "market_no_vig_probability": 0.8636967984875378,
+        "average_decimal_odds": 1.1039879083333333,
+        "offer_count": 12,
+        "edge": -0.2873567787846264,
+        "won": true,
+        "net_profit": 0.10398790833333327
+      },
+      "market_favorite": {
+        "id": "40cb680ae1cd331f",
+        "name": "Yazmin Jauregui",
+        "outcome": "win",
+        "model_probability": 0.5763400197029114,
+        "market_no_vig_probability": 0.8636967984875378,
+        "average_decimal_odds": 1.1039879083333333,
+        "offer_count": 12,
+        "edge": -0.2873567787846264,
+        "won": true,
+        "net_profit": 0.10398790833333327
+      },
+      "confidence_bucket": "55-60",
+      "edge_bucket": "negative",
+      "complete_offer_pairs": 12
+    },
+    {
+      "fight_id": "74f5cbecac011abb",
+      "fighter_a": {
+        "id": "6e15f63b6c2e2c15",
+        "name": "Brandon Royval",
+        "outcome": "win",
+        "model_probability": 0.39205947518348694,
+        "market_no_vig_probability": 0.3382732503848868,
+        "average_decimal_odds": 3.0748496,
+        "offer_count": 13,
+        "edge": 0.053786224798600124,
+        "won": true,
+        "net_profit": 2.0748496
+      },
+      "fighter_b": {
+        "id": "792be9a24df82ed6",
+        "name": "Brandon Moreno",
+        "outcome": "loss",
+        "model_probability": 0.6079405248165131,
+        "market_no_vig_probability": 0.6617267496151132,
+        "average_decimal_odds": 1.4922547846153846,
+        "offer_count": 13,
+        "edge": -0.05378622479860018,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "model_pick": {
+        "id": "792be9a24df82ed6",
+        "name": "Brandon Moreno",
+        "outcome": "loss",
+        "model_probability": 0.6079405248165131,
+        "market_no_vig_probability": 0.6617267496151132,
+        "average_decimal_odds": 1.4922547846153846,
+        "offer_count": 13,
+        "edge": -0.05378622479860018,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "market_favorite": {
+        "id": "792be9a24df82ed6",
+        "name": "Brandon Moreno",
+        "outcome": "loss",
+        "model_probability": 0.6079405248165131,
+        "market_no_vig_probability": 0.6617267496151132,
+        "average_decimal_odds": 1.4922547846153846,
+        "offer_count": 13,
+        "edge": -0.05378622479860018,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "confidence_bucket": "60-65",
+      "edge_bucket": "negative",
+      "complete_offer_pairs": 13
+    },
+    {
+      "fight_id": "93ddc6b233d1956a",
+      "fighter_a": {
+        "id": "5cdf5339728f580d",
+        "name": "Felipe dos Santos",
+        "outcome": "win",
+        "model_probability": 0.47590741515159607,
+        "market_no_vig_probability": 0.5701988719440323,
+        "average_decimal_odds": 2.2289053333333335,
+        "offer_count": 12,
+        "edge": -0.09429145679243622,
+        "won": true,
+        "net_profit": 1.2289053333333335
+      },
+      "fighter_b": {
+        "id": "dc7927cd622676a7",
+        "name": "Victor Altamirano",
+        "outcome": "loss",
+        "model_probability": 0.5240925848484039,
+        "market_no_vig_probability": 0.4298011280559676,
+        "average_decimal_odds": 2.6584273666666665,
+        "offer_count": 12,
+        "edge": 0.09429145679243633,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "model_pick": {
+        "id": "dc7927cd622676a7",
+        "name": "Victor Altamirano",
+        "outcome": "loss",
+        "model_probability": 0.5240925848484039,
+        "market_no_vig_probability": 0.4298011280559676,
+        "average_decimal_odds": 2.6584273666666665,
+        "offer_count": 12,
+        "edge": 0.09429145679243633,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "market_favorite": {
+        "id": "5cdf5339728f580d",
+        "name": "Felipe dos Santos",
+        "outcome": "win",
+        "model_probability": 0.47590741515159607,
+        "market_no_vig_probability": 0.5701988719440323,
+        "average_decimal_odds": 2.2289053333333335,
+        "offer_count": 12,
+        "edge": -0.09429145679243622,
+        "won": true,
+        "net_profit": 1.2289053333333335
+      },
+      "confidence_bucket": "50-55",
+      "edge_bucket": "5-10",
+      "complete_offer_pairs": 12
+    },
+    {
+      "fight_id": "a376f6d5806d0c90",
+      "fighter_a": {
+        "id": "1e4f273069fb9e85",
+        "name": "Fares Ziam",
+        "outcome": "win",
+        "model_probability": 0.6186527013778687,
+        "market_no_vig_probability": 0.646256683429572,
+        "average_decimal_odds": 1.4624875923076923,
+        "offer_count": 13,
+        "edge": -0.027603982051703335,
+        "won": true,
+        "net_profit": 0.4624875923076923
+      },
+      "fighter_b": {
+        "id": "d747eb273a40a920",
+        "name": "Claudio Puelles",
+        "outcome": "loss",
+        "model_probability": 0.38134729862213135,
+        "market_no_vig_probability": 0.353743316570428,
+        "average_decimal_odds": 2.6792307692307693,
+        "offer_count": 13,
+        "edge": 0.027603982051703335,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "model_pick": {
+        "id": "1e4f273069fb9e85",
+        "name": "Fares Ziam",
+        "outcome": "win",
+        "model_probability": 0.6186527013778687,
+        "market_no_vig_probability": 0.646256683429572,
+        "average_decimal_odds": 1.4624875923076923,
+        "offer_count": 13,
+        "edge": -0.027603982051703335,
+        "won": true,
+        "net_profit": 0.4624875923076923
+      },
+      "market_favorite": {
+        "id": "1e4f273069fb9e85",
+        "name": "Fares Ziam",
+        "outcome": "win",
+        "model_probability": 0.6186527013778687,
+        "market_no_vig_probability": 0.646256683429572,
+        "average_decimal_odds": 1.4624875923076923,
+        "offer_count": 13,
+        "edge": -0.027603982051703335,
+        "won": true,
+        "net_profit": 0.4624875923076923
+      },
+      "confidence_bucket": "60-65",
+      "edge_bucket": "negative",
+      "complete_offer_pairs": 13
+    },
+    {
+      "fight_id": "d1d3b6ab8a56e973",
+      "fighter_a": {
+        "id": "48812daf291a4e23",
+        "name": "Mateus Mendonca",
+        "outcome": "loss",
+        "model_probability": 0.524032473564148,
+        "market_no_vig_probability": 0.47859680277957656,
+        "average_decimal_odds": 2.167190976923077,
+        "offer_count": 13,
+        "edge": 0.04543567078457139,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "fighter_b": {
+        "id": "c051c2e12d692b8a",
+        "name": "Jesus Aguilar",
+        "outcome": "win",
+        "model_probability": 0.47596752643585205,
+        "market_no_vig_probability": 0.5214031972204235,
+        "average_decimal_odds": 1.898203923076923,
+        "offer_count": 13,
+        "edge": -0.04543567078457145,
+        "won": true,
+        "net_profit": 0.898203923076923
+      },
+      "model_pick": {
+        "id": "48812daf291a4e23",
+        "name": "Mateus Mendonca",
+        "outcome": "loss",
+        "model_probability": 0.524032473564148,
+        "market_no_vig_probability": 0.47859680277957656,
+        "average_decimal_odds": 2.167190976923077,
+        "offer_count": 13,
+        "edge": 0.04543567078457139,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "market_favorite": {
+        "id": "c051c2e12d692b8a",
+        "name": "Jesus Aguilar",
+        "outcome": "win",
+        "model_probability": 0.47596752643585205,
+        "market_no_vig_probability": 0.5214031972204235,
+        "average_decimal_odds": 1.898203923076923,
+        "offer_count": 13,
+        "edge": -0.04543567078457145,
+        "won": true,
+        "net_profit": 0.898203923076923
+      },
+      "confidence_bucket": "50-55",
+      "edge_bucket": "2-5",
+      "complete_offer_pairs": 13
+    },
+    {
+      "fight_id": "ecbece0cbd60029e",
+      "fighter_a": {
+        "id": "3920d0cc288f9b0d",
+        "name": "Francisco Prado",
+        "outcome": "loss",
+        "model_probability": 0.49318963289260864,
+        "market_no_vig_probability": 0.26581959153583495,
+        "average_decimal_odds": 4.900769230769231,
+        "offer_count": 13,
+        "edge": 0.2273700413567737,
+        "won": false,
+        "net_profit": -1.0
+      },
+      "fighter_b": {
+        "id": "4148802ae4a50768",
+        "name": "Daniel Zellhuber",
+        "outcome": "win",
+        "model_probability": 0.5068103671073914,
+        "market_no_vig_probability": 0.7341804084641651,
+        "average_decimal_odds": 1.326505576923077,
+        "offer_count": 13,
+        "edge": -0.22737004135677374,
+        "won": true,
+        "net_profit": 0.3265055769230769
+      },
+      "model_pick": {
+        "id": "4148802ae4a50768",
+        "name": "Daniel Zellhuber",
+        "outcome": "win",
+        "model_probability": 0.5068103671073914,
+        "market_no_vig_probability": 0.7341804084641651,
+        "average_decimal_odds": 1.326505576923077,
+        "offer_count": 13,
+        "edge": -0.22737004135677374,
+        "won": true,
+        "net_profit": 0.3265055769230769
+      },
+      "market_favorite": {
+        "id": "4148802ae4a50768",
+        "name": "Daniel Zellhuber",
+        "outcome": "win",
+        "model_probability": 0.5068103671073914,
+        "market_no_vig_probability": 0.7341804084641651,
+        "average_decimal_odds": 1.326505576923077,
+        "offer_count": 13,
+        "edge": -0.22737004135677374,
+        "won": true,
+        "net_profit": 0.3265055769230769
+      },
+      "confidence_bucket": "50-55",
+      "edge_bucket": "negative",
+      "complete_offer_pairs": 13
+    }
+  ]
+}
