@@ -8,6 +8,7 @@ import {
 	real,
 	text,
 	timestamp,
+	uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 export const promotionEnum = pgEnum('promotion', ['ufc', 'bellator', 'strikeforce', 'other']);
@@ -182,6 +183,161 @@ export const unmatchedOdds = pgTable('unmatched_odds', {
 	rawDate: date('raw_date').notNull(),
 	snapshotId: text('snapshot_id').notNull(),
 	reason: text('reason').notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const historicalOddsImportRuns = pgTable('historical_odds_import_runs', {
+	id: text('id').primaryKey(),
+	source: text('source').notNull(),
+	sourceUrl: text('source_url').notNull(),
+	sourceEventId: text('source_event_id').notNull(),
+	startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+	finishedAt: timestamp('finished_at', { withTimezone: true }),
+	status: text('status').notNull(),
+	eventsRead: integer('events_read').notNull().default(0),
+	fightsRead: integer('fights_read').notNull().default(0),
+	moneylinesRead: integer('moneylines_read').notNull().default(0),
+	matchedRows: integer('matched_rows').notNull().default(0),
+	unmatchedRows: integer('unmatched_rows').notNull().default(0),
+	rawMetadata: text('raw_metadata').notNull(),
+});
+
+export const historicalOddsEvents = pgTable(
+	'historical_odds_events',
+	{
+		id: text('id').primaryKey(),
+		source: text('source').notNull(),
+		sourceEventId: text('source_event_id').notNull(),
+		sourceEventGlobalId: text('source_event_global_id'),
+		sourceSlug: text('source_slug').notNull(),
+		sourceUrl: text('source_url').notNull(),
+		rawName: text('raw_name').notNull(),
+		eventDate: date('event_date').notNull(),
+		venue: text('venue'),
+		city: text('city'),
+		promotion: text('promotion').notNull(),
+		canonicalEventId: text('canonical_event_id').references(() => events.id, {
+			onDelete: 'set null',
+		}),
+		matchStatus: text('match_status').notNull(),
+		matchReason: text('match_reason').notNull(),
+		rawMetadata: text('raw_metadata').notNull(),
+		scrapedAt: timestamp('scraped_at', { withTimezone: true }).notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => ({
+		sourceEventIdx: uniqueIndex('historical_odds_events_source_event_idx').on(
+			t.source,
+			t.sourceEventId,
+		),
+	}),
+);
+
+export const historicalOddsFights = pgTable(
+	'historical_odds_fights',
+	{
+		id: text('id').primaryKey(),
+		historicalEventId: text('historical_event_id')
+			.notNull()
+			.references(() => historicalOddsEvents.id, { onDelete: 'cascade' }),
+		sourceFightId: text('source_fight_id').notNull(),
+		sourceFightSlug: text('source_fight_slug').notNull(),
+		sourceUrl: text('source_url').notNull(),
+		rawFighterA: text('raw_fighter_a').notNull(),
+		rawFighterB: text('raw_fighter_b').notNull(),
+		sourceFighterAId: text('source_fighter_a_id').notNull(),
+		sourceFighterBId: text('source_fighter_b_id').notNull(),
+		sourceFighterASlug: text('source_fighter_a_slug').notNull(),
+		sourceFighterBSlug: text('source_fighter_b_slug').notNull(),
+		isCancelled: boolean('is_cancelled').notNull().default(false),
+		propCount: integer('prop_count').notNull().default(0),
+		bestOddsA: integer('best_odds_a'),
+		bestOddsB: integer('best_odds_b'),
+		canonicalFightId: text('canonical_fight_id').references(() => fights.id, {
+			onDelete: 'set null',
+		}),
+		canonicalFighterAId: text('canonical_fighter_a_id').references(() => fighters.id, {
+			onDelete: 'set null',
+		}),
+		canonicalFighterBId: text('canonical_fighter_b_id').references(() => fighters.id, {
+			onDelete: 'set null',
+		}),
+		matchStatus: text('match_status').notNull(),
+		matchReason: text('match_reason').notNull(),
+		candidateMatches: text('candidate_matches').notNull(),
+		rawMetadata: text('raw_metadata').notNull(),
+		scrapedAt: timestamp('scraped_at', { withTimezone: true }).notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => ({
+		sourceFightIdx: uniqueIndex('historical_odds_fights_source_fight_idx').on(
+			t.historicalEventId,
+			t.sourceFightId,
+		),
+	}),
+);
+
+export const historicalMoneylineOdds = pgTable(
+	'historical_moneyline_odds',
+	{
+		id: text('id').primaryKey(),
+		importRunId: text('import_run_id')
+			.notNull()
+			.references(() => historicalOddsImportRuns.id, { onDelete: 'cascade' }),
+		historicalFightId: text('historical_fight_id')
+			.notNull()
+			.references(() => historicalOddsFights.id, { onDelete: 'cascade' }),
+		sourceOfferId: text('source_offer_id').notNull(),
+		sportsbookId: text('sportsbook_id').notNull(),
+		sportsbookSlug: text('sportsbook_slug').notNull(),
+		sportsbookName: text('sportsbook_name').notNull(),
+		sourceOutcomeId: text('source_outcome_id').notNull(),
+		rawFighterName: text('raw_fighter_name').notNull(),
+		sourceFighterId: text('source_fighter_id').notNull(),
+		canonicalFighterId: text('canonical_fighter_id').references(() => fighters.id, {
+			onDelete: 'set null',
+		}),
+		side: text('side').notNull(),
+		lineKind: text('line_kind').notNull(),
+		americanOdds: integer('american_odds').notNull(),
+		decimalOdds: real('decimal_odds').notNull(),
+		impliedProbability: real('implied_probability').notNull(),
+		marketTimestamp: timestamp('market_timestamp', { withTimezone: true }),
+		marketTimestampSemantics: text('market_timestamp_semantics').notNull(),
+		scrapedAt: timestamp('scraped_at', { withTimezone: true }).notNull(),
+		rawMetadata: text('raw_metadata').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => ({
+		sourceOutcomeIdx: uniqueIndex('historical_moneyline_odds_source_outcome_idx').on(
+			t.importRunId,
+			t.sourceOfferId,
+			t.sourceOutcomeId,
+			t.lineKind,
+		),
+	}),
+);
+
+export const unmatchedHistoricalOdds = pgTable('unmatched_historical_odds', {
+	id: text('id').primaryKey(),
+	source: text('source').notNull(),
+	sourceEventId: text('source_event_id').notNull(),
+	sourceFightId: text('source_fight_id').notNull(),
+	sourceUrl: text('source_url').notNull(),
+	rawEventName: text('raw_event_name').notNull(),
+	rawEventDate: date('raw_event_date').notNull(),
+	rawFighterA: text('raw_fighter_a').notNull(),
+	rawFighterB: text('raw_fighter_b').notNull(),
+	rawSportsbook: text('raw_sportsbook'),
+	rawOdds: text('raw_odds').notNull(),
+	candidateMatches: text('candidate_matches').notNull(),
+	reason: text('reason').notNull(),
+	reviewed: boolean('reviewed').notNull().default(false),
+	reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+	reviewNote: text('review_note'),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -29,6 +29,13 @@
       "when": 1778363249000,
       "tag": "0003_unmatched_odds",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778490000000,
+      "tag": "0004_historical_odds",
+      "breakpoints": true
     }
   ]
 }

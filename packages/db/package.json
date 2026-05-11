@@ -11,6 +11,7 @@
 		"build": "tsc",
 		"typecheck": "tsc --noEmit",
 		"generate": "drizzle-kit generate",
+		"import:fightodds:event": "tsx src/import-fightodds-event.ts",
 		"import:ufcstats": "tsx src/import-ufcstats-snapshot.ts",
 		"migrate": "tsx src/migrate.ts",
 		"smoke": "tsx src/smoke.ts"
