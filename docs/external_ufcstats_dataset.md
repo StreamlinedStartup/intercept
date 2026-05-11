@@ -180,6 +180,18 @@ The runner should:
 6. Score those predictions against actual results.
 7. Move to the next event and repeat.
 
+Run the current thin backtest runner with:
+
+```bash
+DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor PYTHONPATH=services/python services/python/.venv/bin/python -m ml.backtest --start-date 2024-01-01
+```
+
+For quick checks, limit the number of scored events:
+
+```bash
+DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor PYTHONPATH=services/python services/python/.venv/bin/python -m ml.backtest --start-date 2024-01-01 --max-events 2 --output data/backtests/smoke-walk-forward.json
+```
+
 Report outputs should include:
 
 - accuracy;
