@@ -75,7 +75,40 @@ def render_markdown(summaries: list[dict[str, Any]]) -> str:
                 roc_auc=_format_metric(summary["roc_auc"]),
             )
         )
+        lines.extend(_render_bucket_table("Confidence Buckets", summary["confidence_buckets"]))
+        lines.extend(_render_bucket_table("Model Edge Buckets", summary["model_edge_buckets"]))
     return "\n".join(lines)
+
+
+def _render_bucket_table(title: str, buckets: list[dict[str, Any]]) -> list[str]:
+    if not buckets:
+        return []
+    lines = [
+        "",
+        f"### {title}",
+        "",
+        "| Bucket | Count | Accuracy | Log loss | Brier | ROC AUC |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for bucket in sorted(buckets, key=lambda row: _bucket_sort_key(str(row["bucket"]))):
+        lines.append(
+            "| {bucket} | {count} | {accuracy} | {log_loss} | {brier} | {roc_auc} |".format(
+                bucket=bucket["bucket"],
+                count=bucket["count"],
+                accuracy=_format_metric(bucket["accuracy"]),
+                log_loss=_format_metric(bucket["log_loss"]),
+                brier=_format_metric(bucket["brier_score"]),
+                roc_auc=_format_metric(bucket["roc_auc"]),
+            )
+        )
+    return lines
+
+
+def _bucket_sort_key(bucket: str) -> tuple[int, str]:
+    try:
+        return (int(bucket.split("-", maxsplit=1)[0].removesuffix("+")), bucket)
+    except ValueError:
+        return (999, bucket)
 
 
 def _format_metric(value: Any) -> str:
@@ -88,6 +121,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Summarize saved walk-forward backtest reports")
     parser.add_argument("reports", nargs="*", type=Path)
     parser.add_argument("--format", choices=["markdown", "json"], default="markdown")
+    parser.add_argument("--output", type=Path, default=None)
     return parser.parse_args()
 
 
@@ -96,9 +130,16 @@ def main() -> None:
     paths = [path if path.is_absolute() else REPO_ROOT / path for path in args.reports]
     summaries = summarize_reports(paths or None)
     if args.format == "json":
-        print(json.dumps(summaries, indent=2, allow_nan=False))
+        output = json.dumps(summaries, indent=2, allow_nan=False) + "\n"
+    else:
+        output = render_markdown(summaries) + "\n"
+
+    if args.output is not None:
+        output_path = args.output if args.output.is_absolute() else REPO_ROOT / args.output
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(output)
         return
-    print(render_markdown(summaries))
+    print(output, end="")
 
 
 if __name__ == "__main__":

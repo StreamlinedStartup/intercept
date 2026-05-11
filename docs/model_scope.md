@@ -293,7 +293,7 @@ This is the most honest product metric because it only scores predictions that e
 
 ### 3. Walk-Forward Backtest
 
-Decision Engine v2 core signals were checked with a 20-event walk-forward run:
+Decision Engine v2 core signals were first checked with a 20-event walk-forward run:
 
 ```bash
 DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor PYTHONPATH=services/python services/python/.venv/bin/python -m ml.backtest --start-date 2024-01-01 --max-events 20 --min-train-samples 200 --output data/backtests/decision-engine-v2-core-signals.json
@@ -310,7 +310,44 @@ Result summary:
 | Brier score | 0.245 |
 | ROC AUC | 0.586 |
 
-The 20-event walk-forward is broader than the earlier two-event smoke run in `data/backtests/smoke-walk-forward.json`, so it should be read as the current comparison artifact for this feature slice.
+That 20-event run is broader than the earlier two-event smoke run in `data/backtests/smoke-walk-forward.json`, but it is still only a smoke/comparison artifact.
+
+The full imported UFC Stats CSV corpus was then evaluated without a `--max-events` cap:
+
+```bash
+DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor PYTHONPATH=services/python services/python/.venv/bin/python -m ml.backtest --min-train-samples 200 --output data/backtests/full-corpus-walk-forward.json --progress-every 25
+PYTHONPATH=services/python services/python/.venv/bin/python -m ml.backtest_report data/backtests/full-corpus-walk-forward.json --output data/backtests/full-corpus-walk-forward.md
+```
+
+Policy:
+
+- Start date: no explicit start date. The runner considers every eligible completed UFC event in the imported corpus.
+- Training floor: `min_train_samples=200`. Candidate events before that threshold are skipped, so the first scored event is `UFC 22: Only One Can be Champion` on September 24, 1999 with 206 prior training samples.
+- Final scored event: `UFC 328: Chimaev vs. Strickland` on May 9, 2026 from the current imported snapshot.
+- Odds are not included here. ROI and market-favorite baselines belong to the historical odds source work.
+
+Full-corpus result summary:
+
+| Field | Value |
+|---|---:|
+| Events scored | 753 |
+| Predictions scored | 8,332 |
+| Accuracy | 59.35% |
+| Log loss | 0.669 |
+| Brier score | 0.238 |
+| ROC AUC | 0.627 |
+
+Confidence buckets:
+
+| Confidence | Predictions | Accuracy | Log loss | Brier | ROC AUC |
+|---|---:|---:|---:|---:|---:|
+| 50-55% | 2,643 | 52.29% | 0.692 | 0.250 | 0.524 |
+| 55-60% | 2,327 | 58.92% | 0.678 | 0.242 | 0.592 |
+| 60-65% | 1,703 | 62.54% | 0.660 | 0.234 | 0.639 |
+| 65-70% | 915 | 66.23% | 0.640 | 0.224 | 0.664 |
+| 70%+ | 744 | 70.03% | 0.618 | 0.213 | 0.706 |
+
+This is a useful model-evaluation baseline: confidence rises mostly monotonically with realized accuracy, and the highest-confidence bucket lands near its stated probability. It is not evidence of betting edge because it does not compare against historical market prices.
 
 ## Backtesting We Should Add Next
 
