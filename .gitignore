@@ -18,6 +18,7 @@ __pycache__/
 
 # Runtime data (browser profiles, cache, logs — all generated at runtime)
 /data/*
+# External dataset snapshots live under /data/external/ and stay ignored here.
 # Smoke-gate screenshots are evidence — keep them tracked.
 !/data/smoke/
 

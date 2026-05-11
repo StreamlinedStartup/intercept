@@ -604,33 +604,93 @@ function ModelPickRow({
 	const winner =
 		prediction.predicted_winner_id === target.fighterA.id ? target.fighterA : target.fighterB;
 	const probability = probabilityForFighter(prediction, winner.id);
-	const marketFavorite = prediction.odds
-		? prediction.odds.reduce((best, row) => (row.market_prob > best.market_prob ? row : best))
+	const valueRows = valueRowsForPrediction(target, prediction);
+	const valuePick = valueRows.every((row) => row.edge !== null)
+		? valueRows.reduce((best, row) =>
+				(row.edge ?? -Infinity) > (best.edge ?? -Infinity) ? row : best,
+			)
 		: null;
-	const edgeTone =
-		typeof prediction.edge_pct === 'number' && marketFavorite
-			? marketFavorite.fighter_id !== prediction.predicted_winner_id
-				? 'red'
-				: Math.abs(prediction.edge_pct) > 0.05
-					? 'green'
-					: 'neutral'
-			: null;
+	const modelPickEdge = valueRows.find((row) => row.fighter.id === winner.id)?.edge ?? null;
+	const valueDiffers = valuePick ? valuePick.fighter.id !== winner.id : false;
+
 	return (
-		<div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-3 text-center">
-			<div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-				Model Pick
+		<div className="rounded-md border border-border/70 bg-muted/20 px-3 py-3">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+				<SignalTile
+					label="Model Pick"
+					name={winner.name}
+					primary={`${formatPct(probability)} win probability`}
+					badge={
+						modelPickEdge !== null
+							? {
+									text: `Edge ${formatSignedPct(modelPickEdge)}`,
+									tone: edgeTone(modelPickEdge),
+								}
+							: null
+					}
+				/>
+				<SignalTile
+					label="Value Pick"
+					name={valuePick?.fighter.name ?? 'Market odds unavailable'}
+					primary={
+						valuePick
+							? `${formatSignedPct(valuePick.edge ?? 0)} vs market`
+							: 'Need two matched moneylines'
+					}
+					badge={
+						valuePick
+							? {
+									text: valueDiffers ? 'Differs from pick' : 'Same as pick',
+									tone: valueDiffers ? 'amber' : 'green',
+								}
+							: null
+					}
+				/>
 			</div>
-			<div className="text-sm font-semibold text-foreground mt-1">
-				{winner.name} · {Math.round(probability * 100)}%
+			<div className="text-xs text-muted-foreground mt-2 text-center">
+				Model {prediction.model_version}
 			</div>
-			{typeof prediction.edge_pct === 'number' && edgeTone && (
-				<Badge variant="outline" className={`mt-2 text-xs ${edgeBadgeClass(edgeTone)}`}>
-					Edge {formatSignedPct(prediction.edge_pct)}
-				</Badge>
-			)}
-			<div className="text-xs text-muted-foreground mt-0.5">Model {prediction.model_version}</div>
 		</div>
 	);
+}
+
+function SignalTile({
+	label,
+	name,
+	primary,
+	badge,
+}: {
+	label: string;
+	name: string;
+	primary: string;
+	badge: { text: string; tone: 'green' | 'amber' | 'red' | 'neutral' } | null;
+}) {
+	return (
+		<div className="rounded-md border border-border/60 bg-background/60 px-3 py-2 min-w-0 text-center">
+			<div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+				{label}
+			</div>
+			<div className="text-sm font-semibold text-foreground mt-1 truncate">{name}</div>
+			<div className="text-xs text-muted-foreground mt-0.5">{primary}</div>
+			{badge && (
+				<Badge variant="outline" className={`mt-2 text-xs ${edgeBadgeClass(badge.tone)}`}>
+					{badge.text}
+				</Badge>
+			)}
+		</div>
+	);
+}
+
+function valueRowsForPrediction(target: NonNullable<Target>, prediction: FightPrediction) {
+	const fighters = [target.fighterA, target.fighterB];
+	return fighters.map((fighter) => {
+		const market = prediction.odds?.find((row) => row.fighter_id === fighter.id);
+		const modelProb = probabilityForFighter(prediction, fighter.id);
+		return {
+			fighter,
+			edge: market ? modelProb - market.market_prob : null,
+		};
+	});
 }
 
 function probabilityForFighter(prediction: FightPrediction, fighterId: string): number {
@@ -644,8 +704,20 @@ function formatSignedPct(value: number): string {
 	return `${pct > 0 ? '+' : ''}${pct}%`;
 }
 
-function edgeBadgeClass(tone: 'green' | 'red' | 'neutral'): string {
+function formatPct(value: number): string {
+	return `${Math.round(value * 100)}%`;
+}
+
+function edgeTone(value: number): 'green' | 'amber' | 'red' | 'neutral' {
+	if (value >= 0.1) return 'green';
+	if (value >= 0.05) return 'amber';
+	if (value < 0) return 'red';
+	return 'neutral';
+}
+
+function edgeBadgeClass(tone: 'green' | 'amber' | 'red' | 'neutral'): string {
 	if (tone === 'green') return 'border-emerald-500/50 text-emerald-600 bg-emerald-500/10';
+	if (tone === 'amber') return 'border-yellow-500/50 text-yellow-700 bg-yellow-500/10';
 	if (tone === 'red') return 'border-destructive/50 text-destructive bg-destructive/10';
 	return 'border-muted-foreground/30 text-muted-foreground';
 }
