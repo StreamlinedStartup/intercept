@@ -1,0 +1,244 @@
+{
+  "generated_at": "2026-05-12T03:16:45.313Z",
+  "report": "historical-odds-corpus-expansion-final",
+  "epic": {
+    "id": "intercept-vgy0",
+    "title": "D2-HOC: Historical odds corpus expansion and entity-resolution gate",
+    "parent": "intercept-8mw9"
+  },
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "insufficient_coverage",
+  "value_status_reason": "Only 235 matched fights across 26 events were scored; need at least 200 fights across 30 events.",
+  "model_improvement_unblocked": false,
+  "model_improvement_blockers": [
+    "Market gate remains insufficient_coverage: Only 235 matched fights across 26 events were scored; need at least 200 fights across 30 events.",
+    "Resolve at least 4 additional market-covered scored UFC events to reach 30 scored events.",
+    "Reduce or explain 220 unresolved historical odds review rows before using the corpus for model-value claims."
+  ],
+  "inputs": {
+    "coverage_report": "data/experiments/historical-odds-target-cohort-baseline.json",
+    "leakage_audit": "data/experiments/leakage-audit.json",
+    "baseline_report": "data/experiments/simple-baselines.json",
+    "market_gate_report": "data/experiments/market-gate-report.json"
+  },
+  "coverage": {
+    "source_events": 30,
+    "matched_source_events": 26,
+    "target_events": 30,
+    "imported_target_events": 30,
+    "target_event_coverage_rate": 1,
+    "source_fights": 464,
+    "matched_fights": 244,
+    "ambiguous_fights": 0,
+    "unmatched_fights": 220,
+    "cancelled_unmatched_fights": 100,
+    "moneyline_rows": 23598,
+    "linked_moneyline_rows": 13759,
+    "review_rows": 220,
+    "fight_match_rate": 0.5258620689655172,
+    "moneyline_link_rate": 0.5830578862615476,
+    "source_events_imported": 30,
+    "source_events_matched": 26,
+    "source_events_unmatched": 4,
+    "source_fights_imported": 464,
+    "source_fights_matched": 244,
+    "source_fights_unmatched": 220,
+    "moneyline_rows_imported": 23598,
+    "moneyline_rows_linked": 13759,
+    "scored_events": 26,
+    "scored_fights": 235
+  },
+  "target_cohort": {
+    "id": "d2-hoc-30-event",
+    "title": "D2-HOC 30-event UFC FightOdds target cohort",
+    "source": "fightodds",
+    "from": "2023-01-01",
+    "to": "2024-03-10",
+    "target_event_count": 30,
+    "selection_rule": "Use FightOdds EventsRecentQuery with dateGte=2023-01-01, dateLt=2024-03-10, orderBy=-date, filter promotion slug/shortName to UFC, and import the first 30 UFC events.",
+    "import_command": "pnpm --filter @interceptor/db import:fightodds:event -- --event-pks 5356,5318,5362,5355,5358,5347,5306,5293,4779,5281,5251,4778,5098,4777,4655,5107,4776,4775,4774,4749,4802,4755,4727,4738,4751,4744,4671,4702,4634,4696 --delay-ms 1500 --continue-on-error",
+    "match_command": "pnpm --filter @interceptor/db match:fightodds:all",
+    "report_command": "pnpm --filter @interceptor/db report:fightodds:coverage -- --target-cohort d2-hoc-30-event",
+    "rationale": "The window ends at UFC 299, which is the newest event in the current 3-event corpus, and reaches backward far enough for the importer to select 30 recent UFC market events without using future market data."
+  },
+  "review_reasons": [
+    {
+      "reason": "source fight is cancelled and no canonical fight pair exists on the completed event",
+      "rows": 86
+    },
+    {
+      "reason": "no canonical fight matched normalized fighter pair",
+      "rows": 72
+    },
+    {
+      "reason": "no canonical event matched date/name/promotion",
+      "rows": 62
+    }
+  ],
+  "verification": {
+    "leakage_audit": {
+      "checks": 15,
+      "passed": 15,
+      "failed": 0
+    },
+    "market_coverage": {
+      "samples": 8538,
+      "covered_samples": 235,
+      "coverage_rate": 0.027524010306863435
+    },
+    "market_favorite": {
+      "name": "market_favorite",
+      "description": "Pick the fighter with higher no-vig market probability where historical odds are matched.",
+      "coverage": {
+        "samples": 235,
+        "market_samples": 235
+      },
+      "metrics": {
+        "count": 235,
+        "accuracy": 0.7531914893617021,
+        "avg_confidence": 0.6658326775750556,
+        "calibration_gap": 0.0873588117866465,
+        "abs_calibration_error": 0.0873588117866465,
+        "log_loss": 0.5616083169385526,
+        "brier_score": 0.18859570940201337,
+        "roc_auc": 0.7916001740896561
+      },
+      "simulated_research_roi": {
+        "entries": 235,
+        "units": 30.362501392098466,
+        "roi_pct": 0.12920213358339772,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    "market_gate_thresholds": {
+      "min_fights": 200,
+      "min_market_events": 30,
+      "min_market_roi_delta": 0.02
+    },
+    "market_gate_strategies": [
+      {
+        "name": "model_pick",
+        "description": "Leak-free UFC experience baseline pick",
+        "model_weight": 1,
+        "market_weight": 0,
+        "metrics": {
+          "count": 235,
+          "accuracy": 0.425531914893617,
+          "avg_confidence": 0.5914893617021274,
+          "calibration_gap": -0.16595744680851038,
+          "abs_calibration_error": 0.16595744680851038,
+          "log_loss": 0.7368391315322678,
+          "brier_score": 0.2714893617021277,
+          "roc_auc": 0.4319962280574496
+        },
+        "simulated_research_roi": {
+          "entries": 235,
+          "wins": 100,
+          "units": -29.452052188523236,
+          "roi_pct": -0.12532788165329037,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      {
+        "name": "market_favorite",
+        "description": "No-vig market favorite",
+        "model_weight": 0,
+        "market_weight": 1,
+        "metrics": {
+          "count": 235,
+          "accuracy": 0.7531914893617021,
+          "avg_confidence": 0.6658326775750556,
+          "calibration_gap": 0.0873588117866465,
+          "abs_calibration_error": 0.0873588117866465,
+          "log_loss": 0.5616083169385526,
+          "brier_score": 0.18859570940201337,
+          "roc_auc": 0.7916001740896561
+        },
+        "simulated_research_roi": {
+          "entries": 235,
+          "wins": 177,
+          "units": 30.362501392098466,
+          "roi_pct": 0.12920213358339772,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      {
+        "name": "blend_50_50",
+        "description": "50% model baseline probability + 50% market probability",
+        "model_weight": 0.5,
+        "market_weight": 0.5,
+        "metrics": {
+          "count": 235,
+          "accuracy": 0.6893617021276596,
+          "avg_confidence": 0.5799271891245699,
+          "calibration_gap": 0.1094345130030897,
+          "abs_calibration_error": 0.1094345130030897,
+          "log_loss": 0.6240835760619691,
+          "brier_score": 0.2165378500732599,
+          "roc_auc": 0.7461917887712172
+        },
+        "simulated_research_roi": {
+          "entries": 235,
+          "wins": 162,
+          "units": 7.723802617059934,
+          "roi_pct": 0.03286724517897844,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      {
+        "name": "blend_25_model_75_market",
+        "description": "25% model baseline probability + 75% market probability",
+        "model_weight": 0.25,
+        "market_weight": 0.75,
+        "metrics": {
+          "count": 235,
+          "accuracy": 0.7617021276595745,
+          "avg_confidence": 0.6204801839425734,
+          "calibration_gap": 0.14122194371700103,
+          "abs_calibration_error": 0.14122194371700103,
+          "log_loss": 0.5865244354511093,
+          "brier_score": 0.19919060836793398,
+          "roc_auc": 0.7854344987668649
+        },
+        "simulated_research_roi": {
+          "entries": 235,
+          "wins": 179,
+          "units": 35.097882802579065,
+          "roi_pct": 0.1493526927769322,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      {
+        "name": "blend_75_model_25_market",
+        "description": "75% model baseline probability + 25% market probability",
+        "model_weight": 0.75,
+        "market_weight": 0.25,
+        "metrics": {
+          "count": 235,
+          "accuracy": 0.502127659574468,
+          "avg_confidence": 0.563171364072683,
+          "calibration_gap": -0.061043704498214946,
+          "abs_calibration_error": 0.061043704498214946,
+          "log_loss": 0.6736363438150371,
+          "brier_score": 0.24063743451799108,
+          "roc_auc": 0.5829101987523575
+        },
+        "simulated_research_roi": {
+          "entries": 235,
+          "wins": 118,
+          "units": -20.427122026895113,
+          "roi_pct": -0.08692392351870261,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      }
+    ]
+  },
+  "conclusion": "Model-improvement work remains blocked for value claims. The corpus now has enough scored fights but only 26 scored market-covered events, below the 30-event validation threshold."
+}
