@@ -1,0 +1,245 @@
+{
+  "report": "pre-fight-signal-candidates",
+  "generated_at": "2026-05-12T22:45:00Z",
+  "value_status": "research_only",
+  "writes_model_versions": false,
+  "source_evidence": [
+    "data/experiments/market-residual-signal-candidates.md",
+    "data/experiments/market-residual-final-recommendation.md",
+    "data/experiments/harness/market-grid-mass-edge-search-recommendation.md"
+  ],
+  "decision": {
+    "summary": "Current model families, feature variants, calibration, and mass-search sweeps did not beat market. The next candidates must add genuinely new pre-fight information or better opponent/context normalization, not more variants of the same feature families.",
+    "next_smallest_justified_experiment": "opponent_adjusted_recent_performance_v1",
+    "status": "research_only"
+  },
+  "pre_fight_rules": [
+    "Use only data timestamped before the scheduled fight date.",
+    "Do not use fight result, post-fight totals, post-fight odds, or future opponent records.",
+    "Every signal must declare its data availability and fallback behavior as NaN, not silent zero.",
+    "Every candidate must beat market favorite by the predeclared gate before promotion is discussed."
+  ],
+  "existing_data_candidates": [
+    {
+      "id": "opponent_adjusted_recent_performance_v1",
+      "priority": 1,
+      "readiness": "ready_existing_db",
+      "source_data": [
+        "fight_results before target fight",
+        "fight_round_stats before target fight",
+        "opponent pre-fight records before each historical bout"
+      ],
+      "leakage_posture": "pre_fight_only_if_each_historical_bout_uses_only_prior_opponent_context",
+      "feature_semantics": [
+        {
+          "name": "adj_recent_strike_diff_last_3",
+          "type": "numeric",
+          "meaning": "Fighter A minus Fighter B recent significant-strike differential, adjusted by opponent quality at the time each prior fight occurred."
+        },
+        {
+          "name": "adj_recent_grappling_diff_last_3",
+          "type": "numeric",
+          "meaning": "Recent takedown/control/submission pressure differential adjusted for opponent defensive quality."
+        },
+        {
+          "name": "quality_of_recent_opposition_diff",
+          "type": "numeric",
+          "meaning": "Difference in recent opponent quality faced before the target fight."
+        },
+        {
+          "name": "adj_recent_efficiency_trend_diff",
+          "type": "numeric",
+          "meaning": "Slope of opponent-adjusted performance across the last three fights, fighter A minus fighter B."
+        }
+      ],
+      "why_this_might_help": "Current features include raw career stats and recent win/loss form but do not normalize recent performance by opponent quality. Market likely prices whether a fighter's recent record came against strong or weak UFC opposition.",
+      "validation_gate": {
+        "minimum": "Must improve log loss and Brier versus current XGBoost and reduce market gap in at least one residual cluster.",
+        "promotion": "Must beat market favorite by +2pp ROI with log loss and Brier not worse on a locked future slice."
+      }
+    },
+    {
+      "id": "style_matchup_pressure_v1",
+      "priority": 2,
+      "readiness": "ready_existing_db",
+      "source_data": [
+        "career striking rates before target fight",
+        "career wrestling/grappling rates before target fight",
+        "defensive rates before target fight"
+      ],
+      "leakage_posture": "pre_fight_only",
+      "feature_semantics": [
+        {
+          "name": "striking_pressure_vs_defense_edge",
+          "type": "numeric",
+          "meaning": "A fighter's striking output/accuracy pressure against opponent striking defense and absorption profile."
+        },
+        {
+          "name": "wrestling_pressure_vs_tdd_edge",
+          "type": "numeric",
+          "meaning": "Takedown attempt/success profile against opponent takedown defense."
+        },
+        {
+          "name": "submission_pressure_vs_grappling_risk_edge",
+          "type": "numeric",
+          "meaning": "Submission attempt tendency versus opponent grappling vulnerability proxy."
+        }
+      ],
+      "why_this_might_help": "Current features are mostly differentials. Interaction features can model matchups where the same raw fighter strength matters differently depending on opponent weakness.",
+      "validation_gate": {
+        "minimum": "Must improve probability quality in near-pickem or model/market-disagreement buckets.",
+        "promotion": "Same market gate as all candidates."
+      }
+    },
+    {
+      "id": "low_information_uncertainty_v1",
+      "priority": 3,
+      "readiness": "ready_existing_db",
+      "source_data": [
+        "UFC fight counts before target fight",
+        "feature availability before target fight",
+        "days since last fight before target fight"
+      ],
+      "leakage_posture": "pre_fight_only",
+      "feature_semantics": [
+        {
+          "name": "combined_low_info_flag",
+          "type": "binary",
+          "meaning": "1 when either fighter has too few UFC fights, sparse recent form, or elevated missingness."
+        },
+        {
+          "name": "low_info_asymmetry",
+          "type": "numeric",
+          "meaning": "Difference in pre-fight information depth between fighters."
+        },
+        {
+          "name": "uncertainty_adjusted_confidence_cap",
+          "type": "numeric",
+          "meaning": "Signal for calibration experiments that should reduce model confidence in sparse-context fights."
+        }
+      ],
+      "why_this_might_help": "Availability flags improved ROI versus current XGBoost but failed probability quality. A more targeted uncertainty signal may help calibration without trying to infer winner strength.",
+      "validation_gate": {
+        "minimum": "Must reduce overconfidence in sparse/context-poor clusters without degrading overall log loss or Brier.",
+        "promotion": "Same market gate as all candidates."
+      }
+    },
+    {
+      "id": "weight_class_context_v2",
+      "priority": 4,
+      "readiness": "ready_existing_db",
+      "source_data": [
+        "target fight weight class",
+        "fighter historical same-weight-class records before target fight",
+        "fighter historical movement across UFC weight classes before target fight"
+      ],
+      "leakage_posture": "pre_fight_only",
+      "feature_semantics": [
+        {
+          "name": "same_weight_class_experience_ratio",
+          "type": "numeric",
+          "meaning": "Share of each fighter's prior UFC fights in the target weight class, expressed as fighter A minus fighter B."
+        },
+        {
+          "name": "weight_class_move_direction_pair",
+          "type": "categorical_encoded",
+          "meaning": "Directional interaction for up/down/stay movement by both fighters."
+        },
+        {
+          "name": "weight_class_success_adjusted_diff",
+          "type": "numeric",
+          "meaning": "Difference in prior success within the target weight class, with sparse rows left as NaN."
+        }
+      ],
+      "why_this_might_help": "Existing mass search over current weight features did not win, but weight-class movement may need directional interactions rather than simple differentials.",
+      "validation_gate": {
+        "minimum": "Must improve weight-class cluster residuals and not degrade overall probability quality.",
+        "promotion": "Same market gate as all candidates."
+      }
+    }
+  ],
+  "new_data_candidates": [
+    {
+      "id": "line_movement_microstructure_v1",
+      "priority": 1,
+      "readiness": "requires_odds_time_series",
+      "source_data": [
+        "opening moneyline",
+        "timestamped pre-fight line snapshots",
+        "book dispersion across snapshots",
+        "closing or final pre-fight line"
+      ],
+      "leakage_posture": "pre_fight_only_only_if_cutoff_is_locked_before_fight_start",
+      "feature_semantics": [
+        {
+          "name": "open_to_cutoff_no_vig_delta",
+          "type": "numeric",
+          "meaning": "Change in no-vig implied probability from opener to a predeclared cutoff."
+        },
+        {
+          "name": "late_steam_direction",
+          "type": "numeric",
+          "meaning": "Direction and magnitude of line movement near the locked cutoff."
+        },
+        {
+          "name": "book_disagreement_width",
+          "type": "numeric",
+          "meaning": "Cross-book spread in no-vig probabilities at cutoff."
+        }
+      ],
+      "why_this_might_help": "The strongest failure mode is market-prior gap. Market microstructure may expose information arrival before fight time that is not present in fighter stats.",
+      "validation_gate": {
+        "minimum": "Must be evaluated with strict cutoff timestamps and no closing-line leakage.",
+        "promotion": "Same market gate as all candidates."
+      }
+    },
+    {
+      "id": "fight_week_context_v1",
+      "priority": 2,
+      "readiness": "requires_external_event_context",
+      "source_data": [
+        "weigh-in miss data",
+        "short-notice replacement flags",
+        "bout cancellation/rebooking history",
+        "travel/home-region context where available"
+      ],
+      "leakage_posture": "pre_fight_only_if_event_timestamps_precede_fight",
+      "feature_semantics": [
+        {
+          "name": "short_notice_flag_diff",
+          "type": "numeric",
+          "meaning": "Whether either fighter accepted the bout with unusually short notice."
+        },
+        {
+          "name": "weigh_in_miss_or_hard_cut_flag",
+          "type": "binary",
+          "meaning": "Pre-fight weight issue indicator."
+        },
+        {
+          "name": "rebooked_bout_instability_flag",
+          "type": "binary",
+          "meaning": "Whether the bout had late opponent or schedule instability."
+        }
+      ],
+      "why_this_might_help": "Market may price late fight-week information that is absent from UFCStats-derived fighter history.",
+      "validation_gate": {
+        "minimum": "Requires timestamped source audit before modeling.",
+        "promotion": "Same market gate as all candidates."
+      }
+    }
+  ],
+  "rejected_or_diagnostic_only": [
+    {
+      "id": "feature_availability_flags_v1",
+      "reason": "Already tested. Improved ROI versus current XGBoost but worsened log loss and Brier and remained far below market."
+    },
+    {
+      "id": "market_disagreement_context",
+      "reason": "Residual evidence shows a market-prior gap, not an internal fighter-stat signal. Treat as diagnostic unless line-movement data is added with strict pre-fight cutoff."
+    },
+    {
+      "id": "more_blend_weights",
+      "reason": "Mass search showed best candidates are effectively 1% model / 99% market blends and still worsen probability quality."
+    }
+  ]
+}
