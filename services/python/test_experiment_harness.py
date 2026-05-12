@@ -126,6 +126,7 @@ def test_feature_count_tracks_availability_alignment() -> None:
     assert _feature_count("none") == 0
     assert _feature_count("production_plus_availability") == _feature_count("production") + 4
     assert _feature_count("production_plus_opponent_adjusted_recent_performance") == _feature_count("production") + 4
+    assert _feature_count("production_plus_style_matchup_pressure") == _feature_count("production") + 3
 
 
 def test_base_prediction_key_ignores_blend_and_calibration() -> None:

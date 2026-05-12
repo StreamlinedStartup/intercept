@@ -4,6 +4,8 @@ The source of truth for the current signal candidates is `data/experiments/pre-f
 
 The previously recommended report-only experiment, `opponent_adjusted_recent_performance_v1`, has now been evaluated and did not clear the market gate. See `docs/opponent_adjusted_recent_performance_v1.md`.
 
+The next existing-DB candidate, `style_matchup_pressure_v1`, has also been evaluated and did not clear the market gate. See `docs/style_matchup_pressure_v1.md`.
+
 Why this is the next slice:
 
 - Mass search found no edge from the existing feature families.

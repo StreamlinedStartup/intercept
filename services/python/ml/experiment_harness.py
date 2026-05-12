@@ -22,7 +22,9 @@ from ml.baselines import _load_market_consensus
 from ml.features import (
     FEATURE_NAMES,
     OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES,
+    STYLE_MATCHUP_PRESSURE_FEATURE_NAMES,
     build_opponent_adjusted_recent_performance_features,
+    build_style_matchup_pressure_features,
 )
 from ml.market_blend_experiments import blend_probability, roi_delta
 from ml.market_gate_report import (
@@ -527,6 +529,7 @@ def _feature_spec(variant: dict[str, Any]) -> dict[str, Any]:
         "production",
         "production_plus_availability",
         "production_plus_opponent_adjusted_recent_performance",
+        "production_plus_style_matchup_pressure",
     }:
         return {"base": features}
     raise ValueError(f"unsupported feature set {features!r}")
@@ -539,6 +542,8 @@ def _base_feature_names(features: str) -> list[str]:
         return [*FEATURE_NAMES, *AVAILABILITY_FEATURE_NAMES]
     if features == "production_plus_opponent_adjusted_recent_performance":
         return [*FEATURE_NAMES, *OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES]
+    if features == "production_plus_style_matchup_pressure":
+        return [*FEATURE_NAMES, *STYLE_MATCHUP_PRESSURE_FEATURE_NAMES]
     raise ValueError(f"unsupported feature set {features!r}")
 
 
@@ -549,6 +554,8 @@ def _base_feature_fn(features: str) -> FeatureFn:
         return _availability_augmented_features
     if features == "production_plus_opponent_adjusted_recent_performance":
         return _opponent_adjusted_recent_performance_features
+    if features == "production_plus_style_matchup_pressure":
+        return _style_matchup_pressure_features
     raise ValueError(f"unsupported feature set {features!r}")
 
 
@@ -557,6 +564,19 @@ def _opponent_adjusted_recent_performance_features(sample: dict[str, Any]) -> np
         [
             sample["features"],
             build_opponent_adjusted_recent_performance_features(
+                sample["fighter_a_id"],
+                sample["fighter_b_id"],
+                sample["event_date"],
+            ),
+        ]
+    )
+
+
+def _style_matchup_pressure_features(sample: dict[str, Any]) -> np.ndarray:
+    return np.concatenate(
+        [
+            sample["features"],
+            build_style_matchup_pressure_features(
                 sample["fighter_a_id"],
                 sample["fighter_b_id"],
                 sample["event_date"],
