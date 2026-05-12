@@ -20,6 +20,7 @@
 		"report:fightodds:coverage": "tsx src/report-historical-odds-coverage.ts",
 		"report:fightodds:final": "tsx src/report-historical-odds-final.ts",
 		"report:market-blend-experiments": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.market_blend_experiments",
+		"report:model-family-experiments": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.model_family_experiments",
 		"report:odds-aware:event": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.odds_aware_report",
 		"report:odds-aware:evaluation": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.odds_aware_report --final",
 		"smoke": "tsx src/smoke.ts",
