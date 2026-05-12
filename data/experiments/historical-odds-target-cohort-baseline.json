@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-12T02:31:06.827Z",
+  "generated_at": "2026-05-12T02:38:42.785Z",
   "report": "historical-odds-coverage",
   "report_only": true,
   "writes_model_versions": false,
@@ -23,15 +23,15 @@
     "imported_target_events": 3,
     "target_event_coverage_rate": 0.1,
     "source_fights": 46,
-    "matched_fights": 30,
+    "matched_fights": 37,
     "ambiguous_fights": 0,
-    "unmatched_fights": 16,
+    "unmatched_fights": 9,
     "cancelled_unmatched_fights": 9,
     "moneyline_rows": 2173,
-    "linked_moneyline_rows": 1553,
-    "review_rows": 63,
-    "fight_match_rate": 0.6521739130434783,
-    "moneyline_link_rate": 0.7146801656695813
+    "linked_moneyline_rows": 1915,
+    "review_rows": 55,
+    "fight_match_rate": 0.8043478260869565,
+    "moneyline_link_rate": 0.8812701334560515
   },
   "events": [
     {
@@ -47,7 +47,7 @@
       "cancelled_unmatched_fights": 2,
       "moneyline_rows": 652,
       "linked_moneyline_rows": 600,
-      "review_rows": 17
+      "review_rows": 16
     },
     {
       "source_event_id": "5318",
@@ -56,13 +56,13 @@
       "canonical_event_id": "e4a9dbade7c7e1a7",
       "match_status": "matched",
       "source_fights": 16,
-      "matched_fights": 9,
+      "matched_fights": 11,
       "ambiguous_fights": 0,
-      "unmatched_fights": 7,
+      "unmatched_fights": 5,
       "cancelled_unmatched_fights": 5,
       "moneyline_rows": 688,
-      "linked_moneyline_rows": 418,
-      "review_rows": 23
+      "linked_moneyline_rows": 508,
+      "review_rows": 21
     },
     {
       "source_event_id": "5356",
@@ -71,13 +71,13 @@
       "canonical_event_id": "a9df5ae20a97b090",
       "match_status": "matched",
       "source_fights": 16,
-      "matched_fights": 9,
+      "matched_fights": 14,
       "ambiguous_fights": 0,
-      "unmatched_fights": 7,
+      "unmatched_fights": 2,
       "cancelled_unmatched_fights": 2,
       "moneyline_rows": 833,
-      "linked_moneyline_rows": 535,
-      "review_rows": 23
+      "linked_moneyline_rows": 807,
+      "review_rows": 18
     }
   ]
 }

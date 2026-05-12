@@ -30,6 +30,7 @@ describe('historical odds matching', () => {
 		expect(normalizeName('Raul Rosas Jr.')).toBe('raul rosas');
 		expect(normalizeName('Mateus Mendonça')).toBe('mateus mendonca');
 		expect(normalizeName('Christian Quiñónez')).toBe('christian quinonez');
+		expect(normalizeName('Michał Oleksiejczuk')).toBe('michal oleksiejczuk');
 	});
 
 	it('matches a swapped source fighter order', () => {
@@ -69,6 +70,86 @@ describe('historical odds matching', () => {
 		expect(accentMatch.status).toBe('matched');
 		expect(renameMatch.status).toBe('matched');
 		expect(spellingMatch.status).toBe('matched');
+	});
+
+	it('matches FightOdds/UFCStats participant naming differences', () => {
+		const rozenstruikMatch = matchHistoricalFight(
+			{ rawFighterA: 'Jair Rozenstruik', rawFighterB: 'Shamil Gaziev', isCancelled: false },
+			[
+				{
+					fightId: 'fight-d',
+					fighters: [
+						{ id: 'rozenstruik', name: 'Jairzinho Rozenstruik' },
+						{ id: 'gaziev', name: 'Shamil Gaziev' },
+					],
+				},
+			],
+		);
+		const particleMatch = matchHistoricalFight(
+			{ rawFighterA: 'Vinicius de Oliveira', rawFighterB: 'Benardo Sopaj', isCancelled: false },
+			[
+				{
+					fightId: 'fight-e',
+					fighters: [
+						{ id: 'oliveira', name: 'Vinicius Oliveira' },
+						{ id: 'sopaj', name: 'Benardo Sopaj' },
+					],
+				},
+			],
+		);
+		const transposedMatch = matchHistoricalFight(
+			{ rawFighterA: 'Petr Yan', rawFighterB: 'Yadong Song', isCancelled: false },
+			[
+				{
+					fightId: 'fight-f',
+					fighters: [
+						{ id: 'yan', name: 'Petr Yan' },
+						{ id: 'yadong', name: 'Song Yadong' },
+					],
+				},
+			],
+		);
+		const shortNameMatch = matchHistoricalFight(
+			{ rawFighterA: 'Luiz Philipe Lins', rawFighterB: 'Ion Cutelaba', isCancelled: false },
+			[
+				{
+					fightId: 'fight-g',
+					fighters: [
+						{ id: 'lins', name: 'Philipe Lins' },
+						{ id: 'cutelaba', name: 'Ion Cutelaba' },
+					],
+				},
+			],
+		);
+		const aliasMatch = matchHistoricalFight(
+			{ rawFighterA: 'Carlos Vergara', rawFighterB: 'Asu Almabaev', isCancelled: false },
+			[
+				{
+					fightId: 'fight-h',
+					fighters: [
+						{ id: 'vergara', name: 'CJ Vergara' },
+						{ id: 'almabayev', name: 'Asu Almabayev' },
+					],
+				},
+			],
+		);
+		expect(rozenstruikMatch.status).toBe('matched');
+		expect(particleMatch.status).toBe('matched');
+		expect(transposedMatch.status).toBe('matched');
+		expect(shortNameMatch.status).toBe('matched');
+		expect(aliasMatch.status).toBe('matched');
+	});
+
+	it('keeps cancelled source fights reviewable instead of linking them', () => {
+		const match = matchHistoricalFight(
+			{ rawFighterA: 'Brandon Moreno', rawFighterB: 'Brandon Royval', isCancelled: true },
+			canonicalFights,
+		);
+		expect(match.status).toBe('unmatched');
+		expect(match.reason).toBe('source fight is cancelled; canonical linking skipped');
+		if (match.status === 'unmatched') {
+			expect(match.candidates).toHaveLength(1);
+		}
 	});
 
 	it('preserves ambiguous matches for review', () => {

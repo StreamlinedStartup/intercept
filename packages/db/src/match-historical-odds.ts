@@ -211,6 +211,7 @@ async function loadCanonicalFights(eventId: string): Promise<CanonicalFight[]> {
 	const rows = await db
 		.select({
 			fightId: fights.id,
+			weightClass: fights.weightClass,
 			fighterId: fighters.id,
 			fighterName: fighters.name,
 		})
@@ -220,7 +221,11 @@ async function loadCanonicalFights(eventId: string): Promise<CanonicalFight[]> {
 		.where(eq(fights.eventId, eventId));
 	const byFightId = new Map<string, CanonicalFight>();
 	for (const row of rows) {
-		const fight = byFightId.get(row.fightId) ?? { fightId: row.fightId, fighters: [] };
+		const fight = byFightId.get(row.fightId) ?? {
+			fightId: row.fightId,
+			weightClass: row.weightClass,
+			fighters: [],
+		};
 		fight.fighters.push({ id: row.fighterId, name: row.fighterName });
 		byFightId.set(row.fightId, fight);
 	}
@@ -243,6 +248,9 @@ async function markFightMatched(
 			updatedAt: new Date(),
 		})
 		.where(eq(historicalOddsFights.id, historicalFight.id));
+	await db
+		.delete(unmatchedHistoricalOdds)
+		.where(eq(unmatchedHistoricalOdds.id, `${historicalFight.id}:match-review`));
 }
 
 async function markFightForReview(
@@ -361,6 +369,7 @@ function eventNameTokens(normalizedEventName: string): string[] {
 function candidateRows(candidates: CanonicalFight[]) {
 	return candidates.map((candidate) => ({
 		fightId: candidate.fightId,
+		weightClass: candidate.weightClass ?? null,
 		fighters: candidate.fighters,
 	}));
 }
