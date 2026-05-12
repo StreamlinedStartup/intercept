@@ -68,6 +68,17 @@ def test_load_config_accepts_checked_in_example() -> None:
     assert len(config["variants"]) >= 4
 
 
+def test_load_config_accepts_real_axes_smoke_example() -> None:
+    config = _load_config(Path("configs/experiments/market-grid-real-axes-smoke.json"))
+
+    variants = {variant["name"]: variant for variant in config["variants"]}
+    assert config["value_status"] == "research_only"
+    assert config["writes_model_versions"] is False
+    assert variants["xgb_shallow"]["model_params"]["max_depth"] == 2
+    assert variants["xgb_no_recent_form"]["feature_subset"]["mode"] == "exclude"
+    assert variants["xgb_temperature_150"]["calibration"]["temperature"] == 1.5
+
+
 def test_validate_config_rejects_active_model_writes() -> None:
     config = _config()
     config["writes_model_versions"] = True
