@@ -31,6 +31,7 @@ const NAME_ALIASES = new Map<string, string[]>([
 ]);
 
 const PARTICLES = new Set(['da', 'de', 'del', 'do', 'dos', 'das']);
+const EVENT_TOKEN_ALIASES = new Map([['spivak', 'spivac']]);
 
 export function matchHistoricalFight(
 	historicalFight: { rawFighterA: string; rawFighterB: string; isCancelled: boolean },
@@ -95,6 +96,21 @@ export function normalizeName(value: string): string {
 		.replace(/[^a-z0-9]+/g, ' ')
 		.trim()
 		.replace(/\s+/g, ' ');
+}
+
+export function normalizeEventName(value: string): string {
+	return normalizeName(value)
+		.replace(/\bufc on (espn|abc) \d+\b/g, 'ufc fight night')
+		.replace(/\bufc fight night \d+\b/g, 'ufc fight night');
+}
+
+export function eventNameTokens(normalizedEventName: string): string[] {
+	return normalizedEventName
+		.split(' ')
+		.filter(
+			(token) => !['ufc', 'fight', 'night', 'vs'].includes(token) && Number.isNaN(Number(token)),
+		)
+		.map((token) => EVENT_TOKEN_ALIASES.get(token) ?? token);
 }
 
 function mapFighters(sourceA: string[], sourceB: string[], fight: CanonicalFight) {
