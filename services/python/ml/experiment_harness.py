@@ -12,6 +12,11 @@ from typing import Any
 
 import numpy as np
 from sklearn.exceptions import UndefinedMetricWarning
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from xgboost import XGBClassifier
 
 from ml.baselines import _load_market_consensus
 from ml.features import FEATURE_NAMES
@@ -32,10 +37,12 @@ from ml.market_signal_experiment import (
     _base_features,
 )
 from ml.model_family_experiments import (
+    COMMON_OPPONENT_FEATURES,
+    DAMAGE_FEATURES,
+    RECENT_FORM_FEATURES,
+    STANCE_FEATURES,
     _eligible_evaluation_samples,
     _evaluation_events,
-    _logistic_regression,
-    _xgboost,
 )
 from ml.odds_aware_report import _load_source_coverage
 from ml.train import REPO_ROOT
@@ -45,6 +52,22 @@ DEFAULT_OUTPUT = REPO_ROOT / "data" / "experiments" / "harness" / "market-grid-s
 DEFAULT_MARKDOWN = REPO_ROOT / "data" / "experiments" / "harness" / "market-grid-smoke.md"
 
 type FeatureFn = Callable[[dict[str, Any]], np.ndarray]
+
+FEATURE_GROUPS = {
+    "common_opponents": COMMON_OPPONENT_FEATURES,
+    "damage": DAMAGE_FEATURES,
+    "recent_form": RECENT_FORM_FEATURES,
+    "stance": STANCE_FEATURES,
+}
+XGBOOST_PARAM_DEFAULTS = {
+    "n_estimators": 40,
+    "max_depth": 3,
+    "learning_rate": 0.05,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+}
+XGBOOST_PARAM_KEYS = set(XGBOOST_PARAM_DEFAULTS)
+LOGISTIC_PARAM_KEYS = {"C"}
 
 
 def run_experiment_harness(
@@ -66,6 +89,7 @@ def run_experiment_harness(
     eligible_samples = _eligible_evaluation_samples(samples, min_train_samples)
     markets = _load_market_consensus()
     market_predictions = [_market_prediction(sample, markets) for sample in eligible_samples]
+    base_prediction_cache: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
     market_report = _variant_report(
         {
             "name": "market_favorite",
@@ -81,7 +105,14 @@ def run_experiment_harness(
         if variant["name"] == "market_favorite" or variant["model"] == "market_favorite":
             report = market_report
         else:
-            report = _run_model_variant(variant, samples, eligible_samples, markets, min_train_samples)
+            report = _run_model_variant(
+                variant,
+                samples,
+                eligible_samples,
+                markets,
+                min_train_samples,
+                base_prediction_cache,
+            )
         _annotate_variant(report, market_report, config["gate"])
         reports.append(report)
     if not any(report["name"] == "market_favorite" for report in reports):
@@ -236,6 +267,10 @@ def _validate_config(config: dict[str, Any]) -> None:
             raise ValueError("market_favorite variant must use features='none'")
         if variant.get("market_blend_weight") is not None and variant["model"] == "market_favorite":
             raise ValueError("market_favorite variant cannot set market_blend_weight")
+        _validate_model_params(variant)
+        _feature_spec(variant)
+        _feature_names(variant)
+        _calibration(variant)
 
 
 def _run_model_variant(
@@ -244,25 +279,57 @@ def _run_model_variant(
     evaluation_samples: list[dict[str, Any]],
     markets: dict[str, dict[str, dict[str, float]]],
     min_train_samples: int,
+    base_prediction_cache: dict[tuple[Any, ...], list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
+    cache = base_prediction_cache if base_prediction_cache is not None else {}
+    key = _base_prediction_key(variant, min_train_samples)
+    if key not in cache:
+        cache[key] = _score_base_walk_forward(variant, training_samples, evaluation_samples, min_train_samples)
+    predictions = _materialize_predictions(cache[key], markets, _calibration(variant), variant.get("market_blend_weight"))
+    return _variant_report(variant, predictions)
+
+
+def _score_base_walk_forward(
+    variant: dict[str, Any],
+    training_samples: list[dict[str, Any]],
+    evaluation_samples: list[dict[str, Any]],
+    min_train_samples: int,
+) -> list[dict[str, Any]]:
     predictions: list[dict[str, Any]] = []
-    feature_fn = _feature_fn(variant["features"])
+    feature_fn = _feature_fn(variant)
     for event in _evaluation_events(evaluation_samples):
         train_samples = [sample for sample in training_samples if sample["event_date"] < event["event_date"]]
         target_samples = [sample for sample in evaluation_samples if sample["event_id"] == event["event_id"]]
         if len(train_samples) < min_train_samples or not target_samples:
             continue
-        model = _model(variant["model"])
+        model = _model(variant["model"], _model_params(variant))
         train_x = np.vstack([feature_fn(sample) for sample in train_samples])
         train_y = np.array([sample["label"] for sample in train_samples], dtype=int)
         model.fit(train_x, train_y)
         target_x = np.vstack([feature_fn(sample) for sample in target_samples])
         probabilities = model.predict_proba(target_x)[:, 1]
         predictions.extend(
-            _prediction(sample, markets, float(probability), variant.get("market_blend_weight"))
+            {"sample": sample, "model_probability": float(probability)}
             for sample, probability in zip(target_samples, probabilities, strict=True)
         )
-    return _variant_report(variant, predictions)
+    return predictions
+
+
+def _materialize_predictions(
+    base_predictions: list[dict[str, Any]],
+    markets: dict[str, dict[str, dict[str, float]]],
+    calibration: dict[str, Any],
+    market_blend_weight: float | None,
+) -> list[dict[str, Any]]:
+    return [
+        _prediction(
+            base_prediction["sample"],
+            markets,
+            _calibrate_probability(float(base_prediction["model_probability"]), calibration),
+            market_blend_weight,
+        )
+        for base_prediction in base_predictions
+    ]
 
 
 def _market_prediction(
@@ -309,8 +376,11 @@ def _variant_report(variant: dict[str, Any], predictions: list[dict[str, Any]]) 
         "params": {
             "model": variant["model"],
             "features": variant["features"],
+            "feature_names": _feature_names(variant),
             "market_blend_weight": variant.get("market_blend_weight"),
-            "feature_count": _feature_count(variant["features"]),
+            "model_params": _model_params(variant),
+            "calibration": _calibration(variant),
+            "feature_count": _feature_count(variant),
         },
         "events_scored": len({prediction["event_id"] for prediction in predictions}),
         "metrics": _safe_metrics(predictions),
@@ -378,30 +448,139 @@ def _ranking_key(report: dict[str, Any]) -> tuple[int, float, float, float, str]
     )
 
 
-def _model(name: str) -> Any:
+def _base_prediction_key(variant: dict[str, Any], min_train_samples: int) -> tuple[Any, ...]:
+    return (
+        variant["model"],
+        _stable_items(_model_params(variant)),
+        tuple(_feature_names(variant)),
+        min_train_samples,
+    )
+
+
+def _model(name: str, params: dict[str, Any] | None = None) -> Any:
+    params = params or {}
     if name == "xgboost":
-        return _xgboost()
+        return XGBClassifier(
+            **{**XGBOOST_PARAM_DEFAULTS, **params},
+            eval_metric="logloss",
+            n_jobs=1,
+            random_state=42,
+        )
     if name == "logistic_regression":
-        return _logistic_regression()
+        return make_pipeline(
+            SimpleImputer(strategy="median"),
+            StandardScaler(),
+            LogisticRegression(max_iter=1000, random_state=42, C=float(params.get("C", 1.0))),
+        )
     raise ValueError(f"unsupported model {name!r}")
 
 
-def _feature_fn(name: str) -> FeatureFn:
-    if name == "production":
+def _feature_fn(variant: dict[str, Any]) -> FeatureFn:
+    names = _feature_names(variant)
+    if names == FEATURE_NAMES:
         return _base_features
-    if name == "production_plus_availability":
+    if names == [*FEATURE_NAMES, *AVAILABILITY_FEATURE_NAMES]:
         return _availability_augmented_features
-    raise ValueError(f"unsupported feature set {name!r}")
+    index_by_name = {name: index for index, name in enumerate([*FEATURE_NAMES, *AVAILABILITY_FEATURE_NAMES])}
+    indices = [index_by_name[name] for name in names]
+
+    def project(sample: dict[str, Any]) -> np.ndarray:
+        return _availability_augmented_features(sample)[indices]
+
+    return project
 
 
-def _feature_count(name: str) -> int:
-    if name == "none":
+def _feature_count(features: Any) -> int:
+    if features == "none":
         return 0
-    if name == "production":
-        return len(FEATURE_NAMES)
-    if name == "production_plus_availability":
-        return len(FEATURE_NAMES) + len(AVAILABILITY_FEATURE_NAMES)
-    raise ValueError(f"unsupported feature set {name!r}")
+    variant = {"model": "xgboost", "features": features} if not isinstance(features, dict) or "features" not in features else features
+    return len(_feature_names(variant))
+
+
+def _feature_names(variant: dict[str, Any]) -> list[str]:
+    spec = _feature_spec(variant)
+    if spec["base"] == "none":
+        return []
+    base = list(FEATURE_NAMES) if spec["base"] == "production" else [*FEATURE_NAMES, *AVAILABILITY_FEATURE_NAMES]
+    subset = variant.get("feature_subset")
+    if subset is None:
+        return base
+    names = _resolve_feature_names(subset["names"], base)
+    if subset["mode"] == "only":
+        return names
+    excluded = set(names)
+    return [name for name in base if name not in excluded]
+
+
+def _feature_spec(variant: dict[str, Any]) -> dict[str, Any]:
+    features = variant["features"]
+    if features == "none":
+        if variant["model"] == "market_favorite":
+            return {"base": "none"}
+        raise ValueError("non-market variants cannot use features='none'")
+    if features in {"production", "production_plus_availability"}:
+        return {"base": features}
+    raise ValueError(f"unsupported feature set {features!r}")
+
+
+def _resolve_feature_names(names: list[str], base: list[str]) -> list[str]:
+    resolved: list[str] = []
+    for name in names:
+        if name in FEATURE_GROUPS:
+            resolved.extend(feature for feature in base if feature in FEATURE_GROUPS[name])
+        elif name in base:
+            resolved.append(name)
+        else:
+            raise ValueError(f"unknown feature or group {name!r}")
+    unique: list[str] = []
+    for name in resolved:
+        if name not in unique:
+            unique.append(name)
+    if not unique:
+        raise ValueError("feature_subset resolved to no features")
+    return unique
+
+
+def _model_params(variant: dict[str, Any]) -> dict[str, Any]:
+    return dict(variant.get("model_params") or {})
+
+
+def _validate_model_params(variant: dict[str, Any]) -> None:
+    params = _model_params(variant)
+    if not params:
+        return
+    if variant["model"] == "xgboost":
+        unsupported = sorted(set(params) - XGBOOST_PARAM_KEYS)
+    elif variant["model"] == "logistic_regression":
+        unsupported = sorted(set(params) - LOGISTIC_PARAM_KEYS)
+    else:
+        unsupported = sorted(params)
+    if unsupported:
+        raise ValueError(f"unsupported model_params for {variant['model']}: {', '.join(unsupported)}")
+
+
+def _calibration(variant: dict[str, Any]) -> dict[str, Any]:
+    calibration = dict(variant.get("calibration") or {"method": "none"})
+    if calibration["method"] == "none":
+        return {"method": "none"}
+    if calibration["method"] == "temperature":
+        return {"method": "temperature", "temperature": float(calibration["temperature"])}
+    raise ValueError(f"unsupported calibration method {calibration['method']!r}")
+
+
+def _calibrate_probability(probability: float, calibration: dict[str, Any]) -> float:
+    if calibration["method"] == "none":
+        return float(np.clip(probability, 0.001, 0.999))
+    if calibration["method"] == "temperature":
+        temperature = float(calibration["temperature"])
+        clipped = float(np.clip(probability, 1e-6, 1 - 1e-6))
+        logit = np.log(clipped / (1 - clipped))
+        return float(np.clip(1 / (1 + np.exp(-(logit / temperature))), 0.001, 0.999))
+    raise ValueError(f"unsupported calibration method {calibration['method']!r}")
+
+
+def _stable_items(values: dict[str, Any]) -> tuple[tuple[str, Any], ...]:
+    return tuple(sorted(values.items()))
 
 
 def _safe_metrics(predictions: list[dict[str, Any]]) -> dict[str, Any]:
