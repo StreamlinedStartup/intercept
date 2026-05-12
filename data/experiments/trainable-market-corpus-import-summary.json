@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-05-12T04:29:15Z",
+  "report": "trainable-market-corpus-import-summary",
+  "epic": "intercept-ftbt",
+  "task": "intercept-on0t",
+  "report_only": true,
+  "writes_model_versions": false,
+  "import_command": "DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor pnpm --filter @interceptor/db import:fightodds:event -- --event-pks 4592,4579,4580,4556,4501,4483,4486,4450,4469,4460,4438,4441,4382,4426 --delay-ms 1500 --continue-on-error",
+  "summary": {
+    "source": "fightodds",
+    "events_scanned": 14,
+    "events_imported": 14,
+    "events_skipped": 0,
+    "events_failed": 0,
+    "fights_read": 209,
+    "moneylines_read": 10966,
+    "matched_rows": 0,
+    "unmatched_rows": 209,
+    "skipped_rows": 826,
+    "cancelled_fights": 38,
+    "failed_events": []
+  },
+  "source_event_ids": [
+    "4592",
+    "4579",
+    "4580",
+    "4556",
+    "4501",
+    "4483",
+    "4486",
+    "4450",
+    "4469",
+    "4460",
+    "4438",
+    "4441",
+    "4382",
+    "4426"
+  ],
+  "post_import_database_counts": {
+    "fightodds_events": 51,
+    "fightodds_matched_events": 37,
+    "fightodds_min_event_date": "2023-01-14",
+    "fightodds_max_event_date": "2024-03-09",
+    "target_fights": 209,
+    "target_moneyline_rows": 10966,
+    "model_versions": 14
+  },
+  "next_step": "Run deterministic matching/rematch tooling for the older imported batch."
+}
