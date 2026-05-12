@@ -1,0 +1,184 @@
+{
+  "generated_at": "2026-05-12T05:41:13Z",
+  "report": "market-residual-analysis-baseline",
+  "epic": "intercept-b6yf",
+  "task": "intercept-nwg3",
+  "source_epic": "intercept-ftbt",
+  "source_commit": "78770eb",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "purpose": "Freeze D2-TMC output artifacts as the input baseline for market residual analysis.",
+  "frozen_inputs": [
+    {
+      "path": "data/experiments/trainable-market-corpus-final-report.json",
+      "sha256": "de02bcb25eb4e2dc68b3bad2e0b44c1ecdff359574da4f70175eebd1ced5c348",
+      "role": "Final D2-TMC decision, corpus counts, gate outcomes, and next-epic recommendation."
+    },
+    {
+      "path": "data/experiments/trainable-market-corpus-market-gate-report.json",
+      "sha256": "e10a023cdbe541b49b14fadc9d81e0f285749d2a911f5aaeed80a65dc8d6aade",
+      "role": "Expanded-corpus model, market, and simple blend baselines."
+    },
+    {
+      "path": "data/experiments/trainable-market-corpus-blend-experiments.json",
+      "sha256": "c7d448c166226a3519e3d2995c7319fbf2fc6852854fe527342066253d63dc3c",
+      "role": "Report-only model-market blend and calibration variants."
+    },
+    {
+      "path": "data/experiments/trainable-market-corpus-simple-baselines.json",
+      "sha256": "1883928ead7a7428baace8c0a6df6c70659d00efbeaf8c66a3c00b5bca6ea1f9",
+      "role": "Leak-free simple model baselines over the trainable market corpus."
+    },
+    {
+      "path": "data/experiments/trainable-market-corpus-model-family-experiments.json",
+      "sha256": "d5799b13ac2a2f9d6a4703c6d03efb92902195d79f8f3f9c628336d7e2cc5080",
+      "role": "Report-only model-family comparison over model-eligible fights."
+    },
+    {
+      "path": "data/experiments/trainable-market-corpus-coverage.json",
+      "sha256": "262144f02610188e284970ea195a63e40f262d21ac5f20f03049bd6f896b5032",
+      "role": "Expanded corpus coverage snapshot."
+    },
+    {
+      "path": "data/experiments/trainable-market-corpus-leakage-audit.json",
+      "sha256": "9df45a2e77d05f972c6896d9f434c5c7d32bfaec6bab45f8bc759926b4c5ca19",
+      "role": "Leakage audit evidence used by the D2-TMC gate."
+    }
+  ],
+  "corpus": {
+    "market_covered_events": 51,
+    "scored_fights": 486,
+    "model_eligible_events": 40,
+    "model_eligible_fights": 379,
+    "source_events_imported": 51,
+    "source_events_matched": 51,
+    "source_events_unmatched": 0,
+    "source_fights_imported": 781,
+    "source_fights_matched": 499,
+    "source_fights_unmatched": 282,
+    "moneyline_rows_imported": 40022,
+    "moneyline_rows_linked": 28038
+  },
+  "gate_thresholds": {
+    "min_fights": 200,
+    "min_market_events": 30,
+    "min_market_roi_delta": 0.02,
+    "minimum_candidate_roi": 0.2195603026669945
+  },
+  "gate_status": {
+    "leakage_audit": {
+      "status": "pass",
+      "passed": 15,
+      "checks": 15
+    },
+    "coverage_gate": {
+      "status": "pass",
+      "scored_events": 51,
+      "scored_fights": 486
+    },
+    "market_gate": {
+      "status": "fail",
+      "reason": "No model or blend candidate beat market favorite ROI by the required +2pp margin."
+    },
+    "model_family_gate": {
+      "status": "fail",
+      "reason": "Best model-family candidate trailed market favorite ROI and degraded log loss and Brier score."
+    }
+  },
+  "baselines": [
+    {
+      "name": "market_favorite",
+      "family": "market",
+      "scope": "full market-covered corpus",
+      "count": 486,
+      "accuracy": 0.7510288065843621,
+      "avg_confidence": 0.6547877602184583,
+      "calibration_gap": 0.0962410463659038,
+      "log_loss": 0.5683540607865748,
+      "brier_score": 0.191634300444208,
+      "roc_auc": 0.7890671420083184,
+      "simulated_research_roi": 0.1995603026669945,
+      "roi_delta_vs_market_favorite": 0.0
+    },
+    {
+      "name": "model_pick",
+      "family": "model",
+      "scope": "full market-covered corpus",
+      "count": 486,
+      "accuracy": 0.4403292181069959,
+      "avg_confidence": 0.5915637860082302,
+      "calibration_gap": -0.15123456790123435,
+      "log_loss": 0.7331106662338442,
+      "brier_score": 0.2696502057613169,
+      "roc_auc": 0.44132077073253545,
+      "simulated_research_roi": -0.1120582063793795,
+      "roi_delta_vs_market_favorite": -0.311618509046374
+    },
+    {
+      "name": "blend_25_model_75_market",
+      "family": "blend",
+      "scope": "full market-covered corpus",
+      "count": 486,
+      "accuracy": 0.742798353909465,
+      "avg_confidence": 0.6139562341937794,
+      "calibration_gap": 0.1288421197156856,
+      "log_loss": 0.5931507996967803,
+      "brier_score": 0.2020631712260481,
+      "roc_auc": 0.7814616755793227,
+      "simulated_research_roi": 0.18493576173442264,
+      "roi_delta_vs_market_favorite": -0.014624540932571872
+    },
+    {
+      "name": "blend_50_50",
+      "family": "blend",
+      "scope": "full market-covered corpus",
+      "count": 486,
+      "accuracy": 0.6851851851851852,
+      "avg_confidence": 0.5778592457829008,
+      "calibration_gap": 0.10732593940228441,
+      "log_loss": 0.6286079024797508,
+      "brier_score": 0.21854211237284626,
+      "roc_auc": 0.7441134029369324,
+      "simulated_research_roi": 0.10066114751539286,
+      "roi_delta_vs_market_favorite": -0.09889915515160165
+    },
+    {
+      "name": "blend_75_model_25_market",
+      "family": "blend",
+      "scope": "full market-covered corpus",
+      "count": 486,
+      "accuracy": 0.5123456790123457,
+      "avg_confidence": 0.5652154049397385,
+      "calibration_gap": -0.05286972592739281,
+      "log_loss": 0.6746896958536805,
+      "brier_score": 0.2410711238846025,
+      "roc_auc": 0.5937526525761819,
+      "simulated_research_roi": -0.016943269373655555,
+      "roi_delta_vs_market_favorite": -0.21650357204065007
+    },
+    {
+      "name": "blend_25_xgboost_75_market",
+      "family": "model_family_blend",
+      "scope": "model-eligible subset",
+      "count": 379,
+      "accuracy": 0.7071240105540897,
+      "avg_confidence": 0.6235343132924908,
+      "calibration_gap": 0.08358969726159893,
+      "log_loss": 0.5995445408625287,
+      "brier_score": 0.2051590524706049,
+      "roc_auc": 0.7620949720670391,
+      "simulated_research_roi": 0.10508783686027016,
+      "roi_delta_vs_market_favorite": -0.0797402458695212,
+      "rejection_reasons": [
+        "roi_delta_below_plus_2pp_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    }
+  ],
+  "analysis_contract": {
+    "allowed_next_step": "Use the frozen artifacts above to bucket model-vs-market residuals and identify pre-fight feature gaps.",
+    "disallowed_next_step": "Do not activate value status, publish betting claims, or write active model_versions from this task."
+  }
+}
