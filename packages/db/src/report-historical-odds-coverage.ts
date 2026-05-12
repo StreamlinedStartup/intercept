@@ -17,7 +17,7 @@ const D2_HOC_TARGET_COHORT: TargetCohort = {
 	selection_rule:
 		'Use FightOdds EventsRecentQuery with dateGte=2023-01-01, dateLt=2024-03-10, orderBy=-date, filter promotion slug/shortName to UFC, and import the first 30 UFC events.',
 	import_command:
-		'pnpm --filter @interceptor/db import:fightodds:range -- --from 2023-01-01 --to 2024-03-10 --limit 30',
+		'pnpm --filter @interceptor/db import:fightodds:event -- --event-pks 5356,5318,5362,5355,5358,5347,5306,5293,4779,5281,5251,4778,5098,4777,4655,5107,4776,4775,4774,4749,4802,4755,4727,4738,4751,4744,4671,4702,4634,4696 --delay-ms 1500 --continue-on-error',
 	match_command: 'pnpm --filter @interceptor/db match:fightodds:all',
 	report_command:
 		'pnpm --filter @interceptor/db report:fightodds:coverage -- --target-cohort d2-hoc-30-event',
