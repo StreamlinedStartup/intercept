@@ -2,6 +2,7 @@ import { and, eq, gte, lte } from 'drizzle-orm';
 import { db, sql } from './client.js';
 import {
 	type CanonicalFight,
+	countHistoricalFightParticipantMatches,
 	eventNameTokens,
 	type FightMatch,
 	matchHistoricalFight,
@@ -200,12 +201,13 @@ async function findCanonicalEvent(
 			normalizeEventName(candidate.name).includes(token),
 		),
 	);
-	return tokenMatch
-		? {
-				...tokenMatch,
-				reason: 'matched by event date, UFC promotion, and normalized headline tokens',
-			}
-		: null;
+	if (tokenMatch) {
+		return {
+			...tokenMatch,
+			reason: 'matched by event date, UFC promotion, and normalized headline tokens',
+		};
+	}
+	return findCanonicalEventByParticipants(historicalEvent, candidates);
 }
 
 async function loadCanonicalFights(eventId: string): Promise<CanonicalFight[]> {
@@ -231,6 +233,42 @@ async function loadCanonicalFights(eventId: string): Promise<CanonicalFight[]> {
 		byFightId.set(row.fightId, fight);
 	}
 	return [...byFightId.values()].filter((fight) => fight.fighters.length === 2);
+}
+
+async function findCanonicalEventByParticipants(
+	historicalEvent: HistoricalEvent,
+	candidates: CanonicalEvent[],
+): Promise<(CanonicalEvent & { reason: string }) | null> {
+	const historicalFights = await db
+		.select({
+			rawFighterA: historicalOddsFights.rawFighterA,
+			rawFighterB: historicalOddsFights.rawFighterB,
+			isCancelled: historicalOddsFights.isCancelled,
+		})
+		.from(historicalOddsFights)
+		.where(eq(historicalOddsFights.historicalEventId, historicalEvent.id));
+	const scored = [];
+	for (const candidate of candidates) {
+		const canonicalFights = await loadCanonicalFights(candidate.id);
+		const matchedParticipants = countHistoricalFightParticipantMatches(
+			historicalFights,
+			canonicalFights,
+		);
+		scored.push({ candidate, matchedParticipants });
+	}
+	const [best, second] = scored.sort(
+		(left, right) => right.matchedParticipants - left.matchedParticipants,
+	);
+	if (!best || best.matchedParticipants < 3) {
+		return null;
+	}
+	if (second && second.matchedParticipants === best.matchedParticipants) {
+		return null;
+	}
+	return {
+		...best.candidate,
+		reason: `matched by event date, UFC promotion, and ${best.matchedParticipants} overlapping fight participants`,
+	};
 }
 
 async function markFightMatched(

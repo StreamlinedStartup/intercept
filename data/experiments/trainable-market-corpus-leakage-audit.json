@@ -1,0 +1,109 @@
+{
+  "generated_at": "2026-05-12T04:37:47.395646+00:00",
+  "audit_type": "model-reliability-leakage",
+  "report_only": true,
+  "writes_model_versions": false,
+  "args": {
+    "include_db": true,
+    "start_date": null,
+    "max_events": null
+  },
+  "status": "pass",
+  "summary": {
+    "checks": 15,
+    "passed": 15,
+    "failed": 0
+  },
+  "checks": [
+    {
+      "category": "feature_point_in_time",
+      "name": "_career_stats uses strict prior-event cutoff",
+      "status": "pass",
+      "detail": "query filters prior rows with e.date < target_date"
+    },
+    {
+      "category": "feature_point_in_time",
+      "name": "_ufc_fight_count uses strict prior-event cutoff",
+      "status": "pass",
+      "detail": "query filters prior rows with e.date < target_date"
+    },
+    {
+      "category": "feature_point_in_time",
+      "name": "_recent_form uses strict prior-event cutoff",
+      "status": "pass",
+      "detail": "query filters prior rows with e.date < target_date"
+    },
+    {
+      "category": "feature_point_in_time",
+      "name": "_career_profile uses strict prior-event cutoff",
+      "status": "pass",
+      "detail": "query filters prior rows with e.date < target_date"
+    },
+    {
+      "category": "feature_point_in_time",
+      "name": "_weight_class_record_profile uses strict prior-event cutoff",
+      "status": "pass",
+      "detail": "query filters prior rows with e.date < target_date"
+    },
+    {
+      "category": "feature_point_in_time",
+      "name": "_round_tendency_profile uses strict prior-event cutoff",
+      "status": "pass",
+      "detail": "query filters prior rows with e.date < target_date"
+    },
+    {
+      "category": "feature_point_in_time",
+      "name": "_prior_results_by_opponent uses strict prior-event cutoff",
+      "status": "pass",
+      "detail": "query filters prior rows with e.date < target_date"
+    },
+    {
+      "category": "feature_point_in_time",
+      "name": "_damage_index uses strict prior-event cutoff",
+      "status": "pass",
+      "detail": "query filters prior rows with e.date < target_date"
+    },
+    {
+      "category": "feature_point_in_time",
+      "name": "build_features derives target context before label",
+      "status": "pass",
+      "detail": "target date and weight class are passed into feature construction before label serialization"
+    },
+    {
+      "category": "feature_point_in_time",
+      "name": "build_feature_dict threads fight_date through feature helpers",
+      "status": "pass",
+      "detail": "production feature helpers are called from one fight_date-scoped dictionary builder"
+    },
+    {
+      "category": "train_test_boundary",
+      "name": "train.py uses chronological split",
+      "status": "pass",
+      "detail": "training samples are sorted by event date before holdout split"
+    },
+    {
+      "category": "train_test_boundary",
+      "name": "walk-forward trains only on earlier events",
+      "status": "pass",
+      "detail": "walk-forward train set excludes same-day and future target events"
+    },
+    {
+      "category": "train_test_boundary",
+      "name": "walk-forward targets one event at a time",
+      "status": "pass",
+      "detail": "target samples are selected by current event_id only"
+    },
+    {
+      "category": "report_only",
+      "name": "leakage audit does not write active models",
+      "status": "pass",
+      "detail": "audit source has no model persistence calls"
+    },
+    {
+      "category": "database_boundary",
+      "name": "loaded walk-forward samples respect event boundaries",
+      "status": "pass",
+      "detail": "checked 777 event boundaries from 8538 labeled samples"
+    }
+  ]
+}

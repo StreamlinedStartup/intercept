@@ -23,6 +23,7 @@ const NAME_ALIASES = new Map<string, string[]>([
 	['carlos vergara', ['cj vergara']],
 	['cristian quinonez', ['christian quinonez']],
 	['daniel lacerda', ['daniel da silva']],
+	['dontale mayes', ['don tale mayes']],
 	['jailton almeida', ['jailton junior']],
 	['jairzinho rozenstruik', ['jair rozenstruik']],
 	['muhammad naimov', ['muhammadjon naimov']],
@@ -84,6 +85,15 @@ export function matchHistoricalFight(
 			: 'no canonical fight matched normalized fighter pair',
 		candidates: partialCandidates,
 	};
+}
+
+export function countHistoricalFightParticipantMatches(
+	historicalFights: Array<{ rawFighterA: string; rawFighterB: string; isCancelled: boolean }>,
+	canonicalFights: CanonicalFight[],
+): number {
+	return historicalFights
+		.map((fight) => matchHistoricalFight(fight, canonicalFights))
+		.filter((match) => match.status === 'matched').length;
 }
 
 export function normalizeName(value: string): string {
