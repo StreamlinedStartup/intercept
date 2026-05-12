@@ -117,7 +117,10 @@
               "production",
               "production_plus_availability",
               "production_plus_opponent_adjusted_recent_performance",
-              "production_plus_style_matchup_pressure"
+              "production_plus_style_matchup_pressure",
+              "production_plus_market_context",
+              "production_plus_all_research",
+              "production_plus_all_research_market_context"
             ]
           },
           "market_blend_weight": {

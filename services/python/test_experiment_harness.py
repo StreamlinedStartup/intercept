@@ -9,7 +9,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent))
 
 from ml.experiment_harness import (
+    MARKET_CONTEXT_FEATURE_NAMES,
     _annotate_variant,
+    _attach_market_context,
     _base_prediction_key,
     _calibrate_probability,
     _feature_count,
@@ -127,6 +129,24 @@ def test_feature_count_tracks_availability_alignment() -> None:
     assert _feature_count("production_plus_availability") == _feature_count("production") + 4
     assert _feature_count("production_plus_opponent_adjusted_recent_performance") == _feature_count("production") + 4
     assert _feature_count("production_plus_style_matchup_pressure") == _feature_count("production") + 3
+    assert _feature_count("production_plus_market_context") == _feature_count("production") + 4
+    assert _feature_count("production_plus_all_research_market_context") == _feature_count("production") + 15
+
+
+def test_market_context_features_are_declared_and_point_in_time_attached() -> None:
+    variant = {"name": "market_context", "model": "xgboost", "features": "production_plus_market_context"}
+    sample = {
+        "fight_id": "fight-1",
+        "fighter_a_id": "a",
+        "fighter_b_id": "b",
+        "features": __import__("numpy").array([1.0]),
+    }
+    markets = {"fight-1": {"a": {"market_prob": 0.62}, "b": {"market_prob": 0.38}}}
+
+    enriched = _attach_market_context([sample], markets)
+
+    assert _feature_names(variant)[-4:] == MARKET_CONTEXT_FEATURE_NAMES
+    assert enriched[0]["market_context_features"].tolist() == pytest.approx([0.62, 0.38, 0.24, 0.38])
 
 
 def test_base_prediction_key_ignores_blend_and_calibration() -> None:

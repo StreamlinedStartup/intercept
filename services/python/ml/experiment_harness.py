@@ -65,6 +65,12 @@ FEATURE_GROUPS = {
     "recent_form": RECENT_FORM_FEATURES,
     "stance": STANCE_FEATURES,
 }
+MARKET_CONTEXT_FEATURE_NAMES = [
+    "fighter_a_market_probability",
+    "fighter_b_market_probability",
+    "market_probability_edge",
+    "market_uncertainty",
+]
 XGBOOST_PARAM_DEFAULTS = {
     "n_estimators": 40,
     "max_depth": 3,
@@ -94,6 +100,8 @@ def run_experiment_harness(
     min_train_samples = int(config["corpus"]["min_train_samples"])
     eligible_samples = _eligible_evaluation_samples(samples, min_train_samples)
     markets = _load_market_consensus()
+    samples = _attach_market_context(samples, markets)
+    eligible_samples = _attach_market_context(eligible_samples, markets)
     market_predictions = [_market_prediction(sample, markets) for sample in eligible_samples]
     base_prediction_cache: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
     market_report = _variant_report(
@@ -530,6 +538,9 @@ def _feature_spec(variant: dict[str, Any]) -> dict[str, Any]:
         "production_plus_availability",
         "production_plus_opponent_adjusted_recent_performance",
         "production_plus_style_matchup_pressure",
+        "production_plus_market_context",
+        "production_plus_all_research",
+        "production_plus_all_research_market_context",
     }:
         return {"base": features}
     raise ValueError(f"unsupported feature set {features!r}")
@@ -544,6 +555,23 @@ def _base_feature_names(features: str) -> list[str]:
         return [*FEATURE_NAMES, *OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES]
     if features == "production_plus_style_matchup_pressure":
         return [*FEATURE_NAMES, *STYLE_MATCHUP_PRESSURE_FEATURE_NAMES]
+    if features == "production_plus_market_context":
+        return [*FEATURE_NAMES, *MARKET_CONTEXT_FEATURE_NAMES]
+    if features == "production_plus_all_research":
+        return [
+            *FEATURE_NAMES,
+            *AVAILABILITY_FEATURE_NAMES,
+            *OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES,
+            *STYLE_MATCHUP_PRESSURE_FEATURE_NAMES,
+        ]
+    if features == "production_plus_all_research_market_context":
+        return [
+            *FEATURE_NAMES,
+            *AVAILABILITY_FEATURE_NAMES,
+            *OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES,
+            *STYLE_MATCHUP_PRESSURE_FEATURE_NAMES,
+            *MARKET_CONTEXT_FEATURE_NAMES,
+        ]
     raise ValueError(f"unsupported feature set {features!r}")
 
 
@@ -556,6 +584,12 @@ def _base_feature_fn(features: str) -> FeatureFn:
         return _opponent_adjusted_recent_performance_features
     if features == "production_plus_style_matchup_pressure":
         return _style_matchup_pressure_features
+    if features == "production_plus_market_context":
+        return _market_context_features
+    if features == "production_plus_all_research":
+        return _all_research_features
+    if features == "production_plus_all_research_market_context":
+        return _all_research_market_context_features
     raise ValueError(f"unsupported feature set {features!r}")
 
 
@@ -583,6 +617,64 @@ def _style_matchup_pressure_features(sample: dict[str, Any]) -> np.ndarray:
             ),
         ]
     )
+
+
+def _all_research_features(sample: dict[str, Any]) -> np.ndarray:
+    return np.concatenate(
+        [
+            sample["features"],
+            _availability_augmented_features(sample)[len(FEATURE_NAMES) :],
+            build_opponent_adjusted_recent_performance_features(
+                sample["fighter_a_id"],
+                sample["fighter_b_id"],
+                sample["event_date"],
+            ),
+            build_style_matchup_pressure_features(
+                sample["fighter_a_id"],
+                sample["fighter_b_id"],
+                sample["event_date"],
+            ),
+        ]
+    )
+
+
+def _market_context_features(sample: dict[str, Any]) -> np.ndarray:
+    return np.concatenate([sample["features"], np.array(sample["market_context_features"], dtype=float)])
+
+
+def _all_research_market_context_features(sample: dict[str, Any]) -> np.ndarray:
+    return np.concatenate(
+        [
+            _all_research_features(sample),
+            np.array(sample["market_context_features"], dtype=float),
+        ]
+    )
+
+
+def _attach_market_context(
+    samples: list[dict[str, Any]],
+    markets: dict[str, dict[str, dict[str, float]]],
+) -> list[dict[str, Any]]:
+    enriched = []
+    for sample in samples:
+        market = markets[sample["fight_id"]]
+        fighter_a_probability = float(market[sample["fighter_a_id"]]["market_prob"])
+        fighter_b_probability = float(market[sample["fighter_b_id"]]["market_prob"])
+        enriched.append(
+            {
+                **sample,
+                "market_context_features": np.array(
+                    [
+                        fighter_a_probability,
+                        fighter_b_probability,
+                        fighter_a_probability - fighter_b_probability,
+                        min(fighter_a_probability, fighter_b_probability),
+                    ],
+                    dtype=float,
+                ),
+            }
+        )
+    return enriched
 
 
 def _resolve_feature_names(names: list[str], base: list[str]) -> list[str]:
