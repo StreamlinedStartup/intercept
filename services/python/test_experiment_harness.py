@@ -125,6 +125,7 @@ def test_feature_subset_resolves_named_groups() -> None:
 def test_feature_count_tracks_availability_alignment() -> None:
     assert _feature_count("none") == 0
     assert _feature_count("production_plus_availability") == _feature_count("production") + 4
+    assert _feature_count("production_plus_opponent_adjusted_recent_performance") == _feature_count("production") + 4
 
 
 def test_base_prediction_key_ignores_blend_and_calibration() -> None:
