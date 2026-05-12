@@ -1,0 +1,2626 @@
+{
+  "generated_at": "2026-05-12T05:52:20.002490+00:00",
+  "report": "market-residual-clusters",
+  "epic": "intercept-b6yf",
+  "task": "intercept-ty3n",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "input_report": "data/experiments/market-residual-buckets.json",
+  "coverage": {
+    "source_events_imported": 51,
+    "source_events_matched": 51,
+    "source_events_unmatched": 0,
+    "source_fights_imported": 781,
+    "source_fights_matched": 499,
+    "source_fights_unmatched": 282,
+    "moneyline_rows_imported": 40022,
+    "moneyline_rows_linked": 28038,
+    "scored_events": 51,
+    "scored_fights": 486,
+    "model_eligible_events": 40,
+    "model_eligible_fights": 379
+  },
+  "thresholds": {
+    "high_loss_roi_delta": -0.25,
+    "high_loss_accuracy_delta": -0.2,
+    "high_conf_wrong_rate": 0.25
+  },
+  "corpus_feature_summary": {
+    "count": 379,
+    "average_missing_rate": 0.09481090589270008,
+    "average_missing_count": 4.266490765171504,
+    "availability_rates": {
+      "has_recent_form": 0.8311345646437994,
+      "has_physical_profile": 1.0,
+      "has_weight_context": 0.9815303430079155,
+      "has_common_opponents": 1.0
+    }
+  },
+  "clusters": [
+    {
+      "dimension": "market_model_disagreement",
+      "bucket": "disagree_delta_0_5pp",
+      "bucket_report": {
+        "dimension": "market_model_disagreement",
+        "bucket": "disagree_delta_0_5pp",
+        "count": 7,
+        "events": 7,
+        "unstable": true,
+        "unstable_reasons": [
+          "fewer_than_30_fights"
+        ],
+        "eligible_for_promotion_recommendations": false,
+        "model": {
+          "metrics": {
+            "count": 7,
+            "accuracy": 0.2857142857142857,
+            "avg_confidence": 0.5124771637575967,
+            "calibration_gap": -0.22676287804331097,
+            "abs_calibration_error": 0.22676287804331097,
+            "log_loss": 0.7064629864446171,
+            "brier_score": 0.2566535218906291,
+            "roc_auc": 0.25
+          },
+          "simulated_research_roi": {
+            "entries": 7,
+            "wins": 2,
+            "units": -2.946445883173077,
+            "roi_pct": -0.42092084045329675,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 7,
+            "accuracy": 0.7142857142857143,
+            "avg_confidence": 0.520225335237117,
+            "calibration_gap": 0.1940603790485973,
+            "abs_calibration_error": 0.1940603790485973,
+            "log_loss": 0.6780657313239703,
+            "brier_score": 0.24247939398643714,
+            "roc_auc": 0.6666666666666667
+          },
+          "simulated_research_roi": {
+            "entries": 7,
+            "wins": 5,
+            "units": 5.165817903571429,
+            "roi_pct": 0.7379739862244898,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.4285714285714286,
+          "roi_model_minus_market": -1.1588948266777865,
+          "log_loss_model_minus_market": 0.028397255120646836,
+          "brier_model_minus_market": 0.01417412790419198,
+          "calibration_gap_model_minus_market": -0.42082325709190826
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 5,
+        "high_conf_wrong_count": 0,
+        "high_conf_wrong_rate": 0.0
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 7,
+          "average_missing_rate": 0.006349206349206349,
+          "average_missing_count": 0.2857142857142857,
+          "availability_rates": {
+            "has_recent_form": 1.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 5,
+          "average_missing_rate": 0.0,
+          "average_missing_count": 0.0,
+          "availability_rates": {
+            "has_recent_form": 1.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "unstable_or_noise"
+    },
+    {
+      "dimension": "market_model_disagreement",
+      "bucket": "disagree_delta_5_10pp",
+      "bucket_report": {
+        "dimension": "market_model_disagreement",
+        "bucket": "disagree_delta_5_10pp",
+        "count": 11,
+        "events": 10,
+        "unstable": true,
+        "unstable_reasons": [
+          "fewer_than_30_fights"
+        ],
+        "eligible_for_promotion_recommendations": false,
+        "model": {
+          "metrics": {
+            "count": 11,
+            "accuracy": 0.2727272727272727,
+            "avg_confidence": 0.5282932086424394,
+            "calibration_gap": -0.25556593591516674,
+            "abs_calibration_error": 0.25556593591516674,
+            "log_loss": 0.7268811055841714,
+            "brier_score": 0.26678131837706204,
+            "roc_auc": 0.13333333333333333
+          },
+          "simulated_research_roi": {
+            "entries": 11,
+            "wins": 3,
+            "units": -4.652739255860806,
+            "roi_pct": -0.422976295987346,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 11,
+            "accuracy": 0.7272727272727273,
+            "avg_confidence": 0.5475991617254506,
+            "calibration_gap": 0.17967356554727665,
+            "abs_calibration_error": 0.17967356554727665,
+            "log_loss": 0.6572235767180316,
+            "brier_score": 0.2321100981624971,
+            "roc_auc": 0.6333333333333333
+          },
+          "simulated_research_roi": {
+            "entries": 11,
+            "wins": 8,
+            "units": 3.612539604804612,
+            "roi_pct": 0.3284126913458738,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.4545454545454546,
+          "roi_model_minus_market": -0.7513889873332198,
+          "log_loss_model_minus_market": 0.06965752886613985,
+          "brier_model_minus_market": 0.034671220214564924,
+          "calibration_gap_model_minus_market": -0.4352395014624434
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 8,
+        "high_conf_wrong_count": 0,
+        "high_conf_wrong_rate": 0.0
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 11,
+          "average_missing_rate": 0.018181818181818184,
+          "average_missing_count": 0.8181818181818182,
+          "availability_rates": {
+            "has_recent_form": 1.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 8,
+          "average_missing_rate": 0.016666666666666666,
+          "average_missing_count": 0.75,
+          "availability_rates": {
+            "has_recent_form": 1.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "unstable_or_noise"
+    },
+    {
+      "dimension": "market_model_disagreement",
+      "bucket": "disagree_delta_10_20pp",
+      "bucket_report": {
+        "dimension": "market_model_disagreement",
+        "bucket": "disagree_delta_10_20pp",
+        "count": 33,
+        "events": 22,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 33,
+            "accuracy": 0.21212121212121213,
+            "avg_confidence": 0.5579193460218834,
+            "calibration_gap": -0.34579813390067127,
+            "abs_calibration_error": 0.34579813390067127,
+            "log_loss": 0.77054555015082,
+            "brier_score": 0.28806103744922257,
+            "roc_auc": 0.2067669172932331
+          },
+          "simulated_research_roi": {
+            "entries": 33,
+            "wins": 7,
+            "units": -15.113224245714285,
+            "roi_pct": -0.45797649229437226,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 33,
+            "accuracy": 0.7878787878787878,
+            "avg_confidence": 0.6042103603048109,
+            "calibration_gap": 0.18366842757397694,
+            "abs_calibration_error": 0.18366842757397694,
+            "log_loss": 0.5872629414985155,
+            "brier_score": 0.1981984568166486,
+            "roc_auc": 0.8157894736842105
+          },
+          "simulated_research_roi": {
+            "entries": 33,
+            "wins": 26,
+            "units": 8.755408834686824,
+            "roi_pct": 0.26531541923293406,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.5757575757575757,
+          "roi_model_minus_market": -0.7232919115273063,
+          "log_loss_model_minus_market": 0.1832826086523045,
+          "brier_model_minus_market": 0.08986258063257396,
+          "calibration_gap_model_minus_market": -0.5294665614746482
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 26,
+        "high_conf_wrong_count": 1,
+        "high_conf_wrong_rate": 0.030303030303030304
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 33,
+          "average_missing_rate": 0.0505050505050505,
+          "average_missing_count": 2.272727272727273,
+          "availability_rates": {
+            "has_recent_form": 0.9090909090909091,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 26,
+          "average_missing_rate": 0.0452991452991453,
+          "average_missing_count": 2.0384615384615383,
+          "availability_rates": {
+            "has_recent_form": 0.9230769230769231,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "market_prior_gap"
+    },
+    {
+      "dimension": "favorite_underdog_side",
+      "bucket": "model_on_market_underdog",
+      "bucket_report": {
+        "dimension": "favorite_underdog_side",
+        "bucket": "model_on_market_underdog",
+        "count": 146,
+        "events": 39,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 146,
+            "accuracy": 0.2054794520547945,
+            "avg_confidence": 0.6032466378113995,
+            "calibration_gap": -0.397767185756605,
+            "abs_calibration_error": 0.397767185756605,
+            "log_loss": 0.8790329694633607,
+            "brier_score": 0.3353382533745416,
+            "roc_auc": 0.18454771466819664
+          },
+          "simulated_research_roi": {
+            "entries": 146,
+            "wins": 30,
+            "units": -60.826446110277864,
+            "roi_pct": -0.41661949390601277,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 146,
+            "accuracy": 0.7945205479452054,
+            "avg_confidence": 0.6441609756883487,
+            "calibration_gap": 0.1503595722568567,
+            "abs_calibration_error": 0.1503595722568567,
+            "log_loss": 0.557152663262248,
+            "brier_score": 0.18606900401400922,
+            "roc_auc": 0.8081851214381336
+          },
+          "simulated_research_roi": {
+            "entries": 146,
+            "wins": 116,
+            "units": 43.007415419305666,
+            "roi_pct": 0.29457133848839495,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.5890410958904109,
+          "roi_model_minus_market": -0.7111908323944077,
+          "log_loss_model_minus_market": 0.32188030620111274,
+          "brier_model_minus_market": 0.14926924936053237,
+          "calibration_gap_model_minus_market": -0.5481267580134617
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 116,
+        "high_conf_wrong_count": 31,
+        "high_conf_wrong_rate": 0.21232876712328766
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 146,
+          "average_missing_rate": 0.10547945205479452,
+          "average_missing_count": 4.7465753424657535,
+          "availability_rates": {
+            "has_recent_form": 0.8082191780821918,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9794520547945206,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 116,
+          "average_missing_rate": 0.10881226053639846,
+          "average_missing_count": 4.896551724137931,
+          "availability_rates": {
+            "has_recent_form": 0.8017241379310345,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9827586206896551,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "market_prior_gap"
+    },
+    {
+      "dimension": "market_model_disagreement",
+      "bucket": "disagree_delta_20pp_plus",
+      "bucket_report": {
+        "dimension": "market_model_disagreement",
+        "bucket": "disagree_delta_20pp_plus",
+        "count": 95,
+        "events": 37,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 95,
+            "accuracy": 0.18947368421052632,
+            "avg_confidence": 0.6343590027407596,
+            "calibration_gap": -0.4448853185302333,
+            "abs_calibration_error": 0.4448853185302333,
+            "log_loss": 0.9470513402119516,
+            "brier_score": 0.365496858962912,
+            "roc_auc": 0.17434507678410116
+          },
+          "simulated_research_roi": {
+            "entries": 95,
+            "wins": 18,
+            "units": -38.1140367255297,
+            "roi_pct": -0.40120038658452317,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 95,
+            "accuracy": 0.8105263157894737,
+            "avg_confidence": 0.6783514993136881,
+            "calibration_gap": 0.13217481647578555,
+            "abs_calibration_error": 0.13217481647578555,
+            "log_loss": 0.5261967610912743,
+            "brier_score": 0.17236798603582543,
+            "roc_auc": 0.8233965672990063
+          },
+          "simulated_research_roi": {
+            "entries": 95,
+            "wins": 77,
+            "units": 25.473649076242804,
+            "roi_pct": 0.26814367448676635,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.6210526315789473,
+          "roi_model_minus_market": -0.6693440610712895,
+          "log_loss_model_minus_market": 0.42085457912067725,
+          "brier_model_minus_market": 0.19312887292708658,
+          "calibration_gap_model_minus_market": -0.5770601350060188
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 77,
+        "high_conf_wrong_count": 30,
+        "high_conf_wrong_rate": 0.3157894736842105
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 95,
+          "average_missing_rate": 0.14198830409356725,
+          "average_missing_count": 6.389473684210526,
+          "availability_rates": {
+            "has_recent_form": 0.7368421052631579,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.968421052631579,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 77,
+          "average_missing_rate": 0.14689754689754692,
+          "average_missing_count": 6.6103896103896105,
+          "availability_rates": {
+            "has_recent_form": 0.7272727272727273,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.974025974025974,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "market_prior_gap"
+    },
+    {
+      "dimension": "weight_class",
+      "bucket": "light heavyweight",
+      "bucket_report": {
+        "dimension": "weight_class",
+        "bucket": "light heavyweight",
+        "count": 25,
+        "events": 20,
+        "unstable": true,
+        "unstable_reasons": [
+          "fewer_than_30_fights"
+        ],
+        "eligible_for_promotion_recommendations": false,
+        "model": {
+          "metrics": {
+            "count": 25,
+            "accuracy": 0.28,
+            "avg_confidence": 0.5837407660484314,
+            "calibration_gap": -0.30374076604843137,
+            "abs_calibration_error": 0.30374076604843137,
+            "log_loss": 0.850461747359852,
+            "brier_score": 0.3228735449873642,
+            "roc_auc": 0.20779220779220778
+          },
+          "simulated_research_roi": {
+            "entries": 25,
+            "wins": 7,
+            "units": -14.379512726217948,
+            "roi_pct": -0.5751805090487179,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 25,
+            "accuracy": 0.68,
+            "avg_confidence": 0.6197034357764195,
+            "calibration_gap": 0.06029656422358054,
+            "abs_calibration_error": 0.06029656422358054,
+            "log_loss": 0.5797565077030709,
+            "brier_score": 0.1966952080955929,
+            "roc_auc": 0.8051948051948051
+          },
+          "simulated_research_roi": {
+            "entries": 25,
+            "wins": 17,
+            "units": 1.095843664732098,
+            "roi_pct": 0.04383374658928392,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.4,
+          "roi_model_minus_market": -0.6190142556380018,
+          "log_loss_model_minus_market": 0.27070523965678117,
+          "brier_model_minus_market": 0.1261783368917713,
+          "calibration_gap_model_minus_market": -0.3640373302720119
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 11,
+        "high_conf_wrong_count": 6,
+        "high_conf_wrong_rate": 0.24
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 25,
+          "average_missing_rate": 0.05333333333333333,
+          "average_missing_count": 2.4,
+          "availability_rates": {
+            "has_recent_form": 0.92,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.96,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 18,
+          "average_missing_rate": 0.03580246913580246,
+          "average_missing_count": 1.6111111111111112,
+          "availability_rates": {
+            "has_recent_form": 0.9444444444444444,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "unstable_or_noise"
+    },
+    {
+      "dimension": "weight_class",
+      "bucket": "flyweight",
+      "bucket_report": {
+        "dimension": "weight_class",
+        "bucket": "flyweight",
+        "count": 30,
+        "events": 20,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 30,
+            "accuracy": 0.5666666666666667,
+            "avg_confidence": 0.612894806265831,
+            "calibration_gap": -0.046228139599164386,
+            "abs_calibration_error": 0.046228139599164386,
+            "log_loss": 0.6716432603590753,
+            "brier_score": 0.24047581782894806,
+            "roc_auc": 0.5791855203619909
+          },
+          "simulated_research_roi": {
+            "entries": 30,
+            "wins": 17,
+            "units": -5.247574567564746,
+            "roi_pct": -0.17491915225215818,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 30,
+            "accuracy": 0.7333333333333333,
+            "avg_confidence": 0.6617980453615608,
+            "calibration_gap": 0.07153528797177244,
+            "abs_calibration_error": 0.07153528797177244,
+            "log_loss": 0.5774702473198016,
+            "brier_score": 0.19749242449965373,
+            "roc_auc": 0.7601809954751132
+          },
+          "simulated_research_roi": {
+            "entries": 30,
+            "wins": 22,
+            "units": 11.759238960848311,
+            "roi_pct": 0.39197463202827704,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.16666666666666663,
+          "roi_model_minus_market": -0.5668937842804352,
+          "log_loss_model_minus_market": 0.09417301303927372,
+          "brier_model_minus_market": 0.04298339332929432,
+          "calibration_gap_model_minus_market": -0.11776342757093683
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 6,
+        "high_conf_wrong_count": 3,
+        "high_conf_wrong_rate": 0.1
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 30,
+          "average_missing_rate": 0.11703703703703704,
+          "average_missing_count": 5.266666666666667,
+          "availability_rates": {
+            "has_recent_form": 0.8,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 13,
+          "average_missing_rate": 0.056410256410256404,
+          "average_missing_count": 2.5384615384615383,
+          "availability_rates": {
+            "has_recent_form": 0.9230769230769231,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "odds_range",
+      "bucket": "near_pickem_50_55",
+      "bucket_report": {
+        "dimension": "odds_range",
+        "bucket": "near_pickem_50_55",
+        "count": 51,
+        "events": 29,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 51,
+            "accuracy": 0.47058823529411764,
+            "avg_confidence": 0.6019393822141722,
+            "calibration_gap": -0.13135114692005456,
+            "abs_calibration_error": 0.13135114692005456,
+            "log_loss": 0.7441375349951476,
+            "brier_score": 0.2729669535683301,
+            "roc_auc": 0.47750865051903113
+          },
+          "simulated_research_roi": {
+            "entries": 51,
+            "wins": 24,
+            "units": -5.503048516557471,
+            "roi_pct": -0.10790291208936217,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 51,
+            "accuracy": 0.7450980392156863,
+            "avg_confidence": 0.5226472357421509,
+            "calibration_gap": 0.2224508034735354,
+            "abs_calibration_error": 0.2224508034735354,
+            "log_loss": 0.6683126004786152,
+            "brier_score": 0.23761020697415072,
+            "roc_auc": 0.7474048442906575
+          },
+          "simulated_research_roi": {
+            "entries": 51,
+            "wins": 38,
+            "units": 23.194767689944513,
+            "roi_pct": 0.45479936646950025,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.27450980392156865,
+          "roi_model_minus_market": -0.5627022785588625,
+          "log_loss_model_minus_market": 0.07582493451653238,
+          "brier_model_minus_market": 0.035356746594179395,
+          "calibration_gap_model_minus_market": -0.35380195039358997
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 18,
+        "high_conf_wrong_count": 9,
+        "high_conf_wrong_rate": 0.17647058823529413
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 51,
+          "average_missing_rate": 0.12026143790849672,
+          "average_missing_count": 5.411764705882353,
+          "availability_rates": {
+            "has_recent_form": 0.7843137254901961,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9803921568627451,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 27,
+          "average_missing_rate": 0.08559670781893003,
+          "average_missing_count": 3.8518518518518516,
+          "availability_rates": {
+            "has_recent_form": 0.8518518518518519,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "weight_class",
+      "bucket": "heavyweight",
+      "bucket_report": {
+        "dimension": "weight_class",
+        "bucket": "heavyweight",
+        "count": 25,
+        "events": 19,
+        "unstable": true,
+        "unstable_reasons": [
+          "fewer_than_30_fights"
+        ],
+        "eligible_for_promotion_recommendations": false,
+        "model": {
+          "metrics": {
+            "count": 25,
+            "accuracy": 0.4,
+            "avg_confidence": 0.6161710983514785,
+            "calibration_gap": -0.21617109835147852,
+            "abs_calibration_error": 0.21617109835147852,
+            "log_loss": 0.7850078028835974,
+            "brier_score": 0.29024252713493764,
+            "roc_auc": 0.38461538461538464
+          },
+          "simulated_research_roi": {
+            "entries": 25,
+            "wins": 10,
+            "units": -8.326027973352994,
+            "roi_pct": -0.3330411189341198,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 25,
+            "accuracy": 0.84,
+            "avg_confidence": 0.6550406746446933,
+            "calibration_gap": 0.18495932535530668,
+            "abs_calibration_error": 0.18495932535530668,
+            "log_loss": 0.4915491007339554,
+            "brier_score": 0.15626907931094192,
+            "roc_auc": 0.9102564102564102
+          },
+          "simulated_research_roi": {
+            "entries": 25,
+            "wins": 21,
+            "units": 5.669262900240987,
+            "roi_pct": 0.2267705160096395,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.43999999999999995,
+          "roi_model_minus_market": -0.5598116349437593,
+          "log_loss_model_minus_market": 0.293458702149642,
+          "brier_model_minus_market": 0.13397344782399573,
+          "calibration_gap_model_minus_market": -0.4011304237067852
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 13,
+        "high_conf_wrong_count": 3,
+        "high_conf_wrong_rate": 0.12
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 25,
+          "average_missing_rate": 0.12533333333333332,
+          "average_missing_count": 5.64,
+          "availability_rates": {
+            "has_recent_form": 0.76,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 15,
+          "average_missing_rate": 0.1348148148148148,
+          "average_missing_count": 6.066666666666666,
+          "availability_rates": {
+            "has_recent_form": 0.7333333333333333,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "unstable_or_noise"
+    },
+    {
+      "dimension": "weight_class",
+      "bucket": "women's featherweight",
+      "bucket_report": {
+        "dimension": "weight_class",
+        "bucket": "women's featherweight",
+        "count": 3,
+        "events": 3,
+        "unstable": true,
+        "unstable_reasons": [
+          "fewer_than_30_fights",
+          "fewer_than_5_events"
+        ],
+        "eligible_for_promotion_recommendations": false,
+        "model": {
+          "metrics": {
+            "count": 3,
+            "accuracy": 0.6666666666666666,
+            "avg_confidence": 0.541489859422048,
+            "calibration_gap": 0.12517680724461866,
+            "abs_calibration_error": 0.12517680724461866,
+            "log_loss": 0.6843777409209321,
+            "brier_score": 0.2456428739881821,
+            "roc_auc": null
+          },
+          "simulated_research_roi": {
+            "entries": 3,
+            "wins": 2,
+            "units": 0.54182675,
+            "roi_pct": 0.18060891666666667,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 3,
+            "accuracy": 1.0,
+            "avg_confidence": 0.5729009683931113,
+            "calibration_gap": 0.42709903160688867,
+            "abs_calibration_error": 0.42709903160688867,
+            "log_loss": 0.5589729272720898,
+            "brier_score": 0.18364211813856182,
+            "roc_auc": null
+          },
+          "simulated_research_roi": {
+            "entries": 3,
+            "wins": 3,
+            "units": 2.1545229142857143,
+            "roi_pct": 0.7181743047619048,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.33333333333333337,
+          "roi_model_minus_market": -0.5375653880952381,
+          "log_loss_model_minus_market": 0.12540481364884226,
+          "brier_model_minus_market": 0.06200075584962028,
+          "calibration_gap_model_minus_market": -0.30192222436227
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 1,
+        "high_conf_wrong_count": 0,
+        "high_conf_wrong_rate": 0.0
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 3,
+          "average_missing_rate": 0.007407407407407408,
+          "average_missing_count": 0.3333333333333333,
+          "availability_rates": {
+            "has_recent_form": 1.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 1,
+          "average_missing_rate": 0.022222222222222223,
+          "average_missing_count": 1.0,
+          "availability_rates": {
+            "has_recent_form": 1.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "unstable_or_noise"
+    },
+    {
+      "dimension": "weight_class",
+      "bucket": "women's strawweight",
+      "bucket_report": {
+        "dimension": "weight_class",
+        "bucket": "women's strawweight",
+        "count": 23,
+        "events": 20,
+        "unstable": true,
+        "unstable_reasons": [
+          "fewer_than_30_fights"
+        ],
+        "eligible_for_promotion_recommendations": false,
+        "model": {
+          "metrics": {
+            "count": 23,
+            "accuracy": 0.43478260869565216,
+            "avg_confidence": 0.6245420283597448,
+            "calibration_gap": -0.18975941966409265,
+            "abs_calibration_error": 0.18975941966409265,
+            "log_loss": 0.8130315003734137,
+            "brier_score": 0.3051229068688151,
+            "roc_auc": 0.3492063492063492
+          },
+          "simulated_research_roi": {
+            "entries": 23,
+            "wins": 10,
+            "units": -5.665265210862573,
+            "roi_pct": -0.24631587873315536,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 23,
+            "accuracy": 0.8260869565217391,
+            "avg_confidence": 0.6591512361231762,
+            "calibration_gap": 0.16693572039856297,
+            "abs_calibration_error": 0.16693572039856297,
+            "log_loss": 0.5563897251353754,
+            "brier_score": 0.18646221176258712,
+            "roc_auc": 0.7857142857142858
+          },
+          "simulated_research_roi": {
+            "entries": 23,
+            "wins": 19,
+            "units": 5.743825895698702,
+            "roi_pct": 0.24973156068255226,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.391304347826087,
+          "roi_model_minus_market": -0.4960474394157076,
+          "log_loss_model_minus_market": 0.2566417752380382,
+          "brier_model_minus_market": 0.11866069510622798,
+          "calibration_gap_model_minus_market": -0.3566951400626556
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 10,
+        "high_conf_wrong_count": 5,
+        "high_conf_wrong_rate": 0.21739130434782608
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 23,
+          "average_missing_rate": 0.02995169082125604,
+          "average_missing_count": 1.3478260869565217,
+          "availability_rates": {
+            "has_recent_form": 0.9565217391304348,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9565217391304348,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 13,
+          "average_missing_rate": 0.05128205128205129,
+          "average_missing_count": 2.3076923076923075,
+          "availability_rates": {
+            "has_recent_form": 0.9230769230769231,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9230769230769231,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "unstable_or_noise"
+    },
+    {
+      "dimension": "feature_availability",
+      "bucket": "mostly_complete",
+      "bucket_report": {
+        "dimension": "feature_availability",
+        "bucket": "mostly_complete",
+        "count": 89,
+        "events": 37,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 89,
+            "accuracy": 0.4606741573033708,
+            "avg_confidence": 0.6135364765866419,
+            "calibration_gap": -0.1528623192832711,
+            "abs_calibration_error": 0.1528623192832711,
+            "log_loss": 0.7616051799283915,
+            "brier_score": 0.28163198417807295,
+            "roc_auc": 0.448432760364004
+          },
+          "simulated_research_roi": {
+            "entries": 89,
+            "wins": 41,
+            "units": -12.179510041263738,
+            "roi_pct": -0.13684842742992964,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 89,
+            "accuracy": 0.7752808988764045,
+            "avg_confidence": 0.6371930955234457,
+            "calibration_gap": 0.13808780335295878,
+            "abs_calibration_error": 0.13808780335295878,
+            "log_loss": 0.5637420457148973,
+            "brier_score": 0.1890251526373671,
+            "roc_auc": 0.8149646107178969
+          },
+          "simulated_research_roi": {
+            "entries": 89,
+            "wins": 69,
+            "units": 27.58717004134876,
+            "roi_pct": 0.3099682027117838,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.3146067415730337,
+          "roi_model_minus_market": -0.44681663014171347,
+          "log_loss_model_minus_market": 0.19786313421349422,
+          "brier_model_minus_market": 0.09260683154070584,
+          "calibration_gap_model_minus_market": -0.2909501226362299
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 32,
+        "high_conf_wrong_count": 16,
+        "high_conf_wrong_rate": 0.1797752808988764
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 89,
+          "average_missing_rate": 0.04169787765293383,
+          "average_missing_count": 1.8764044943820224,
+          "availability_rates": {
+            "has_recent_form": 1.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 48,
+          "average_missing_rate": 0.0375,
+          "average_missing_count": 1.6875,
+          "availability_rates": {
+            "has_recent_form": 1.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "confidence",
+      "bucket": "model_55_60",
+      "bucket_report": {
+        "dimension": "confidence",
+        "bucket": "model_55_60",
+        "count": 96,
+        "events": 39,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 96,
+            "accuracy": 0.5208333333333334,
+            "avg_confidence": 0.5719844934840997,
+            "calibration_gap": -0.05115116015076637,
+            "abs_calibration_error": 0.05115116015076637,
+            "log_loss": 0.6971156457751485,
+            "brier_score": 0.25195337364784914,
+            "roc_auc": 0.5227272727272727
+          },
+          "simulated_research_roi": {
+            "entries": 96,
+            "wins": 50,
+            "units": -9.851047674434811,
+            "roi_pct": -0.10261507994202929,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 96,
+            "accuracy": 0.7708333333333334,
+            "avg_confidence": 0.6424409294367502,
+            "calibration_gap": 0.12839240389658313,
+            "abs_calibration_error": 0.12839240389658313,
+            "log_loss": 0.566457433201354,
+            "brier_score": 0.19009323974007467,
+            "roc_auc": 0.8028846153846154
+          },
+          "simulated_research_roi": {
+            "entries": 96,
+            "wins": 74,
+            "units": 29.245173763625978,
+            "roi_pct": 0.30463722670443727,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.25,
+          "roi_model_minus_market": -0.40725230664646656,
+          "log_loss_model_minus_market": 0.1306582125737945,
+          "brier_model_minus_market": 0.06186013390777448,
+          "calibration_gap_model_minus_market": -0.1795435640473495
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 30,
+        "high_conf_wrong_count": 0,
+        "high_conf_wrong_rate": 0.0
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 96,
+          "average_missing_rate": 0.06828703703703703,
+          "average_missing_count": 3.0729166666666665,
+          "availability_rates": {
+            "has_recent_form": 0.8854166666666666,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.96875,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 46,
+          "average_missing_rate": 0.0608695652173913,
+          "average_missing_count": 2.739130434782609,
+          "availability_rates": {
+            "has_recent_form": 0.8913043478260869,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "weight_class",
+      "bucket": "women's bantamweight",
+      "bucket_report": {
+        "dimension": "weight_class",
+        "bucket": "women's bantamweight",
+        "count": 16,
+        "events": 13,
+        "unstable": true,
+        "unstable_reasons": [
+          "fewer_than_30_fights"
+        ],
+        "eligible_for_promotion_recommendations": false,
+        "model": {
+          "metrics": {
+            "count": 16,
+            "accuracy": 0.4375,
+            "avg_confidence": 0.6303101060912013,
+            "calibration_gap": -0.1928101060912013,
+            "abs_calibration_error": 0.1928101060912013,
+            "log_loss": 0.7376763572554098,
+            "brier_score": 0.2695547029276391,
+            "roc_auc": 0.515625
+          },
+          "simulated_research_roi": {
+            "entries": 16,
+            "wins": 7,
+            "units": 1.6133497602021885,
+            "roi_pct": 0.10083436001263678,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 16,
+            "accuracy": 0.8125,
+            "avg_confidence": 0.6394691290532658,
+            "calibration_gap": 0.1730308709467342,
+            "abs_calibration_error": 0.1730308709467342,
+            "log_loss": 0.5617682910850825,
+            "brier_score": 0.18734462080392297,
+            "roc_auc": 0.8125
+          },
+          "simulated_research_roi": {
+            "entries": 16,
+            "wins": 13,
+            "units": 8.061685570705313,
+            "roi_pct": 0.5038553481690821,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.375,
+          "roi_model_minus_market": -0.40302098815644527,
+          "log_loss_model_minus_market": 0.17590806617032728,
+          "brier_model_minus_market": 0.08221008212371614,
+          "calibration_gap_model_minus_market": -0.3658409770379355
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 7,
+        "high_conf_wrong_count": 3,
+        "high_conf_wrong_rate": 0.1875
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 16,
+          "average_missing_rate": 0.19722222222222222,
+          "average_missing_count": 8.875,
+          "availability_rates": {
+            "has_recent_form": 0.625,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9375,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 9,
+          "average_missing_rate": 0.16296296296296295,
+          "average_missing_count": 7.333333333333333,
+          "availability_rates": {
+            "has_recent_form": 0.6666666666666666,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [
+        "higher_feature_missingness",
+        "lower_has_recent_form"
+      ],
+      "classification": "unstable_or_noise"
+    },
+    {
+      "dimension": "feature_availability",
+      "bucket": "sparse",
+      "bucket_report": {
+        "dimension": "feature_availability",
+        "bucket": "sparse",
+        "count": 64,
+        "events": 30,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 64,
+            "accuracy": 0.53125,
+            "avg_confidence": 0.6488086783792824,
+            "calibration_gap": -0.11755867837928236,
+            "abs_calibration_error": 0.11755867837928236,
+            "log_loss": 0.7675790923004718,
+            "brier_score": 0.2802248995055797,
+            "roc_auc": 0.46432062561094817
+          },
+          "simulated_research_roi": {
+            "entries": 64,
+            "wins": 34,
+            "units": -7.275434741922127,
+            "roi_pct": -0.11367866784253323,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 64,
+            "accuracy": 0.8125,
+            "avg_confidence": 0.6695749086602748,
+            "calibration_gap": 0.1429250913397252,
+            "abs_calibration_error": 0.1429250913397252,
+            "log_loss": 0.5301848036781903,
+            "brier_score": 0.17573454991219029,
+            "roc_auc": 0.8279569892473118
+          },
+          "simulated_research_roi": {
+            "entries": 64,
+            "wins": 52,
+            "units": 15.686591627300977,
+            "roi_pct": 0.24510299417657777,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.28125,
+          "roi_model_minus_market": -0.358781662019111,
+          "log_loss_model_minus_market": 0.2373942886222815,
+          "brier_model_minus_market": 0.10449034959338943,
+          "calibration_gap_model_minus_market": -0.26048376971900755
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 23,
+        "high_conf_wrong_count": 15,
+        "high_conf_wrong_rate": 0.234375
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 64,
+          "average_missing_rate": 0.5034722222222222,
+          "average_missing_count": 22.65625,
+          "availability_rates": {
+            "has_recent_form": 0.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.890625,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 30,
+          "average_missing_rate": 0.49925925925925924,
+          "average_missing_count": 22.466666666666665,
+          "availability_rates": {
+            "has_recent_form": 0.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [
+        "higher_feature_missingness",
+        "lower_has_recent_form"
+      ],
+      "classification": "actionable_pre_fight_feature_gap"
+    },
+    {
+      "dimension": "confidence",
+      "bucket": "model_70_plus",
+      "bucket_report": {
+        "dimension": "confidence",
+        "bucket": "model_70_plus",
+        "count": 53,
+        "events": 25,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 53,
+            "accuracy": 0.4716981132075472,
+            "avg_confidence": 0.7546993153837492,
+            "calibration_gap": -0.28300120217620206,
+            "abs_calibration_error": 0.28300120217620206,
+            "log_loss": 0.8876480137947994,
+            "brier_score": 0.3308446995616331,
+            "roc_auc": 0.49002849002849
+          },
+          "simulated_research_roi": {
+            "entries": 53,
+            "wins": 25,
+            "units": -12.841919496295679,
+            "roi_pct": -0.24230036785463546,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 53,
+            "accuracy": 0.7547169811320755,
+            "avg_confidence": 0.6596709124825653,
+            "calibration_gap": 0.09504606864951026,
+            "abs_calibration_error": 0.09504606864951026,
+            "log_loss": 0.5610719907323581,
+            "brier_score": 0.18952998957488493,
+            "roc_auc": 0.7891737891737892
+          },
+          "simulated_research_roi": {
+            "entries": 53,
+            "wins": 40,
+            "units": 6.146190114391314,
+            "roi_pct": 0.11596585121493046,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.28301886792452835,
+          "roi_model_minus_market": -0.3582662190695659,
+          "log_loss_model_minus_market": 0.32657602306244127,
+          "brier_model_minus_market": 0.14131470998674817,
+          "calibration_gap_model_minus_market": -0.3780472708257123
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 17,
+        "high_conf_wrong_count": 28,
+        "high_conf_wrong_rate": 0.5283018867924528
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 53,
+          "average_missing_rate": 0.16184486373165619,
+          "average_missing_count": 7.283018867924528,
+          "availability_rates": {
+            "has_recent_form": 0.6981132075471698,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9811320754716981,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 28,
+          "average_missing_rate": 0.15396825396825395,
+          "average_missing_count": 6.928571428571429,
+          "availability_rates": {
+            "has_recent_form": 0.7142857142857143,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [
+        "higher_feature_missingness",
+        "lower_has_recent_form"
+      ],
+      "classification": "actionable_pre_fight_feature_gap"
+    },
+    {
+      "dimension": "weight_class",
+      "bucket": "catch weight",
+      "bucket_report": {
+        "dimension": "weight_class",
+        "bucket": "catch weight",
+        "count": 5,
+        "events": 5,
+        "unstable": true,
+        "unstable_reasons": [
+          "fewer_than_30_fights"
+        ],
+        "eligible_for_promotion_recommendations": false,
+        "model": {
+          "metrics": {
+            "count": 5,
+            "accuracy": 0.8,
+            "avg_confidence": 0.6065917283296585,
+            "calibration_gap": 0.19340827167034158,
+            "abs_calibration_error": 0.19340827167034158,
+            "log_loss": 0.5644246541399958,
+            "brier_score": 0.19167659212306334,
+            "roc_auc": 0.8333333333333333
+          },
+          "simulated_research_roi": {
+            "entries": 5,
+            "wins": 4,
+            "units": 2.040355741282051,
+            "roi_pct": 0.4080711482564102,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 5,
+            "accuracy": 0.8,
+            "avg_confidence": 0.6527234470549524,
+            "calibration_gap": 0.1472765529450476,
+            "abs_calibration_error": 0.1472765529450476,
+            "log_loss": 0.49536743055784155,
+            "brier_score": 0.1621541377657738,
+            "roc_auc": 0.8333333333333333
+          },
+          "simulated_research_roi": {
+            "entries": 5,
+            "wins": 4,
+            "units": 3.7360820955555556,
+            "roi_pct": 0.7472164191111111,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": 0.0,
+          "roi_model_minus_market": -0.3391452708547009,
+          "log_loss_model_minus_market": 0.06905722358215421,
+          "brier_model_minus_market": 0.029522454357289535,
+          "calibration_gap_model_minus_market": 0.04613171872529398
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 1,
+        "high_conf_wrong_count": 0,
+        "high_conf_wrong_rate": 0.0
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 5,
+          "average_missing_rate": 0.19555555555555554,
+          "average_missing_count": 8.8,
+          "availability_rates": {
+            "has_recent_form": 0.6,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 1,
+          "average_missing_rate": 0.4888888888888889,
+          "average_missing_count": 22.0,
+          "availability_rates": {
+            "has_recent_form": 0.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [
+        "higher_feature_missingness",
+        "lower_has_recent_form"
+      ],
+      "classification": "unstable_or_noise"
+    },
+    {
+      "dimension": "weight_class",
+      "bucket": "bantamweight",
+      "bucket_report": {
+        "dimension": "weight_class",
+        "bucket": "bantamweight",
+        "count": 45,
+        "events": 26,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 45,
+            "accuracy": 0.5555555555555556,
+            "avg_confidence": 0.6258269283506606,
+            "calibration_gap": -0.07027137279510498,
+            "abs_calibration_error": 0.07027137279510498,
+            "log_loss": 0.691706343146449,
+            "brier_score": 0.2493231086513461,
+            "roc_auc": 0.5345622119815668
+          },
+          "simulated_research_roi": {
+            "entries": 45,
+            "wins": 25,
+            "units": -6.421521619019058,
+            "roi_pct": -0.14270048042264571,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 45,
+            "accuracy": 0.8,
+            "avg_confidence": 0.6650368127943668,
+            "calibration_gap": 0.13496318720563327,
+            "abs_calibration_error": 0.13496318720563327,
+            "log_loss": 0.5322152164267344,
+            "brier_score": 0.1744825194282789,
+            "roc_auc": 0.8018433179723502
+          },
+          "simulated_research_roi": {
+            "entries": 45,
+            "wins": 36,
+            "units": 8.199894859817384,
+            "roi_pct": 0.18221988577371964,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.24444444444444446,
+          "roi_model_minus_market": -0.32492036619636533,
+          "log_loss_model_minus_market": 0.15949112671971455,
+          "brier_model_minus_market": 0.07484058922306722,
+          "calibration_gap_model_minus_market": -0.20523456000073825
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 13,
+        "high_conf_wrong_count": 7,
+        "high_conf_wrong_rate": 0.15555555555555556
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 45,
+          "average_missing_rate": 0.12641975308641976,
+          "average_missing_count": 5.688888888888889,
+          "availability_rates": {
+            "has_recent_form": 0.7777777777777778,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9555555555555556,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 20,
+          "average_missing_rate": 0.09777777777777777,
+          "average_missing_count": 4.4,
+          "availability_rates": {
+            "has_recent_form": 0.85,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.95,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "odds_range",
+      "bucket": "favorite_55_65",
+      "bucket_report": {
+        "dimension": "odds_range",
+        "bucket": "favorite_55_65",
+        "count": 157,
+        "events": 38,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 157,
+            "accuracy": 0.49044585987261147,
+            "avg_confidence": 0.6109587879507405,
+            "calibration_gap": -0.12051292807812908,
+            "abs_calibration_error": 0.12051292807812908,
+            "log_loss": 0.7467275508596346,
+            "brier_score": 0.27470654395016275,
+            "roc_auc": 0.46864847303443796
+          },
+          "simulated_research_roi": {
+            "entries": 157,
+            "wins": 77,
+            "units": -12.887772636188775,
+            "roi_pct": -0.08208772379738073,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 157,
+            "accuracy": 0.7006369426751592,
+            "avg_confidence": 0.6012326999469187,
+            "calibration_gap": 0.09940424272824044,
+            "abs_calibration_error": 0.09940424272824044,
+            "log_loss": 0.6267668059100243,
+            "brier_score": 0.21732697777775575,
+            "roc_auc": 0.7305068226120858
+          },
+          "simulated_research_roi": {
+            "entries": 157,
+            "wins": 110,
+            "units": 31.545057525065598,
+            "roi_pct": 0.2009239332806726,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.21019108280254772,
+          "roi_model_minus_market": -0.2830116570780533,
+          "log_loss_model_minus_market": 0.11996074494961029,
+          "brier_model_minus_market": 0.057379566172407,
+          "calibration_gap_model_minus_market": -0.21991717080636952
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 48,
+        "high_conf_wrong_count": 25,
+        "high_conf_wrong_rate": 0.1592356687898089
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 157,
+          "average_missing_rate": 0.08478414720452937,
+          "average_missing_count": 3.8152866242038215,
+          "availability_rates": {
+            "has_recent_form": 0.8535031847133758,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9745222929936306,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 80,
+          "average_missing_rate": 0.07055555555555555,
+          "average_missing_count": 3.175,
+          "availability_rates": {
+            "has_recent_form": 0.875,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9875,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "event_date_age",
+      "bucket": "last_12_months",
+      "bucket_report": {
+        "dimension": "event_date_age",
+        "bucket": "last_12_months",
+        "count": 379,
+        "events": 40,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 379,
+            "accuracy": 0.5197889182058048,
+            "avg_confidence": 0.6103226479958733,
+            "calibration_gap": -0.09053372979006857,
+            "abs_calibration_error": 0.09053372979006857,
+            "log_loss": 0.7265544566102333,
+            "brier_score": 0.2641469910943604,
+            "roc_auc": 0.5145530726256984
+          },
+          "simulated_research_roi": {
+            "entries": 379,
+            "wins": 197,
+            "units": -33.7840181749926,
+            "roi_pct": -0.08913988964377996,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 379,
+            "accuracy": 0.7467018469656992,
+            "avg_confidence": 0.6520807387622892,
+            "calibration_gap": 0.09462110820340996,
+            "abs_calibration_error": 0.09462110820340996,
+            "log_loss": 0.5765940478013445,
+            "brier_score": 0.19523511986831754,
+            "roc_auc": 0.7779608938547485
+          },
+          "simulated_research_roi": {
+            "entries": 379,
+            "wins": 283,
+            "units": 70.04984335459093,
+            "roi_pct": 0.18482808272979137,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.22691292875989444,
+          "roi_model_minus_market": -0.27396797237357134,
+          "log_loss_model_minus_market": 0.14996040880888883,
+          "brier_model_minus_market": 0.06891187122604286,
+          "calibration_gap_model_minus_market": -0.18515483799347854
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 116,
+        "high_conf_wrong_count": 52,
+        "high_conf_wrong_rate": 0.13720316622691292
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 182,
+          "average_missing_rate": 0.09218559218559219,
+          "average_missing_count": 4.148351648351649,
+          "availability_rates": {
+            "has_recent_form": 0.8351648351648352,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9835164835164835,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "weight_class",
+      "bucket": "middleweight",
+      "bucket_report": {
+        "dimension": "weight_class",
+        "bucket": "middleweight",
+        "count": 41,
+        "events": 26,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 41,
+            "accuracy": 0.5365853658536586,
+            "avg_confidence": 0.5997874111664004,
+            "calibration_gap": -0.06320204531274187,
+            "abs_calibration_error": 0.06320204531274187,
+            "log_loss": 0.6794729696899539,
+            "brier_score": 0.2427999149808555,
+            "roc_auc": 0.6071428571428572
+          },
+          "simulated_research_roi": {
+            "entries": 41,
+            "wins": 22,
+            "units": -2.4775631467390946,
+            "roi_pct": -0.06042836943266085,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 41,
+            "accuracy": 0.8048780487804879,
+            "avg_confidence": 0.6698190753890021,
+            "calibration_gap": 0.13505897339148576,
+            "abs_calibration_error": 0.13505897339148576,
+            "log_loss": 0.5728379590097,
+            "brier_score": 0.19049798866015658,
+            "roc_auc": 0.7571428571428571
+          },
+          "simulated_research_roi": {
+            "entries": 41,
+            "wins": 33,
+            "units": 7.836784548974832,
+            "roi_pct": 0.19114108656036174,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.2682926829268293,
+          "roi_model_minus_market": -0.2515694559930226,
+          "log_loss_model_minus_market": 0.10663501068025383,
+          "brier_model_minus_market": 0.05230192632069894,
+          "calibration_gap_model_minus_market": -0.19826101870422763
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 14,
+        "high_conf_wrong_count": 4,
+        "high_conf_wrong_rate": 0.0975609756097561
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 41,
+          "average_missing_rate": 0.03089430894308943,
+          "average_missing_count": 1.3902439024390243,
+          "availability_rates": {
+            "has_recent_form": 0.9512195121951219,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 19,
+          "average_missing_rate": 0.011695906432748539,
+          "average_missing_count": 0.5263157894736842,
+          "availability_rates": {
+            "has_recent_form": 1.0,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "confidence",
+      "bucket": "model_50_55",
+      "bucket_report": {
+        "dimension": "confidence",
+        "bucket": "model_50_55",
+        "count": 95,
+        "events": 37,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 95,
+            "accuracy": 0.4842105263157895,
+            "avg_confidence": 0.525694856831902,
+            "calibration_gap": -0.0414843305161125,
+            "abs_calibration_error": 0.0414843305161125,
+            "log_loss": 0.6976663724256573,
+            "brier_score": 0.25225573130221984,
+            "roc_auc": 0.4636118598382749
+          },
+          "simulated_research_roi": {
+            "entries": 95,
+            "wins": 46,
+            "units": -10.785154867533365,
+            "roi_pct": -0.11352794597403541,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 95,
+            "accuracy": 0.7263157894736842,
+            "avg_confidence": 0.6491503544403983,
+            "calibration_gap": 0.07716543503328599,
+            "abs_calibration_error": 0.07716543503328599,
+            "log_loss": 0.5871288756131046,
+            "brier_score": 0.20101693757635658,
+            "roc_auc": 0.7681940700808626
+          },
+          "simulated_research_roi": {
+            "entries": 95,
+            "wins": 69,
+            "units": 11.58179423703754,
+            "roi_pct": 0.12191362354776358,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.24210526315789477,
+          "roi_model_minus_market": -0.235441569521799,
+          "log_loss_model_minus_market": 0.11053749681255276,
+          "brier_model_minus_market": 0.05123879372586326,
+          "calibration_gap_model_minus_market": -0.11864976554939849
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 35,
+        "high_conf_wrong_count": 0,
+        "high_conf_wrong_rate": 0.0
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 95,
+          "average_missing_rate": 0.06479532163742689,
+          "average_missing_count": 2.9157894736842107,
+          "availability_rates": {
+            "has_recent_form": 0.8842105263157894,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 49,
+          "average_missing_rate": 0.04580498866213152,
+          "average_missing_count": 2.061224489795918,
+          "availability_rates": {
+            "has_recent_form": 0.9183673469387755,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 1.0,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "odds_range",
+      "bucket": "heavy_favorite_75_plus",
+      "bucket_report": {
+        "dimension": "odds_range",
+        "bucket": "heavy_favorite_75_plus",
+        "count": 64,
+        "events": 32,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 64,
+            "accuracy": 0.640625,
+            "avg_confidence": 0.6246913245413452,
+            "calibration_gap": 0.01593367545865476,
+            "abs_calibration_error": 0.01593367545865476,
+            "log_loss": 0.6653272556146903,
+            "brier_score": 0.2338992008787259,
+            "roc_auc": 0.64613880742913
+          },
+          "simulated_research_roi": {
+            "entries": 64,
+            "wins": 41,
+            "units": -6.297445745020003,
+            "roi_pct": -0.09839758976593754,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 64,
+            "accuracy": 0.875,
+            "avg_confidence": 0.8066180689484538,
+            "calibration_gap": 0.06838193105154622,
+            "abs_calibration_error": 0.06838193105154622,
+            "log_loss": 0.3914642518427669,
+            "brier_score": 0.11394895436120431,
+            "roc_auc": 0.8778103616813294
+          },
+          "simulated_research_roi": {
+            "entries": 64,
+            "wins": 56,
+            "units": 7.0316021201147585,
+            "roi_pct": 0.1098687831267931,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.234375,
+          "roi_model_minus_market": -0.20826637289273064,
+          "log_loss_model_minus_market": 0.2738630037719234,
+          "brier_model_minus_market": 0.11995024651752159,
+          "calibration_gap_model_minus_market": -0.05244825559289146
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 17,
+        "high_conf_wrong_count": 8,
+        "high_conf_wrong_rate": 0.125
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 64,
+          "average_missing_rate": 0.14652777777777778,
+          "average_missing_count": 6.59375,
+          "availability_rates": {
+            "has_recent_form": 0.71875,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.984375,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 23,
+          "average_missing_rate": 0.22608695652173913,
+          "average_missing_count": 10.173913043478262,
+          "availability_rates": {
+            "has_recent_form": 0.5652173913043478,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9565217391304348,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [
+        "higher_feature_missingness",
+        "lower_has_recent_form"
+      ],
+      "classification": "actionable_pre_fight_feature_gap"
+    },
+    {
+      "dimension": "confidence",
+      "bucket": "model_65_70",
+      "bucket_report": {
+        "dimension": "confidence",
+        "bucket": "model_65_70",
+        "count": 49,
+        "events": 29,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 49,
+            "accuracy": 0.5102040816326531,
+            "avg_confidence": 0.6710613242217472,
+            "calibration_gap": -0.16085724258909417,
+            "abs_calibration_error": 0.16085724258909417,
+            "log_loss": 0.7508359867882844,
+            "brier_score": 0.27694350044130067,
+            "roc_auc": 0.5033444816053512
+          },
+          "simulated_research_roi": {
+            "entries": 49,
+            "wins": 25,
+            "units": 1.5255124591319702,
+            "roi_pct": 0.031132907329223882,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 49,
+            "accuracy": 0.7142857142857143,
+            "avg_confidence": 0.6696702562955003,
+            "calibration_gap": 0.04461545799021405,
+            "abs_calibration_error": 0.04461545799021405,
+            "log_loss": 0.6018763459195287,
+            "brier_score": 0.20536166697654343,
+            "roc_auc": 0.7491638795986622
+          },
+          "simulated_research_roi": {
+            "entries": 49,
+            "wins": 35,
+            "units": 10.057167009081065,
+            "roi_pct": 0.20524830630777682,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.20408163265306123,
+          "roi_model_minus_market": -0.17411539897855294,
+          "log_loss_model_minus_market": 0.1489596408687558,
+          "brier_model_minus_market": 0.07158183346475724,
+          "calibration_gap_model_minus_market": -0.20547270057930822
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 14,
+        "high_conf_wrong_count": 24,
+        "high_conf_wrong_rate": 0.4897959183673469
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 49,
+          "average_missing_rate": 0.10975056689342405,
+          "average_missing_count": 4.938775510204081,
+          "availability_rates": {
+            "has_recent_form": 0.8163265306122449,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9387755102040817,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 24,
+          "average_missing_rate": 0.17314814814814816,
+          "average_missing_count": 7.791666666666667,
+          "availability_rates": {
+            "has_recent_form": 0.7083333333333334,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.875,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    },
+    {
+      "dimension": "odds_range",
+      "bucket": "strong_favorite_65_75",
+      "bucket_report": {
+        "dimension": "odds_range",
+        "bucket": "strong_favorite_65_75",
+        "count": 107,
+        "events": 38,
+        "unstable": false,
+        "unstable_reasons": [],
+        "eligible_for_promotion_recommendations": true,
+        "model": {
+          "metrics": {
+            "count": 107,
+            "accuracy": 0.514018691588785,
+            "avg_confidence": 0.6047906599869238,
+            "calibration_gap": -0.09077196839813884,
+            "abs_calibration_error": 0.09077196839813884,
+            "log_loss": 0.7251958404319915,
+            "brier_score": 0.2625412966015303,
+            "roc_auc": 0.5284210526315789
+          },
+          "simulated_research_roi": {
+            "entries": 107,
+            "wins": 55,
+            "units": -9.095751277226356,
+            "roi_pct": -0.0850070212824893,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "market": {
+          "metrics": {
+            "count": 107,
+            "accuracy": 0.7383177570093458,
+            "avg_confidence": 0.6959486043335575,
+            "calibration_gap": 0.042369152675788224,
+            "abs_calibration_error": 0.042369152675788224,
+            "log_loss": 0.5699915966961615,
+            "brier_score": 0.19124225499239195,
+            "roc_auc": 0.7803508771929824
+          },
+          "simulated_research_roi": {
+            "entries": 107,
+            "wins": 79,
+            "units": 8.278416019466063,
+            "roi_pct": 0.07736837401370152,
+            "stake_unit": "flat_1u",
+            "status": "simulated_research_only"
+          }
+        },
+        "deltas": {
+          "accuracy_model_minus_market": -0.22429906542056077,
+          "roi_model_minus_market": -0.16237539529619083,
+          "log_loss_model_minus_market": 0.15520424373582997,
+          "brier_model_minus_market": 0.07129904160913836,
+          "calibration_gap_model_minus_market": -0.13314112107392706
+        }
+      },
+      "failure_profile": {
+        "model_wrong_market_correct_count": 33,
+        "high_conf_wrong_count": 10,
+        "high_conf_wrong_rate": 0.09345794392523364
+      },
+      "feature_comparison": {
+        "corpus": {
+          "count": 379,
+          "average_missing_rate": 0.09481090589270008,
+          "average_missing_count": 4.266490765171504,
+          "availability_rates": {
+            "has_recent_form": 0.8311345646437994,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9815303430079155,
+            "has_common_opponents": 1.0
+          }
+        },
+        "cluster": {
+          "count": 107,
+          "average_missing_rate": 0.06645898234683281,
+          "average_missing_count": 2.9906542056074765,
+          "availability_rates": {
+            "has_recent_form": 0.8878504672897196,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9906542056074766,
+            "has_common_opponents": 1.0
+          }
+        },
+        "model_wrong_subset": {
+          "count": 52,
+          "average_missing_rate": 0.06965811965811966,
+          "average_missing_count": 3.1346153846153846,
+          "availability_rates": {
+            "has_recent_form": 0.8846153846153846,
+            "has_physical_profile": 1.0,
+            "has_weight_context": 0.9807692307692307,
+            "has_common_opponents": 1.0
+          }
+        }
+      },
+      "actionable_feature_gaps": [],
+      "classification": "model_calibration_or_noise"
+    }
+  ],
+  "recommendation_policy": "Only stable clusters with actionable pre-fight feature gaps can feed Task D signal candidates. Market-only and unstable/noise clusters are diagnostic only.",
+  "policy": "This report does not write model_versions or activate betting/value claims."
+}
