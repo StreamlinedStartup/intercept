@@ -14,12 +14,12 @@ blocked_by:
 Run report-only model-improvement experiments only after the D2-MCU unlock decision says coverage is sufficient. The goal is to improve model quality against the market favorite without activating claims prematurely.
 
 Acceptance criteria:
-- [ ] Experiment inputs are frozen from a validation-passing market gate bundle.
+- [ ] Experiment inputs are frozen from the D2-MCU coverage-passing, research-only market gate bundle.
 - [ ] Calibration, blend, and feature/model variants are evaluated with walk-forward discipline.
 - [ ] Every result compares against the no-vig market favorite baseline.
 - [ ] Outputs are JSON/Markdown research artifacts only.
 - [ ] No active model_versions writes or validated activation happen in this epic.
 
 Constraints:
-- Do not start until D2-MCU-F says model-improvement experiments are unblocked.
+- Do not start until D2-MCU-F says research-only model-improvement experiments are unblocked.
 - Keep UI/API/docs research-only unless a separate activation gate passes.

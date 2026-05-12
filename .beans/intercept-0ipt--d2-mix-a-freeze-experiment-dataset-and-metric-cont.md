@@ -12,7 +12,7 @@ blocked_by:
 ---
 
 Acceptance criteria:
-- [ ] Freeze the validation-passing evidence bundle from D2-MCU.
+- [ ] Freeze the D2-MCU coverage-passing, research-only evidence bundle.
 - [ ] Define the exact train/test chronology, scored-fight inclusion rules, and market baseline metric contract.
 - [ ] Publish a report-only experiment manifest.
 - [ ] Confirm no active model_versions writes.
