@@ -5,7 +5,7 @@ status: completed
 type: epic
 priority: high
 created_at: 2026-05-12T22:47:07Z
-updated_at: 2026-05-12T22:54:46Z
+updated_at: 2026-05-12T22:56:05Z
 parent: intercept-8mw9
 ---
 
@@ -25,3 +25,9 @@ Implement the smallest report-only research experiment for opponent_adjusted_rec
 - DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor PYTHONPATH=services/python /Users/vulturestudio/intercept/services/python/.venv/bin/python -m ml.experiment_harness --config configs/experiments/opponent-adjusted-recent-performance-v1.json --stdout summary
 
 No HTTP/UI smoke gate was required because this epic added research-only Python harness features and static experiment artifacts, not an HTTP endpoint or UI surface.
+
+
+## CI Gate Note
+
+- ./scripts/ci-local.sh passed after mechanical Biome formatting of existing experiment generator scripts.
+- The script skipped Python tests because this worktree has no local services/python/.venv; the Python feature tests were run explicitly with the shared venv and DATABASE_URL.
