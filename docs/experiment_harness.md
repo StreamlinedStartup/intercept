@@ -32,3 +32,7 @@ See `data/experiments/harness/experiment-harness-recommendation.md` for the firs
 ## Expanded Sweep
 
 See `data/experiments/harness/market-grid-expanded-100-recommendation.md` for the 103-variant dense blend sweep result. The short version: no candidate cleared the market gate, and more blend weights are not useful until the harness supports real new axes such as cached base predictions, hyperparameters, feature subsets, calibration, or new pre-fight signals.
+
+## Real Axes
+
+The harness now supports cached base walk-forward predictions, variant-level model params, feature subsets/ablations, deterministic temperature calibration, and market blends. See `configs/experiments/market-grid-real-axes-smoke.json` and `data/experiments/harness/market-grid-real-axes-smoke-recommendation.md`.

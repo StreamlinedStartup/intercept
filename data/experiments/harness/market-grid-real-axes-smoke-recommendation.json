@@ -1,0 +1,40 @@
+{
+  "report": "market-grid-real-axes-smoke-recommendation",
+  "source_report": "data/experiments/harness/market-grid-real-axes-smoke.json",
+  "value_status": "research_only",
+  "writes_model_versions": false,
+  "model_versions_count_after_run": 14,
+  "variant_count": 10,
+  "coverage": {
+    "model_eligible_events": 40,
+    "model_eligible_fights": 379,
+    "scored_events": 51,
+    "scored_fights": 486
+  },
+  "best_candidate": {
+    "name": "logistic_c_025_temperature_150_blend_10",
+    "clears_gate": false,
+    "roi_delta_vs_market": -0.036541212359504666,
+    "log_loss_delta_vs_market": 0.0075476048175019406,
+    "brier_delta_vs_market": 0.003069111140181602,
+    "rejection_reasons": [
+      "roi_delta_below_market_gate",
+      "log_loss_worse_than_market",
+      "brier_worse_than_market"
+    ]
+  },
+  "recommendation": {
+    "status": "research_only",
+    "expand_real_axes": true,
+    "reason": "The smoke sweep proves real axes work and cache shared base predictions, but no candidate clears the market gate. The next sweep should expand hyperparameters, feature groups, and calibration settings while avoiding dense blend-only searches."
+  },
+  "verification": [
+    "python -m ml.experiment_harness --config configs/experiments/market-grid-real-axes-smoke.json --stdout summary",
+    "jq empty data/experiments/harness/market-grid-real-axes-smoke.json data/experiments/harness/market-grid-real-axes-smoke-recommendation.json",
+    "select count(*) from model_versions; => 14"
+  ],
+  "smoke_gate": {
+    "required": false,
+    "reason": "This epic added CLI/config/artifact work only; it did not add an HTTP endpoint or UI surface."
+  }
+}
