@@ -1,0 +1,75 @@
+{
+  "report": "market-experiment-harness-initial-matrix-summary",
+  "source_report": "data/experiments/harness/market-grid-smoke.json",
+  "generated_at": "2026-05-12T06:19:48.803990+00:00",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "coverage": {
+    "scored_events": 51,
+    "scored_fights": 486,
+    "model_eligible_events": 40,
+    "model_eligible_fights": 379,
+    "moneyline_rows_imported": 40022,
+    "moneyline_rows_linked": 28038
+  },
+  "market_baseline": {
+    "name": "market_favorite",
+    "accuracy": 0.7467018469656992,
+    "log_loss": 0.5765940478013445,
+    "brier_score": 0.19523511986831754,
+    "roi_pct": 0.18482808272979137
+  },
+  "matrix": [
+    "market favorite baseline",
+    "current XGBoost production features",
+    "availability-augmented XGBoost",
+    "regularized logistic production-feature baseline",
+    "25/75 and 50/50 XGBoost-to-market blends"
+  ],
+  "top_ranking": [
+    {
+      "rank": 1,
+      "name": "blend_25_availability_75_market",
+      "roi_delta_vs_market": -0.06887339485325517,
+      "log_loss_delta_vs_market": 0.023919718342126473,
+      "brier_delta_vs_market": 0.01033318195184249,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    },
+    {
+      "rank": 2,
+      "name": "blend_25_xgboost_75_market",
+      "roi_delta_vs_market": -0.0797402458695212,
+      "log_loss_delta_vs_market": 0.022950494083822326,
+      "brier_delta_vs_market": 0.00992393318064519,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    },
+    {
+      "rank": 3,
+      "name": "blend_50_xgboost_50_market",
+      "roi_delta_vs_market": -0.12319767428468742,
+      "log_loss_delta_vs_market": 0.054426977707566104,
+      "brier_delta_vs_market": 0.024717222778534054,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    }
+  ],
+  "recommendation": {
+    "status": "research_only",
+    "reason": "The best configured candidate was blend_25_availability_75_market, but it underperformed the market favorite baseline on ROI, log loss, and Brier score."
+  }
+}
