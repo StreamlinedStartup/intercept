@@ -5,6 +5,25 @@ import { sql } from './client.js';
 const REPO_ROOT = resolve(import.meta.dirname, '../../..');
 const DEFAULT_JSON_OUTPUT = 'data/experiments/historical-odds-coverage.json';
 const DEFAULT_MARKDOWN_OUTPUT = 'data/experiments/historical-odds-coverage.md';
+const TARGET_COHORT_OUTPUT = 'data/experiments/historical-odds-target-cohort-baseline.json';
+const TARGET_COHORT_MARKDOWN = 'data/experiments/historical-odds-target-cohort-baseline.md';
+const D2_HOC_TARGET_COHORT: TargetCohort = {
+	id: 'd2-hoc-30-event',
+	title: 'D2-HOC 30-event UFC FightOdds target cohort',
+	source: 'fightodds',
+	from: '2023-01-01',
+	to: '2024-03-10',
+	target_event_count: 30,
+	selection_rule:
+		'Use FightOdds EventsRecentQuery with dateGte=2023-01-01, dateLt=2024-03-10, orderBy=-date, filter promotion slug/shortName to UFC, and import the first 30 UFC events.',
+	import_command:
+		'pnpm --filter @interceptor/db import:fightodds:range -- --from 2023-01-01 --to 2024-03-10 --limit 30',
+	match_command: 'pnpm --filter @interceptor/db match:fightodds:all',
+	report_command:
+		'pnpm --filter @interceptor/db report:fightodds:coverage -- --target-cohort d2-hoc-30-event',
+	rationale:
+		'The window ends at UFC 299, which is the newest event in the current 3-event corpus, and reaches backward far enough for the importer to select 30 recent UFC market events without using future market data.',
+};
 
 type CoverageEvent = {
 	source_event_id: string;
@@ -27,9 +46,13 @@ type CoverageReport = {
 	report: 'historical-odds-coverage';
 	report_only: true;
 	writes_model_versions: false;
+	target_cohort: TargetCohort | null;
 	summary: {
 		source_events: number;
 		matched_source_events: number;
+		target_events: number | null;
+		imported_target_events: number | null;
+		target_event_coverage_rate: number | null;
 		source_fights: number;
 		matched_fights: number;
 		ambiguous_fights: number;
@@ -44,13 +67,32 @@ type CoverageReport = {
 	events: CoverageEvent[];
 };
 
+type TargetCohort = {
+	id: 'd2-hoc-30-event';
+	title: string;
+	source: 'fightodds';
+	from: string;
+	to: string;
+	target_event_count: number;
+	selection_rule: string;
+	import_command: string;
+	match_command: string;
+	report_command: string;
+	rationale: string;
+};
+
 async function main() {
-	const output = resolveRepoPath(readArg(process.argv.slice(2), '--output') ?? DEFAULT_JSON_OUTPUT);
+	const args = process.argv.slice(2);
+	const targetCohort = readTargetCohort(args);
+	const output = resolveRepoPath(
+		readArg(args, '--output') ?? (targetCohort ? TARGET_COHORT_OUTPUT : DEFAULT_JSON_OUTPUT),
+	);
 	const markdown = resolveRepoPath(
-		readArg(process.argv.slice(2), '--markdown') ?? DEFAULT_MARKDOWN_OUTPUT,
+		readArg(args, '--markdown') ??
+			(targetCohort ? TARGET_COHORT_MARKDOWN : DEFAULT_MARKDOWN_OUTPUT),
 	);
 	try {
-		const report = await buildCoverageReport();
+		const report = await buildCoverageReport(targetCohort);
 		await mkdir(dirname(output), { recursive: true });
 		await mkdir(dirname(markdown), { recursive: true });
 		await writeFile(output, `${JSON.stringify(report, null, 2)}\n`);
@@ -71,7 +113,9 @@ async function main() {
 	}
 }
 
-export async function buildCoverageReport(): Promise<CoverageReport> {
+export async function buildCoverageReport(
+	targetCohort: TargetCohort | null = null,
+): Promise<CoverageReport> {
 	const events = (await sql`
 		SELECT
 			hoe.source_event_id,
@@ -104,9 +148,17 @@ export async function buildCoverageReport(): Promise<CoverageReport> {
 			hoe.match_status
 		ORDER BY hoe.event_date, hoe.source_event_id
 	`) as CoverageEvent[];
+	const targetEvents = targetCohort
+		? events.filter((event) => isTargetEvent(event, targetCohort))
+		: [];
 	const summary = {
 		source_events: events.length,
 		matched_source_events: events.filter((event) => event.canonical_event_id !== null).length,
+		target_events: targetCohort?.target_event_count ?? null,
+		imported_target_events: targetCohort ? targetEvents.length : null,
+		target_event_coverage_rate: targetCohort
+			? ratio(targetEvents.length, targetCohort.target_event_count)
+			: null,
 		source_fights: sum(events, 'source_fights'),
 		matched_fights: sum(events, 'matched_fights'),
 		ambiguous_fights: sum(events, 'ambiguous_fights'),
@@ -123,6 +175,7 @@ export async function buildCoverageReport(): Promise<CoverageReport> {
 		report: 'historical-odds-coverage',
 		report_only: true,
 		writes_model_versions: false,
+		target_cohort: targetCohort,
 		summary,
 		events,
 	};
@@ -138,12 +191,29 @@ function renderMarkdown(report: CoverageReport): string {
 		`- Moneyline rows linked: ${report.summary.linked_moneyline_rows}/${report.summary.moneyline_rows} (${formatPct(report.summary.moneyline_link_rate)})`,
 		`- Review rows: ${report.summary.review_rows}`,
 		`- Writes \`model_versions\`: \`${report.writes_model_versions}\``,
+	];
+	if (report.target_cohort) {
+		lines.push(
+			'',
+			'## Target Cohort',
+			'',
+			`- Cohort: \`${report.target_cohort.id}\``,
+			`- Window: ${report.target_cohort.from} <= event date < ${report.target_cohort.to}`,
+			`- Target UFC events: ${report.summary.imported_target_events}/${report.summary.target_events} imported (${formatPct(report.summary.target_event_coverage_rate)})`,
+			`- Selection rule: ${report.target_cohort.selection_rule}`,
+			`- Import command: \`${report.target_cohort.import_command}\``,
+			`- Match command: \`${report.target_cohort.match_command}\``,
+			`- Report command: \`${report.target_cohort.report_command}\``,
+			`- Rationale: ${report.target_cohort.rationale}`,
+		);
+	}
+	lines.push(
 		'',
 		'## Events',
 		'',
 		'| Source event | Canonical event | Date | Status | Fights | Moneylines | Review rows |',
 		'|---|---|---:|---|---:|---:|---:|',
-	];
+	);
 	for (const event of report.events) {
 		lines.push(
 			`| ${event.source_event_id} ${escapeMd(event.raw_name)} | ${event.canonical_event_id ?? ''} | ${event.event_date} | ${event.match_status} | ${event.matched_fights}/${event.source_fights} | ${event.linked_moneyline_rows}/${event.moneyline_rows} | ${event.review_rows} |`,
@@ -162,6 +232,19 @@ function readArg(args: string[], name: string): string | null {
 	const value = args[index + 1];
 	if (!value || value.startsWith('--')) throw new Error(`${name} requires a value`);
 	return value;
+}
+
+function readTargetCohort(args: string[]): TargetCohort | null {
+	const value = readArg(args, '--target-cohort');
+	if (value === null) return null;
+	if (value !== D2_HOC_TARGET_COHORT.id) {
+		throw new Error(`Unsupported --target-cohort ${value}`);
+	}
+	return D2_HOC_TARGET_COHORT;
+}
+
+function isTargetEvent(event: CoverageEvent, targetCohort: TargetCohort): boolean {
+	return event.event_date >= targetCohort.from && event.event_date < targetCohort.to;
 }
 
 function resolveRepoPath(path: string): string {

@@ -1,0 +1,83 @@
+{
+  "generated_at": "2026-05-12T02:31:06.827Z",
+  "report": "historical-odds-coverage",
+  "report_only": true,
+  "writes_model_versions": false,
+  "target_cohort": {
+    "id": "d2-hoc-30-event",
+    "title": "D2-HOC 30-event UFC FightOdds target cohort",
+    "source": "fightodds",
+    "from": "2023-01-01",
+    "to": "2024-03-10",
+    "target_event_count": 30,
+    "selection_rule": "Use FightOdds EventsRecentQuery with dateGte=2023-01-01, dateLt=2024-03-10, orderBy=-date, filter promotion slug/shortName to UFC, and import the first 30 UFC events.",
+    "import_command": "pnpm --filter @interceptor/db import:fightodds:range -- --from 2023-01-01 --to 2024-03-10 --limit 30",
+    "match_command": "pnpm --filter @interceptor/db match:fightodds:all",
+    "report_command": "pnpm --filter @interceptor/db report:fightodds:coverage -- --target-cohort d2-hoc-30-event",
+    "rationale": "The window ends at UFC 299, which is the newest event in the current 3-event corpus, and reaches backward far enough for the importer to select 30 recent UFC market events without using future market data."
+  },
+  "summary": {
+    "source_events": 3,
+    "matched_source_events": 3,
+    "target_events": 30,
+    "imported_target_events": 3,
+    "target_event_coverage_rate": 0.1,
+    "source_fights": 46,
+    "matched_fights": 30,
+    "ambiguous_fights": 0,
+    "unmatched_fights": 16,
+    "cancelled_unmatched_fights": 9,
+    "moneyline_rows": 2173,
+    "linked_moneyline_rows": 1553,
+    "review_rows": 63,
+    "fight_match_rate": 0.6521739130434783,
+    "moneyline_link_rate": 0.7146801656695813
+  },
+  "events": [
+    {
+      "source_event_id": "5362",
+      "raw_name": "UFC Fight Night 237: Moreno vs. Royval 2",
+      "event_date": "2024-02-24",
+      "canonical_event_id": "902ab9197b83d0db",
+      "match_status": "matched",
+      "source_fights": 14,
+      "matched_fights": 12,
+      "ambiguous_fights": 0,
+      "unmatched_fights": 2,
+      "cancelled_unmatched_fights": 2,
+      "moneyline_rows": 652,
+      "linked_moneyline_rows": 600,
+      "review_rows": 17
+    },
+    {
+      "source_event_id": "5318",
+      "raw_name": "UFC Fight Night 238: Rozenstruik vs. Gaziev",
+      "event_date": "2024-03-02",
+      "canonical_event_id": "e4a9dbade7c7e1a7",
+      "match_status": "matched",
+      "source_fights": 16,
+      "matched_fights": 9,
+      "ambiguous_fights": 0,
+      "unmatched_fights": 7,
+      "cancelled_unmatched_fights": 5,
+      "moneyline_rows": 688,
+      "linked_moneyline_rows": 418,
+      "review_rows": 23
+    },
+    {
+      "source_event_id": "5356",
+      "raw_name": "UFC 299: O'Malley vs. Vera 2",
+      "event_date": "2024-03-09",
+      "canonical_event_id": "a9df5ae20a97b090",
+      "match_status": "matched",
+      "source_fights": 16,
+      "matched_fights": 9,
+      "ambiguous_fights": 0,
+      "unmatched_fights": 7,
+      "cancelled_unmatched_fights": 2,
+      "moneyline_rows": 833,
+      "linked_moneyline_rows": 535,
+      "review_rows": 23
+    }
+  ]
+}
