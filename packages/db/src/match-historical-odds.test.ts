@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	countHistoricalFightParticipantMatches,
 	eventNameTokens,
 	matchHistoricalFight,
 	normalizeEventName,
@@ -171,6 +172,42 @@ describe('historical odds matching', () => {
 		if (match.status === 'unmatched') {
 			expect(match.candidates).toHaveLength(1);
 		}
+	});
+
+	it('counts participant overlap for renamed event headlines', () => {
+		const count = countHistoricalFightParticipantMatches(
+			[
+				{ rawFighterA: 'Andre Muniz', rawFighterB: 'Brendan Allen', isCancelled: false },
+				{ rawFighterA: 'Nikita Krylov', rawFighterB: 'Ryan Spann', isCancelled: true },
+				{ rawFighterA: 'Mike Malott', rawFighterB: 'Yohan Lainesse', isCancelled: false },
+				{ rawFighterA: 'Augusto Sakai', rawFighterB: 'Dontale Mayes', isCancelled: false },
+			],
+			[
+				{
+					fightId: 'muniz-allen',
+					fighters: [
+						{ id: 'muniz', name: 'Andre Muniz' },
+						{ id: 'allen', name: 'Brendan Allen' },
+					],
+				},
+				{
+					fightId: 'malott-lainesse',
+					fighters: [
+						{ id: 'malott', name: 'Mike Malott' },
+						{ id: 'lainesse', name: 'Yohan Lainesse' },
+					],
+				},
+				{
+					fightId: 'sakai-mayes',
+					fighters: [
+						{ id: 'sakai', name: 'Augusto Sakai' },
+						{ id: 'mayes', name: "Don'Tale Mayes" },
+					],
+				},
+			],
+		);
+
+		expect(count).toBe(3);
 	});
 
 	it('preserves ambiguous matches for review', () => {

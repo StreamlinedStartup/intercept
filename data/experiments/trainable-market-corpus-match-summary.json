@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-05-12T04:33:05Z",
+  "report": "trainable-market-corpus-match-summary",
+  "epic": "intercept-ftbt",
+  "task": "intercept-lgvs",
+  "report_only": true,
+  "writes_model_versions": false,
+  "match_command": "DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor pnpm --filter @interceptor/db match:fightodds:all",
+  "summary": {
+    "events_read": 51,
+    "events_matched": 51,
+    "fights_read": 781,
+    "fights_matched": 499,
+    "fights_ambiguous": 0,
+    "fights_unmatched": 282,
+    "cancelled_unmatched": 162,
+    "moneyline_rows_linked": 28038
+  },
+  "target_batch": {
+    "events_matched": 14,
+    "events_total": 14,
+    "fights_matched": 140,
+    "fights_total": 209,
+    "cancelled_unmatched": 38,
+    "moneyline_rows_linked": 7843,
+    "moneyline_rows_total": 10966
+  },
+  "existing_corpus_regression_check": {
+    "events_matched": 37,
+    "events_total": 37,
+    "status": "pass"
+  },
+  "deterministic_matching_changes": [
+    "Added participant-overlap event fallback for same-date UFC events whose FightOdds headline changed before fight night.",
+    "Added Dontale Mayes / Don'Tale Mayes name alias for participant matching."
+  ],
+  "review_reasons": [
+    {
+      "reason": "source fight is cancelled and no canonical fight pair exists on the completed event",
+      "rows": 162
+    },
+    {
+      "reason": "no canonical fight matched normalized fighter pair",
+      "rows": 120
+    }
+  ],
+  "model_versions": 14
+}
