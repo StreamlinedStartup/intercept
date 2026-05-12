@@ -1,0 +1,85 @@
+{
+  "generated_at": "2026-05-12T06:05:00Z",
+  "report": "market-residual-final-recommendation",
+  "epic": "intercept-b6yf",
+  "task": "intercept-jnqm",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "decision": "Do not promote the feature-availability signal or activate validated/value status. Keep the product research-only and use the result to narrow future work.",
+  "evidence_artifacts": {
+    "leakage_audit": "data/experiments/market-residual-final-leakage-audit.json",
+    "residual_buckets": "data/experiments/market-residual-final-buckets.json",
+    "market_gate": "data/experiments/market-residual-final-market-gate-report.json",
+    "blend_experiments": "data/experiments/market-residual-final-blend-experiments.json",
+    "model_family_experiments": "data/experiments/market-residual-final-model-family-experiments.json",
+    "signal_experiment": "data/experiments/market-signal-experiment.json"
+  },
+  "coverage": {
+    "scored_events": 51,
+    "scored_fights": 486,
+    "model_eligible_events": 40,
+    "model_eligible_fights": 379,
+    "moneyline_rows_linked": 28038,
+    "moneyline_rows_imported": 40022
+  },
+  "leakage_audit": {
+    "status": "pass",
+    "checks": 14,
+    "passed": 14,
+    "failed": 0
+  },
+  "market_gate": {
+    "value_status": "research_only",
+    "market_favorite_roi": 0.1995603026669945,
+    "model_pick_roi": -0.1120582063793795,
+    "required_candidate_roi": 0.2195603026669945,
+    "candidate_cleared_gate": false
+  },
+  "blend_gate": {
+    "best_candidate": "blend_25_model_75_market",
+    "best_candidate_roi": 0.18493576173442264,
+    "roi_delta_vs_market": -0.014624540932571872,
+    "candidate_cleared_gate": false
+  },
+  "model_family_gate": {
+    "best_candidate": "blend_25_xgboost_75_market",
+    "best_candidate_roi": 0.10508783686027016,
+    "roi_delta_vs_market": -0.0797402458695212,
+    "candidate_cleared_gate": false,
+    "rejection_reasons": [
+      "roi_delta_below_plus_2pp_market_gate",
+      "log_loss_worse_than_market",
+      "brier_worse_than_market"
+    ]
+  },
+  "signal_experiment": {
+    "candidate": "xgboost_feature_availability",
+    "added_features": [
+      "feature_missing_count",
+      "feature_missing_rate",
+      "has_recent_form_context",
+      "has_weight_context"
+    ],
+    "accuracy": 0.5382585751978892,
+    "roi": -0.05463377793261287,
+    "log_loss": 0.7290904733057262,
+    "brier_score": 0.2652890209810057,
+    "roi_delta_vs_market": -0.23946186066240424,
+    "log_loss_delta_vs_market": 0.1524964255043817,
+    "brier_delta_vs_market": 0.07005390111268817,
+    "roi_delta_vs_current_model": 0.03450611171116709,
+    "log_loss_delta_vs_current_model": 0.00253601669549286,
+    "brier_delta_vs_current_model": 0.0011420298866453016,
+    "recommendation": "do_not_promote"
+  },
+  "blockers": [
+    "Market favorite remains stronger than current model, blends, model-family candidates, and the feature-availability signal on ROI and probability-quality metrics.",
+    "The feature-availability signal improves ROI and accuracy slightly versus current XGBoost but worsens log loss and Brier, so it fails the Task D minimum validation.",
+    "Market-disagreement clusters are market-prior gaps rather than evidence of a missing internal pre-fight feature."
+  ],
+  "next_step": {
+    "recommendation": "Do not continue tuning feature availability in this epic. Next work should either improve the historical market corpus quality/closing-line semantics or define a new pre-fight signal from a source not already encoded in the current feature set.",
+    "status_contract": "Keep value_status research_only; do not write active model_versions."
+  }
+}

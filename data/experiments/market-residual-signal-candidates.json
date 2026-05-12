@@ -1,0 +1,132 @@
+{
+  "generated_at": "2026-05-12T05:55:00Z",
+  "report": "market-residual-signal-candidates",
+  "epic": "intercept-b6yf",
+  "task": "intercept-tktt",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "input_report": "data/experiments/market-residual-clusters.json",
+  "decision": "Build exactly one smallest justified report-only experiment: add pre-fight feature-availability/completeness indicators. Do not force a market-prior feature from the market-disagreement clusters in this epic.",
+  "candidate_signals": [
+    {
+      "name": "pre_fight_feature_availability_flags",
+      "status": "recommended_for_task_e",
+      "source_evidence": [
+        {
+          "cluster": "feature_availability:sparse",
+          "fights": 64,
+          "events": 30,
+          "roi_delta_vs_market": -0.358781662019111,
+          "high_conf_wrong_rate": 0.234375,
+          "gaps": [
+            "higher_feature_missingness",
+            "lower_has_recent_form"
+          ],
+          "cluster_average_missing_rate": 0.5034722222222222,
+          "corpus_average_missing_rate": 0.09481090589270008,
+          "cluster_recent_form_availability": 0.0,
+          "corpus_recent_form_availability": 0.8311345646437994
+        },
+        {
+          "cluster": "confidence:model_70_plus",
+          "fights": 53,
+          "events": 25,
+          "roi_delta_vs_market": -0.3582662190695659,
+          "high_conf_wrong_rate": 0.5283018867924528,
+          "gaps": [
+            "higher_feature_missingness",
+            "lower_has_recent_form"
+          ],
+          "cluster_average_missing_rate": 0.16184486373165619,
+          "corpus_average_missing_rate": 0.09481090589270008,
+          "cluster_recent_form_availability": 0.6981132075471698,
+          "corpus_recent_form_availability": 0.8311345646437994
+        },
+        {
+          "cluster": "odds_range:heavy_favorite_75_plus",
+          "fights": 64,
+          "events": 32,
+          "roi_delta_vs_market": -0.20826637289273064,
+          "high_conf_wrong_rate": 0.125,
+          "gaps": [
+            "higher_feature_missingness",
+            "lower_has_recent_form"
+          ],
+          "cluster_average_missing_rate": 0.14652777777777778,
+          "corpus_average_missing_rate": 0.09481090589270008,
+          "cluster_recent_form_availability": 0.71875,
+          "corpus_recent_form_availability": 0.8311345646437994
+        }
+      ],
+      "feature_semantics": [
+        {
+          "feature": "feature_missing_count",
+          "type": "numeric",
+          "meaning": "Count of NaN values in the existing point-in-time feature vector before model training."
+        },
+        {
+          "feature": "feature_missing_rate",
+          "type": "numeric",
+          "meaning": "Share of NaN values in the existing point-in-time feature vector before model training."
+        },
+        {
+          "feature": "has_recent_form_context",
+          "type": "binary",
+          "meaning": "1 when wins_last_3_diff and wins_last_5_diff are both present before the fight, else 0."
+        },
+        {
+          "feature": "has_weight_context",
+          "type": "binary",
+          "meaning": "1 when weight_class_change and same_weight_class_count_diff are both present before the fight, else 0."
+        }
+      ],
+      "data_source": "Existing pre-fight feature vector returned by ml.features.build_features/build_feature_row. No new scrape source is required.",
+      "leakage_review": {
+        "status": "pre_fight_only",
+        "reason": "The indicators are derived only from whether existing point-in-time inputs are present before the target fight. They do not inspect fight result, post-fight stats, or future events."
+      },
+      "expected_direction": "Missingness should reduce overconfident model picks or let the report-only model learn that sparse/recent-form-missing rows are less reliable than fully observed rows.",
+      "minimum_report_only_validation": [
+        "Rerun the same market residual bucket report on the augmented feature set.",
+        "Compare model_70_plus, feature_availability:sparse, and heavy_favorite_75_plus buckets against Task C baseline.",
+        "Require no degradation in overall log loss/Brier and at least one actionable cluster moving toward market performance before recommending broader model-family work."
+      ]
+    },
+    {
+      "name": "market_disagreement_context",
+      "status": "no_build_in_task_e",
+      "source_evidence": [
+        {
+          "cluster": "favorite_underdog_side:model_on_market_underdog",
+          "fights": 146,
+          "events": 39,
+          "roi_delta_vs_market": -0.7111908323944077,
+          "classification": "market_prior_gap"
+        },
+        {
+          "cluster": "market_model_disagreement:disagree_delta_20pp_plus",
+          "fights": 95,
+          "events": 37,
+          "roi_delta_vs_market": -0.6693440610712895,
+          "classification": "market_prior_gap"
+        }
+      ],
+      "data_source": "No-vig FightOdds market probabilities plus model probabilities.",
+      "leakage_review": {
+        "status": "pre_fight_available_but_not_selected",
+        "reason": "Market probabilities are pre-fight/current-at-import, but D2-MIX already tested market blends and market-aware model-family candidates. Rebuilding this signal would duplicate existing market-prior experiments."
+      },
+      "expected_direction": "Would mostly teach the model to defer to market favorites when model and market disagree.",
+      "minimum_report_only_validation": [],
+      "no_build_reason": "The evidence is market-prior dominance, not a missing internal pre-fight signal. Keep this as diagnostic context and do not spend Task E on it."
+    }
+  ],
+  "task_e_recommendation": {
+    "build": "pre_fight_feature_availability_flags",
+    "do_not_build": [
+      "market_disagreement_context"
+    ],
+    "scope": "report-only feature experiment; no active model_versions writes"
+  }
+}
