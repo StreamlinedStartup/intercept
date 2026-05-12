@@ -1,22 +1,22 @@
 # Market Gate Report
 
-- Generated: `2026-05-12T01:23:23.545952+00:00`
+- Generated: `2026-05-12T03:07:42.748643+00:00`
 - Value status: `insufficient_coverage`
-- Reason: Only 30 matched fights across 3 events were scored; need at least 200 fights across 30 events.
-- Scored events: 3
-- Scored fights: 30
-- Moneyline rows linked: 1553/2173
+- Reason: Only 235 matched fights across 26 events were scored; need at least 200 fights across 30 events.
+- Scored events: 26
+- Scored fights: 235
+- Moneyline rows linked: 13759/23598
 - Writes `model_versions`: `false`
 
 ## Strategy Comparison
 
 | Strategy | Count | Accuracy | Avg confidence | Calibration gap | Log loss | Brier | ROC AUC | Sim ROI |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| model_pick | 30 | 36.7% | 59.0% | -22.3% | 0.7588 | 0.2823 | 0.3711 | -16.4% |
-| market_favorite | 30 | 76.7% | 70.1% | +6.6% | 0.5166 | 0.1685 | 0.8356 | 7.2% |
-| blend_50_50 | 30 | 70.0% | 58.9% | +11.1% | 0.6024 | 0.2064 | 0.7911 | -3.8% |
-| blend_25_model_75_market | 30 | 76.7% | 64.3% | +12.3% | 0.5500 | 0.1827 | 0.8356 | 7.2% |
-| blend_75_model_25_market | 30 | 46.7% | 55.7% | -9.0% | 0.6712 | 0.2396 | 0.5511 | -21.9% |
+| model_pick | 235 | 42.6% | 59.1% | -16.6% | 0.7368 | 0.2715 | 0.4320 | -12.5% |
+| market_favorite | 235 | 75.3% | 66.6% | +8.7% | 0.5616 | 0.1886 | 0.7916 | 12.9% |
+| blend_50_50 | 235 | 68.9% | 58.0% | +10.9% | 0.6241 | 0.2165 | 0.7462 | 3.3% |
+| blend_25_model_75_market | 235 | 76.2% | 62.0% | +14.1% | 0.5865 | 0.1992 | 0.7854 | 14.9% |
+| blend_75_model_25_market | 235 | 50.2% | 56.3% | -6.1% | 0.6736 | 0.2406 | 0.5829 | -8.7% |
 
 ## Timestamp Semantics
 
