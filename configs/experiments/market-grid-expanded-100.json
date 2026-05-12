@@ -1,0 +1,753 @@
+{
+  "name": "market-grid-expanded-100",
+  "description": "Expanded report-only matrix for dense model-to-market blend sweeps across production XGBoost, availability-augmented XGBoost, and logistic regression.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 100,
+    "max_events": null
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "full_current_corpus",
+    "locked_evaluation": "future_required"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline."
+    },
+    {
+      "name": "xgb_prod_unblended",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": null,
+      "description": "XGBoost production features without market blending."
+    },
+    {
+      "name": "xgb_prod_blend_01_model_99_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.01,
+      "description": "1% XGBoost production features probability plus 99% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_04_model_96_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.04,
+      "description": "4% XGBoost production features probability plus 96% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_07_model_93_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.07,
+      "description": "7% XGBoost production features probability plus 93% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_10_model_90_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.1,
+      "description": "10% XGBoost production features probability plus 90% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_13_model_87_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.13,
+      "description": "13% XGBoost production features probability plus 87% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_16_model_84_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.16,
+      "description": "16% XGBoost production features probability plus 84% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_19_model_81_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.19,
+      "description": "19% XGBoost production features probability plus 81% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_22_model_78_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.22,
+      "description": "22% XGBoost production features probability plus 78% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_25_model_75_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.25,
+      "description": "25% XGBoost production features probability plus 75% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_28_model_72_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.28,
+      "description": "28% XGBoost production features probability plus 72% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_31_model_69_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.31,
+      "description": "31% XGBoost production features probability plus 69% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_34_model_66_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.34,
+      "description": "34% XGBoost production features probability plus 66% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_37_model_63_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.37,
+      "description": "37% XGBoost production features probability plus 63% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_40_model_60_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.4,
+      "description": "40% XGBoost production features probability plus 60% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_43_model_57_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.43,
+      "description": "43% XGBoost production features probability plus 57% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_46_model_54_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.46,
+      "description": "46% XGBoost production features probability plus 54% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_49_model_51_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.49,
+      "description": "49% XGBoost production features probability plus 51% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_52_model_48_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.52,
+      "description": "52% XGBoost production features probability plus 48% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_55_model_45_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.55,
+      "description": "55% XGBoost production features probability plus 45% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_58_model_42_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.58,
+      "description": "58% XGBoost production features probability plus 42% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_61_model_39_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.61,
+      "description": "61% XGBoost production features probability plus 39% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_64_model_36_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.64,
+      "description": "64% XGBoost production features probability plus 36% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_67_model_33_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.67,
+      "description": "67% XGBoost production features probability plus 33% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_70_model_30_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.7,
+      "description": "70% XGBoost production features probability plus 30% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_73_model_27_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.73,
+      "description": "73% XGBoost production features probability plus 27% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_76_model_24_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.76,
+      "description": "76% XGBoost production features probability plus 24% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_79_model_21_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.79,
+      "description": "79% XGBoost production features probability plus 21% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_82_model_18_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.82,
+      "description": "82% XGBoost production features probability plus 18% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_85_model_15_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.85,
+      "description": "85% XGBoost production features probability plus 15% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_88_model_12_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.88,
+      "description": "88% XGBoost production features probability plus 12% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_91_model_09_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.91,
+      "description": "91% XGBoost production features probability plus 9% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_94_model_06_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.94,
+      "description": "94% XGBoost production features probability plus 6% no-vig market probability."
+    },
+    {
+      "name": "xgb_prod_blend_97_model_03_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.97,
+      "description": "97% XGBoost production features probability plus 3% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_unblended",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": null,
+      "description": "XGBoost with feature availability indicators without market blending."
+    },
+    {
+      "name": "xgb_avail_blend_01_model_99_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.01,
+      "description": "1% XGBoost with feature availability indicators probability plus 99% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_04_model_96_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.04,
+      "description": "4% XGBoost with feature availability indicators probability plus 96% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_07_model_93_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.07,
+      "description": "7% XGBoost with feature availability indicators probability plus 93% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_10_model_90_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.1,
+      "description": "10% XGBoost with feature availability indicators probability plus 90% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_13_model_87_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.13,
+      "description": "13% XGBoost with feature availability indicators probability plus 87% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_16_model_84_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.16,
+      "description": "16% XGBoost with feature availability indicators probability plus 84% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_19_model_81_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.19,
+      "description": "19% XGBoost with feature availability indicators probability plus 81% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_22_model_78_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.22,
+      "description": "22% XGBoost with feature availability indicators probability plus 78% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_25_model_75_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.25,
+      "description": "25% XGBoost with feature availability indicators probability plus 75% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_28_model_72_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.28,
+      "description": "28% XGBoost with feature availability indicators probability plus 72% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_31_model_69_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.31,
+      "description": "31% XGBoost with feature availability indicators probability plus 69% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_34_model_66_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.34,
+      "description": "34% XGBoost with feature availability indicators probability plus 66% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_37_model_63_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.37,
+      "description": "37% XGBoost with feature availability indicators probability plus 63% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_40_model_60_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.4,
+      "description": "40% XGBoost with feature availability indicators probability plus 60% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_43_model_57_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.43,
+      "description": "43% XGBoost with feature availability indicators probability plus 57% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_46_model_54_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.46,
+      "description": "46% XGBoost with feature availability indicators probability plus 54% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_49_model_51_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.49,
+      "description": "49% XGBoost with feature availability indicators probability plus 51% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_52_model_48_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.52,
+      "description": "52% XGBoost with feature availability indicators probability plus 48% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_55_model_45_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.55,
+      "description": "55% XGBoost with feature availability indicators probability plus 45% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_58_model_42_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.58,
+      "description": "58% XGBoost with feature availability indicators probability plus 42% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_61_model_39_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.61,
+      "description": "61% XGBoost with feature availability indicators probability plus 39% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_64_model_36_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.64,
+      "description": "64% XGBoost with feature availability indicators probability plus 36% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_67_model_33_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.67,
+      "description": "67% XGBoost with feature availability indicators probability plus 33% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_70_model_30_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.7,
+      "description": "70% XGBoost with feature availability indicators probability plus 30% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_73_model_27_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.73,
+      "description": "73% XGBoost with feature availability indicators probability plus 27% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_76_model_24_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.76,
+      "description": "76% XGBoost with feature availability indicators probability plus 24% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_79_model_21_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.79,
+      "description": "79% XGBoost with feature availability indicators probability plus 21% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_82_model_18_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.82,
+      "description": "82% XGBoost with feature availability indicators probability plus 18% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_85_model_15_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.85,
+      "description": "85% XGBoost with feature availability indicators probability plus 15% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_88_model_12_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.88,
+      "description": "88% XGBoost with feature availability indicators probability plus 12% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_91_model_09_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.91,
+      "description": "91% XGBoost with feature availability indicators probability plus 9% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_94_model_06_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.94,
+      "description": "94% XGBoost with feature availability indicators probability plus 6% no-vig market probability."
+    },
+    {
+      "name": "xgb_avail_blend_97_model_03_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.97,
+      "description": "97% XGBoost with feature availability indicators probability plus 3% no-vig market probability."
+    },
+    {
+      "name": "log_prod_unblended",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": null,
+      "description": "regularized logistic regression production features without market blending."
+    },
+    {
+      "name": "log_prod_blend_01_model_99_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.01,
+      "description": "1% regularized logistic regression production features probability plus 99% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_04_model_96_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.04,
+      "description": "4% regularized logistic regression production features probability plus 96% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_07_model_93_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.07,
+      "description": "7% regularized logistic regression production features probability plus 93% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_10_model_90_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.1,
+      "description": "10% regularized logistic regression production features probability plus 90% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_13_model_87_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.13,
+      "description": "13% regularized logistic regression production features probability plus 87% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_16_model_84_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.16,
+      "description": "16% regularized logistic regression production features probability plus 84% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_19_model_81_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.19,
+      "description": "19% regularized logistic regression production features probability plus 81% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_22_model_78_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.22,
+      "description": "22% regularized logistic regression production features probability plus 78% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_25_model_75_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.25,
+      "description": "25% regularized logistic regression production features probability plus 75% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_28_model_72_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.28,
+      "description": "28% regularized logistic regression production features probability plus 72% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_31_model_69_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.31,
+      "description": "31% regularized logistic regression production features probability plus 69% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_34_model_66_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.34,
+      "description": "34% regularized logistic regression production features probability plus 66% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_37_model_63_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.37,
+      "description": "37% regularized logistic regression production features probability plus 63% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_40_model_60_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.4,
+      "description": "40% regularized logistic regression production features probability plus 60% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_43_model_57_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.43,
+      "description": "43% regularized logistic regression production features probability plus 57% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_46_model_54_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.46,
+      "description": "46% regularized logistic regression production features probability plus 54% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_49_model_51_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.49,
+      "description": "49% regularized logistic regression production features probability plus 51% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_52_model_48_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.52,
+      "description": "52% regularized logistic regression production features probability plus 48% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_55_model_45_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.55,
+      "description": "55% regularized logistic regression production features probability plus 45% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_58_model_42_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.58,
+      "description": "58% regularized logistic regression production features probability plus 42% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_61_model_39_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.61,
+      "description": "61% regularized logistic regression production features probability plus 39% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_64_model_36_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.64,
+      "description": "64% regularized logistic regression production features probability plus 36% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_67_model_33_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.67,
+      "description": "67% regularized logistic regression production features probability plus 33% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_70_model_30_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.7,
+      "description": "70% regularized logistic regression production features probability plus 30% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_73_model_27_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.73,
+      "description": "73% regularized logistic regression production features probability plus 27% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_76_model_24_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.76,
+      "description": "76% regularized logistic regression production features probability plus 24% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_79_model_21_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.79,
+      "description": "79% regularized logistic regression production features probability plus 21% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_82_model_18_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.82,
+      "description": "82% regularized logistic regression production features probability plus 18% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_85_model_15_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.85,
+      "description": "85% regularized logistic regression production features probability plus 15% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_88_model_12_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.88,
+      "description": "88% regularized logistic regression production features probability plus 12% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_91_model_09_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.91,
+      "description": "91% regularized logistic regression production features probability plus 9% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_94_model_06_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.94,
+      "description": "94% regularized logistic regression production features probability plus 6% no-vig market probability."
+    },
+    {
+      "name": "log_prod_blend_97_model_03_market",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": 0.97,
+      "description": "97% regularized logistic regression production features probability plus 3% no-vig market probability."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/market-grid-expanded-100.json",
+    "markdown": "data/experiments/harness/market-grid-expanded-100.md"
+  }
+}
