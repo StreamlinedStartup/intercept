@@ -24,3 +24,7 @@ Running many variants can easily overfit the current corpus. The harness therefo
 - Flag small-sample winners as unstable instead of promoting them.
 
 MLflow can be layered on later as a tracking UI. The first durable interface is the config file plus the JSON/Markdown run registry because that is easier to review, commit, and reproduce in this repo.
+
+## Initial Recommendation
+
+See `data/experiments/harness/experiment-harness-recommendation.md` for the first matrix result and MLflow posture.

@@ -1,0 +1,38 @@
+{
+  "report": "market-experiment-harness-recommendation",
+  "source_reports": [
+    "data/experiments/harness/market-grid-smoke.json",
+    "data/experiments/harness/market-grid-summary.json"
+  ],
+  "value_status": "research_only",
+  "writes_model_versions": false,
+  "model_versions_count_after_run": 14,
+  "run_command": "DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor PYTHONPATH=services/python /Users/vulturestudio/intercept/services/python/.venv/bin/python -m ml.experiment_harness --config configs/experiments/market-grid.example.json --stdout summary",
+  "first_matrix_finding": {
+    "best_configured_candidate": "blend_25_availability_75_market",
+    "status": "rejected_by_market_gate",
+    "reason": "The best configured candidate underperformed the market favorite baseline on ROI, log loss, and Brier score.",
+    "roi_delta_vs_market": -0.06887339485325517,
+    "log_loss_delta_vs_market": 0.023919718342126473,
+    "brier_delta_vs_market": 0.01033318195184249
+  },
+  "mlflow_posture": {
+    "needed_now": false,
+    "recommendation": "Keep the first layer as checked-in JSON config plus JSON/Markdown run artifacts. Add MLflow later if the local registry grows enough that a tracking UI, run search, or artifact comparison dashboard becomes the bottleneck."
+  },
+  "next_experiment_policy": [
+    "Use the harness to add curated variants quickly.",
+    "Keep all outputs report-only on the current corpus.",
+    "Promote nothing to validated status until a locked future evaluation slice clears the market gate."
+  ],
+  "verification": [
+    "pytest services/python/test_experiment_harness.py services/python/test_market_signal_experiment.py services/python/test_market_blend_experiments.py services/python/test_model_family_experiments.py -q => 16 passed",
+    "python -m ml.experiment_harness --config configs/experiments/market-grid.example.json --stdout summary",
+    "jq empty data/experiments/harness/market-grid-smoke.json data/experiments/harness/market-grid-summary.json data/experiments/harness/experiment-harness-recommendation.json",
+    "select count(*) from model_versions; => 14"
+  ],
+  "smoke_gate": {
+    "required": false,
+    "reason": "This epic added a pure Python report-only CLI and committed artifacts. It did not add an HTTP endpoint or UI surface."
+  }
+}
