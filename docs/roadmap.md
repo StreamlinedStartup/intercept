@@ -64,11 +64,11 @@
 - ![task](https://img.shields.io/badge/task-1d76db?style=flat-square) 3-A: requirements.txt + ml/db.py ([intercept-y3xz](.beans/intercept-y3xz--3-a-requirementstxt-mldbpy.md))
 ### Epic: Phase 4: Predict API + dashboard UI ([intercept-di4c](.beans/intercept-di4c--phase-4-predict-api-dashboard-ui.md))
 
-> Surface predictions: chip per fight row in /upcoming, win-prob bars + edge in compare-sheet, /predictions page (table + ROI + calibration), /admin/predict-train retrain.
+> Surface predictions: chip per fight row in /upcoming, win-prob bars + research-only market edge in compare-sheet, /predictions page (table + simulated ROI + calibration), /admin/predict-train retrain.
 
 
 - ![task](https://img.shields.io/badge/task-1d76db?style=flat-square) 4-A: GET /api/predict/fight/:id (model only, THE SLICE) ([intercept-1ved](.beans/intercept-1ved--4-a-get-apipredictfightid-model-only-the-slice.md))
-- ![task](https://img.shields.io/badge/task-1d76db?style=flat-square) 4-H: /predictions ROI cumulative chart ([intercept-33qk](.beans/intercept-33qk--4-h-predictions-roi-cumulative-chart.md))
+- ![task](https://img.shields.io/badge/task-1d76db?style=flat-square) 4-H: /predictions simulated ROI cumulative chart ([intercept-33qk](.beans/intercept-33qk--4-h-predictions-roi-cumulative-chart.md))
 - ![task](https://img.shields.io/badge/task-1d76db?style=flat-square) 4-B: Prediction chip on /upcoming fight rows (visual slice closes) ([intercept-a5wm](.beans/intercept-a5wm--4-b-prediction-chip-on-upcoming-fight-rows-visual.md))
 - ![task](https://img.shields.io/badge/task-1d76db?style=flat-square) 4-J: POST /api/predict/train + /admin/predict-train page ([intercept-c5rs](.beans/intercept-c5rs--4-j-post-apipredicttrain-adminpredict-train-page.md))
 - ![task](https://img.shields.io/badge/task-1d76db?style=flat-square) 4-K: Phase 4 verification + ship ([intercept-g0wt](.beans/intercept-g0wt--4-k-phase-4-verification-ship.md))

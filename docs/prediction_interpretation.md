@@ -1,6 +1,6 @@
 # Prediction Interpretation Guide
 
-This guide explains how to read UFC Fight Predictor outputs without confusing a straight-up pick with betting value.
+This guide explains how to read UFC Fight Predictor outputs without confusing a straight-up pick with a validated betting edge.
 
 ## Core Terms
 
@@ -63,9 +63,9 @@ Examples:
 
 When both sides have odds, remove the sportsbook hold by normalizing both implied probabilities before calculating model-vs-market edge.
 
-### Model-vs-Market Edge
+### Research Model-vs-Market Edge
 
-Edge compares the model's probability for a fighter against the market's implied probability.
+Edge compares the model's probability for a fighter against the market's implied probability. In the product today, this is a research-only market comparison until leakage audits, baselines, and market-gated validation pass.
 
 ```text
 edge = model_probability - market_probability
@@ -79,24 +79,24 @@ model_probability = 42.06%
 edge = +25.39 percentage points
 ```
 
-This means the model still picked Chimaev, but Strickland was the value side at that price.
+This means the model still picked Chimaev, but Strickland had the larger research edge at that price.
 
-## Pick vs Value
+## Pick vs Market Comparison
 
-The model can pick one fighter while the value side is the other fighter.
+The model can pick one fighter while the larger research edge is on the other fighter.
 
 Example:
 
 | Fighter | Model probability | Market probability | Interpretation |
 |---|---:|---:|---|
 | Chimaev | 57.94% | much higher than 57.94% if heavily favored | Pick, but likely overpriced |
-| Strickland | 42.06% | 16.67% at +500 | Underdog value |
+| Strickland | 42.06% | 16.67% at +500 | Underdog research edge |
 
 The straight-up pick asks:
 
 > Who is more likely to win?
 
-The value question asks:
+The market-comparison question asks:
 
 > Is the market price too high or too low relative to the model?
 
@@ -104,7 +104,7 @@ Those are different questions.
 
 ## Expected Value
 
-Expected value estimates the long-run return if the model probability is correct.
+Expected value estimates the long-run return if the model probability is correct. It remains a simulation until the model passes reliability and market baseline gates.
 
 For a +500 underdog, a $1 stake wins $5 profit if the fighter wins and loses $1 if the fighter loses.
 
@@ -120,7 +120,7 @@ EV = 2.1030 - 0.5794
 EV = +1.5236 per $1 risked
 ```
 
-That is a theoretical +152.36% expected ROI. Treat this as a signal to investigate, not proof of a profitable bet. The model must be calibrated across many fights before this number can be trusted.
+That is a theoretical +152.36% expected ROI. Treat this as a signal to investigate, not proof of a profitable bet. The model must be leakage-audited, baseline-tested, market-covered, and calibrated across many fights before this number can be trusted.
 
 ## Threshold Bands
 
@@ -142,7 +142,7 @@ Use probability and edge bands as review categories, not automatic betting rules
 |---:|---|---|
 | 0-2 percentage points | Noise | Too small for normal model/market error. |
 | 2-5 percentage points | Watchlist | Track, but usually below action threshold. |
-| 5-10 percentage points | Possible value | Candidate for review if model inputs look sane. |
+| 5-10 percentage points | Research edge | Candidate for review if model inputs look sane. |
 | 10+ percentage points | Large value gap | Investigate carefully; could be real, or could expose model/data weakness. |
 | 20+ percentage points | Extreme gap | Assume something needs review before trusting it. |
 
@@ -160,7 +160,7 @@ Track:
 - log loss;
 - Brier score;
 - ROC AUC;
-- ROI by edge bucket when pre-event odds are available;
+- simulated research ROI by edge bucket when pre-event odds are available;
 - live prediction history where the prediction was saved before the result.
 
 Do not judge the model from one fight. A single upset can be a good value signal and still lose.

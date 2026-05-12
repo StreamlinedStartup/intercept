@@ -236,7 +236,7 @@ Example:
 - Market implies 52%.
 - Edge is +8 percentage points.
 
-The current history page treats an edge above 5 percentage points as a simulated one-unit bet. This is for tracking, not auto-betting.
+The current history page treats an edge above 5 percentage points as a simulated one-unit research entry. This is for tracking calibration and market comparison only, not auto-betting or a validated edge claim.
 
 ## Backtesting We Can Do Now
 
@@ -375,7 +375,7 @@ Recommended walk-forward outputs:
 - log loss over time
 - Brier score over time
 - calibration chart
-- ROI by edge bucket, such as 0-2%, 2-5%, 5-10%, and 10%+
+- simulated research ROI by edge bucket, such as 0-2%, 2-5%, 5-10%, and 10%+
 - performance by confidence bucket, such as 50-55%, 55-60%, 60-65%, and 65%+
 - performance by feature regime, such as debut fights, long-layoff fights, and weight-class-change fights
 
@@ -393,7 +393,7 @@ Highest-value improvements:
    - always pick the younger fighter
    - always pick the betting favorite
    - always pick the fighter with better implied market probability
-5. Report ROI by edge bucket instead of one global ROI number.
+5. Report simulated research ROI by edge bucket instead of one global ROI number.
 
 ## Known Blind Spots
 
@@ -415,7 +415,7 @@ The model can still be useful, but these blind spots are exactly why we should t
 
 Use the model this way:
 
-- Trust the pick more when model probability, market edge, and top contributing features all make intuitive sense.
+- Trust the pick more when model probability, research-only market edge, and top contributing features all make intuitive sense.
 - Be skeptical when the model is confident but the top reason is a weak proxy, such as sparse debut data.
-- Do not judge the model by one fight. Judge it by calibration, log loss, and ROI across many saved predictions.
-- Do not claim a betting edge until walk-forward backtesting and live prediction history both support it.
+- Do not judge the model by one fight. Judge it by calibration, log loss, and simulated ROI across many saved predictions.
+- Do not claim a betting edge until leakage audits, baseline comparisons, market coverage, walk-forward backtesting, and live prediction history all support it.

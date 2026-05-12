@@ -7,7 +7,7 @@ The repo currently has a working ufcstats domain (HTML scraper + dashboard for u
 1. **Backfill** every historical UFC fight + per-round stats + per-fighter stats into a real database (currently only on-disk JSON cache).
 2. **Add a second data source**: moneyline odds from `the-odds-api.com` (free tier, 500 req/month).
 3. **Train an XGBoost model** on the historical data to predict win probability for any matchup.
-4. **Surface predictions in the dashboard**: pick + confidence + edge vs the Vegas line, plus a track-record page and admin retrain trigger.
+4. **Surface predictions in the dashboard**: pick + confidence + research-only edge vs the market line, plus a track-record page and admin retrain trigger.
 
 Why now: the ufcstats domain proves the data plumbing works end-to-end. The next step turns it into something with predictive output (and a measurable track record over time).
 
@@ -226,14 +226,14 @@ Tracked per training run, stored in `model_versions`:
 | **Brier score** | Squared error of predicted probability vs outcome. Best metric for "is the predicted 65% actually a 65% over many trials?" — directly informs how trustable our edge calculations are. |
 | **Accuracy** | Picks correct winner (threshold 0.5). Vegas closing-line accuracy on MMA is ~67%; if we beat that consistently on a chronological holdout, that's the headline. |
 | **ROC AUC** | Ranking quality independent of threshold. |
-| **ROI vs market** | For training set fights where we have odds: simulated ROI of "bet whenever model edge > 5%" — the actual product metric. Stored separately because it depends on having odds data. |
+| **Simulated ROI vs market** | For training set fights where we have odds: simulated ROI of "track whenever model edge > 5%". This is research-only until leakage audits, baselines, and market-gated validation pass. Stored separately because it depends on having odds data. |
 
 **Calibration plot** (separate from training metrics, generated each train run): bin predictions by predicted probability (10 buckets), show actual win rate per bucket. A well-calibrated model produces a near-diagonal line; a confident-but-wrong model bows below. The `/predictions` track-record page renders this same plot from real predictions over time.
 
 Realistic outcome targets, stated up front so we know if the model is actually working:
 - Beat naive baseline (always pick higher-experience fighter): YES — easy.
 - Match closing line accuracy (~67%): plausible after seeding 5+ years of data.
-- Profitable edge bets: hard. Vegas is efficient; a 1-3% positive ROI is realistic if the model is well-calibrated. Negative ROI doesn't mean the model is bad — it means the market priced the same factors first.
+- Validated market edge: hard. Markets are efficient; positive simulated ROI is only useful after leak-free baselines, sufficient odds coverage, and market-gated validation. Negative simulated ROI does not mean the model is bad; it means the market priced the same factors first.
 
 ---
 
@@ -244,19 +244,19 @@ Realistic outcome targets, stated up front so we know if the model is actually w
 Files to create / modify:
 
 - `apps/api/src/routes/predict.ts` — new route file, mounted under `/api/predict`:
-  - `GET /api/predict/fight/:id` → loads fighter snapshots → `pythonBridge.call('ml.predict', ...)` → joins current odds from `odds_snapshots` → returns `{predicted_winner_id, win_prob, decimal_odds, edge_pct}`. Persists row to `predictions` table for backtesting.
+  - `GET /api/predict/fight/:id` → loads fighter snapshots → `pythonBridge.call('ml.predict', ...)` → joins current odds from `odds_snapshots` → returns `{predicted_winner_id, win_prob, decimal_odds, edge_pct, value_status, value_status_reason}`. Persists row to `predictions` table for backtesting.
   - `GET /api/predict/event/:id` → predicts every fight on a card.
   - `POST /api/predict/train` (admin only — gate with shared secret in header for now) → invokes `ml.train`.
   - `GET /api/predict/history?from=&to=` → joins `predictions` × `fight_results` for the track-record page.
 
-- `apps/web/src/app/(dashboard)/upcoming/compare-sheet.tsx` — already loads both fighters in parallel; add a third parallel fetch to `/api/predict/fight/:id`. Display: in the corner-A / corner-B header cells, add a small bar at the bottom showing the model's win probability for each fighter; below the stats grid add an "Edge" badge — green if model agrees with market AND edge > 5%, red if disagrees.
+  - `apps/web/src/app/(dashboard)/upcoming/compare-sheet.tsx` — already loads both fighters in parallel; add a third parallel fetch to `/api/predict/fight/:id`. Display: in the corner-A / corner-B header cells, add a small bar at the bottom showing the model's win probability for each fighter; below the stats grid add a research-only market comparison badge.
 
 - `apps/web/src/app/(dashboard)/upcoming/event-fight-card.tsx` — each fight row gets a small `[58% ✓]`-style chip showing the model's pick. Click row → opens existing comparison sheet.
 
 - `apps/web/src/app/(dashboard)/predictions/page.tsx` + `predictions-content.tsx` — new page:
   - Header: model version, training date, log loss, Brier, accuracy, n predictions.
-  - Table: last 50 predictions with columns Fighter / Pick / Win Prob / Vegas / Result / ✓✗.
-  - ROI vs market chart (cumulative).
+  - Table: last 50 predictions with columns Fighter / Pick / Win Prob / Market / Result / hit.
+  - Simulated research ROI vs market chart (cumulative).
   - Calibration histogram (bin predictions by predicted probability, show actual win rate).
 
 - `apps/web/src/app/(dashboard)/admin/predict-train/page.tsx` — single button "Train new model" (POSTs `/api/predict/train`), shows live progress via polling, displays new model metrics on completion. Admin secret entered as a one-time field stored in localStorage.
