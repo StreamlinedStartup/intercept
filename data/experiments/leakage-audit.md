@@ -1,6 +1,6 @@
 # Model Leakage Audit
 
-- Generated: `2026-05-12T00:57:59.735796+00:00`
+- Generated: `2026-05-12T03:11:31.972908+00:00`
 - Status: **PASS**
 - Report-only: `true`
 - Writes `model_versions`: `false`
@@ -24,7 +24,7 @@
 | train_test_boundary | walk-forward trains only on earlier events | pass | walk-forward train set excludes same-day and future target events |
 | train_test_boundary | walk-forward targets one event at a time | pass | target samples are selected by current event_id only |
 | report_only | leakage audit does not write active models | pass | audit source has no model persistence calls |
-| database_boundary | loaded walk-forward samples respect event boundaries | pass | checked 5 event boundaries from 50 labeled samples |
+| database_boundary | loaded walk-forward samples respect event boundaries | pass | checked 777 event boundaries from 8538 labeled samples |
 
 ## Policy
 

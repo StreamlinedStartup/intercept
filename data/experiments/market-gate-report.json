@@ -1,26 +1,26 @@
 {
-  "generated_at": "2026-05-12T01:23:23.545952+00:00",
+  "generated_at": "2026-05-12T03:07:42.748643+00:00",
   "report": "market-gate-report",
   "report_only": true,
   "writes_model_versions": false,
   "value_status": "insufficient_coverage",
-  "value_status_reason": "Only 30 matched fights across 3 events were scored; need at least 200 fights across 30 events.",
+  "value_status_reason": "Only 235 matched fights across 26 events were scored; need at least 200 fights across 30 events.",
   "validation_thresholds": {
     "min_fights": 200,
     "min_market_events": 30,
     "min_market_roi_delta": 0.02
   },
   "coverage": {
-    "source_events_imported": 3,
-    "source_events_matched": 3,
-    "source_events_unmatched": 0,
-    "source_fights_imported": 46,
-    "source_fights_matched": 30,
-    "source_fights_unmatched": 16,
-    "moneyline_rows_imported": 2173,
-    "moneyline_rows_linked": 1553,
-    "scored_events": 3,
-    "scored_fights": 30
+    "source_events_imported": 30,
+    "source_events_matched": 26,
+    "source_events_unmatched": 4,
+    "source_fights_imported": 464,
+    "source_fights_matched": 244,
+    "source_fights_unmatched": 220,
+    "moneyline_rows_imported": 23598,
+    "moneyline_rows_linked": 13759,
+    "scored_events": 26,
+    "scored_fights": 235
   },
   "timestamp_semantics": {
     "label": "FightOdds source_current lines are captured at import scrape time. This report uses them as current/consensus market probabilities only, not as true closing-line value.",
@@ -33,20 +33,20 @@
       "model_weight": 1.0,
       "market_weight": 0.0,
       "metrics": {
-        "count": 30,
-        "accuracy": 0.36666666666666664,
-        "avg_confidence": 0.5900000000000001,
-        "calibration_gap": -0.22333333333333344,
-        "abs_calibration_error": 0.22333333333333344,
-        "log_loss": 0.7588213407066795,
-        "brier_score": 0.2823333333333334,
-        "roc_auc": 0.3711111111111111
+        "count": 235,
+        "accuracy": 0.425531914893617,
+        "avg_confidence": 0.5914893617021274,
+        "calibration_gap": -0.16595744680851038,
+        "abs_calibration_error": 0.16595744680851038,
+        "log_loss": 0.7368391315322678,
+        "brier_score": 0.2714893617021277,
+        "roc_auc": 0.4319962280574496
       },
       "simulated_research_roi": {
-        "entries": 30,
-        "wins": 11,
-        "units": -4.9235005205661,
-        "roi_pct": -0.16411668401887,
+        "entries": 235,
+        "wins": 100,
+        "units": -29.452052188523236,
+        "roi_pct": -0.12532788165329037,
         "stake_unit": "flat_1u",
         "status": "simulated_research_only"
       }
@@ -57,20 +57,20 @@
       "model_weight": 0.0,
       "market_weight": 1.0,
       "metrics": {
-        "count": 30,
-        "accuracy": 0.7666666666666667,
-        "avg_confidence": 0.701149967050713,
-        "calibration_gap": 0.06551669961595374,
-        "abs_calibration_error": 0.06551669961595374,
-        "log_loss": 0.5165681638991286,
-        "brier_score": 0.16852894164001594,
-        "roc_auc": 0.8355555555555555
+        "count": 235,
+        "accuracy": 0.7531914893617021,
+        "avg_confidence": 0.6658326775750556,
+        "calibration_gap": 0.0873588117866465,
+        "abs_calibration_error": 0.0873588117866465,
+        "log_loss": 0.5616083169385526,
+        "brier_score": 0.18859570940201337,
+        "roc_auc": 0.7916001740896561
       },
       "simulated_research_roi": {
-        "entries": 30,
-        "wins": 23,
-        "units": 2.1718634243482615,
-        "roi_pct": 0.07239544747827538,
+        "entries": 235,
+        "wins": 177,
+        "units": 30.362501392098466,
+        "roi_pct": 0.12920213358339772,
         "stake_unit": "flat_1u",
         "status": "simulated_research_only"
       }
@@ -81,20 +81,20 @@
       "model_weight": 0.5,
       "market_weight": 0.5,
       "metrics": {
-        "count": 30,
-        "accuracy": 0.7,
-        "avg_confidence": 0.5894454185162359,
-        "calibration_gap": 0.11055458148376407,
-        "abs_calibration_error": 0.11055458148376407,
-        "log_loss": 0.6023719806606768,
-        "brier_score": 0.20642820433212225,
-        "roc_auc": 0.7911111111111112
+        "count": 235,
+        "accuracy": 0.6893617021276596,
+        "avg_confidence": 0.5799271891245699,
+        "calibration_gap": 0.1094345130030897,
+        "abs_calibration_error": 0.1094345130030897,
+        "log_loss": 0.6240835760619691,
+        "brier_score": 0.2165378500732599,
+        "roc_auc": 0.7461917887712172
       },
       "simulated_research_roi": {
-        "entries": 30,
-        "wins": 21,
-        "units": -1.1255687079066408,
-        "roi_pct": -0.03751895693022136,
+        "entries": 235,
+        "wins": 162,
+        "units": 7.723802617059934,
+        "roi_pct": 0.03286724517897844,
         "stake_unit": "flat_1u",
         "status": "simulated_research_only"
       }
@@ -105,20 +105,20 @@
       "model_weight": 0.25,
       "market_weight": 0.75,
       "metrics": {
-        "count": 30,
-        "accuracy": 0.7666666666666667,
-        "avg_confidence": 0.6433624752880348,
-        "calibration_gap": 0.12330419137863191,
-        "abs_calibration_error": 0.12330419137863191,
-        "log_loss": 0.5500104525752921,
-        "brier_score": 0.182727839697431,
-        "roc_auc": 0.8355555555555555
+        "count": 235,
+        "accuracy": 0.7617021276595745,
+        "avg_confidence": 0.6204801839425734,
+        "calibration_gap": 0.14122194371700103,
+        "abs_calibration_error": 0.14122194371700103,
+        "log_loss": 0.5865244354511093,
+        "brier_score": 0.19919060836793398,
+        "roc_auc": 0.7854344987668649
       },
       "simulated_research_roi": {
-        "entries": 30,
-        "wins": 23,
-        "units": 2.1718634243482615,
-        "roi_pct": 0.07239544747827538,
+        "entries": 235,
+        "wins": 179,
+        "units": 35.097882802579065,
+        "roi_pct": 0.1493526927769322,
         "stake_unit": "flat_1u",
         "status": "simulated_research_only"
       }
@@ -129,20 +129,20 @@
       "model_weight": 0.75,
       "market_weight": 0.25,
       "metrics": {
-        "count": 30,
-        "accuracy": 0.4666666666666667,
-        "avg_confidence": 0.5569381270567101,
-        "calibration_gap": -0.09027146039004341,
-        "abs_calibration_error": 0.09027146039004341,
-        "log_loss": 0.6712407946457939,
-        "brier_score": 0.23963003554408965,
-        "roc_auc": 0.5511111111111111
+        "count": 235,
+        "accuracy": 0.502127659574468,
+        "avg_confidence": 0.563171364072683,
+        "calibration_gap": -0.061043704498214946,
+        "abs_calibration_error": 0.061043704498214946,
+        "log_loss": 0.6736363438150371,
+        "brier_score": 0.24063743451799108,
+        "roc_auc": 0.5829101987523575
       },
       "simulated_research_roi": {
-        "entries": 30,
-        "wins": 14,
-        "units": -6.577535941239177,
-        "roi_pct": -0.2192511980413059,
+        "entries": 235,
+        "wins": 118,
+        "units": -20.427122026895113,
+        "roi_pct": -0.08692392351870261,
         "stake_unit": "flat_1u",
         "status": "simulated_research_only"
       }

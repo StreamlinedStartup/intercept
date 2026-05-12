@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-05-12T00:57:59.735796+00:00",
+  "generated_at": "2026-05-12T03:11:31.972908+00:00",
   "audit_type": "model-reliability-leakage",
   "report_only": true,
   "writes_model_versions": false,
   "args": {
     "include_db": true,
     "start_date": null,
-    "max_events": 5
+    "max_events": null
   },
   "status": "pass",
   "summary": {
@@ -103,7 +103,7 @@
       "category": "database_boundary",
       "name": "loaded walk-forward samples respect event boundaries",
       "status": "pass",
-      "detail": "checked 5 event boundaries from 50 labeled samples"
+      "detail": "checked 777 event boundaries from 8538 labeled samples"
     }
   ]
 }

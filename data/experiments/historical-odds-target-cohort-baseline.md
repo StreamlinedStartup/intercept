@@ -1,11 +1,22 @@
 # Historical Odds Coverage
 
-- Generated: `2026-05-12T03:03:55.547Z`
+- Generated: `2026-05-12T03:03:55.526Z`
 - Source events: 26/30 matched
 - Fights matched: 244/464 (52.6%)
 - Moneyline rows linked: 13759/23598 (58.3%)
 - Review rows: 220
 - Writes `model_versions`: `false`
+
+## Target Cohort
+
+- Cohort: `d2-hoc-30-event`
+- Window: 2023-01-01 <= event date < 2024-03-10
+- Target UFC events: 30/30 imported (100.0%)
+- Selection rule: Use FightOdds EventsRecentQuery with dateGte=2023-01-01, dateLt=2024-03-10, orderBy=-date, filter promotion slug/shortName to UFC, and import the first 30 UFC events.
+- Import command: `pnpm --filter @interceptor/db import:fightodds:event -- --event-pks 5356,5318,5362,5355,5358,5347,5306,5293,4779,5281,5251,4778,5098,4777,4655,5107,4776,4775,4774,4749,4802,4755,4727,4738,4751,4744,4671,4702,4634,4696 --delay-ms 1500 --continue-on-error`
+- Match command: `pnpm --filter @interceptor/db match:fightodds:all`
+- Report command: `pnpm --filter @interceptor/db report:fightodds:coverage -- --target-cohort d2-hoc-30-event`
+- Rationale: The window ends at UFC 299, which is the newest event in the current 3-event corpus, and reaches backward far enough for the importer to select 30 recent UFC market events without using future market data.
 
 ## Review Reasons
 

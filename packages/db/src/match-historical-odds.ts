@@ -211,6 +211,7 @@ async function loadCanonicalFights(eventId: string): Promise<CanonicalFight[]> {
 	const rows = await db
 		.select({
 			fightId: fights.id,
+			weightClass: fights.weightClass,
 			fighterId: fighters.id,
 			fighterName: fighters.name,
 		})
@@ -220,7 +221,11 @@ async function loadCanonicalFights(eventId: string): Promise<CanonicalFight[]> {
 		.where(eq(fights.eventId, eventId));
 	const byFightId = new Map<string, CanonicalFight>();
 	for (const row of rows) {
-		const fight = byFightId.get(row.fightId) ?? { fightId: row.fightId, fighters: [] };
+		const fight = byFightId.get(row.fightId) ?? {
+			fightId: row.fightId,
+			weightClass: row.weightClass,
+			fighters: [],
+		};
 		fight.fighters.push({ id: row.fighterId, name: row.fighterName });
 		byFightId.set(row.fightId, fight);
 	}
@@ -243,6 +248,14 @@ async function markFightMatched(
 			updatedAt: new Date(),
 		})
 		.where(eq(historicalOddsFights.id, historicalFight.id));
+	await db
+		.delete(unmatchedHistoricalOdds)
+		.where(
+			and(
+				eq(unmatchedHistoricalOdds.source, SOURCE),
+				eq(unmatchedHistoricalOdds.sourceFightId, historicalFight.sourceFightId),
+			),
+		);
 }
 
 async function markFightForReview(
@@ -263,35 +276,18 @@ async function markFightForReview(
 		})
 		.where(eq(historicalOddsFights.id, historicalFight.id));
 	await db
+		.delete(unmatchedHistoricalOdds)
+		.where(
+			and(
+				eq(unmatchedHistoricalOdds.source, SOURCE),
+				eq(unmatchedHistoricalOdds.sourceEventId, historicalEvent.sourceEventId),
+				eq(unmatchedHistoricalOdds.sourceFightId, historicalFight.sourceFightId),
+			),
+		);
+	await db
 		.insert(unmatchedHistoricalOdds)
-		.values({
-			id: `${historicalFight.id}:match-review`,
-			source: SOURCE,
-			sourceEventId: historicalEvent.sourceEventId,
-			sourceFightId: historicalFight.sourceFightId,
-			sourceUrl: historicalFight.sourceUrl,
-			rawEventName: historicalEvent.rawName,
-			rawEventDate: historicalEvent.eventDate,
-			rawFighterA: historicalFight.rawFighterA,
-			rawFighterB: historicalFight.rawFighterB,
-			rawSportsbook: null,
-			rawOdds: historicalFight.rawMetadata,
-			candidateMatches: stringifyJson(candidateRows(match.candidates)),
-			reason: match.reason,
-			reviewed: false,
-			reviewedAt: null,
-			reviewNote: null,
-		})
-		.onConflictDoUpdate({
-			target: unmatchedHistoricalOdds.id,
-			set: {
-				candidateMatches: stringifyJson(candidateRows(match.candidates)),
-				reason: match.reason,
-				reviewed: false,
-				reviewedAt: null,
-				reviewNote: null,
-			},
-		});
+		.values(reviewRow(historicalEvent, historicalFight, match.reason, match.candidates))
+		.onConflictDoNothing();
 }
 
 async function linkMoneylines(
@@ -329,6 +325,37 @@ async function markHistoricalEventUnmatched(historicalEvent: HistoricalEvent, re
 			updatedAt: new Date(),
 		})
 		.where(eq(historicalOddsEvents.id, historicalEvent.id));
+	const historicalFights = await db
+		.select()
+		.from(historicalOddsFights)
+		.where(eq(historicalOddsFights.historicalEventId, historicalEvent.id));
+	for (const historicalFight of historicalFights) {
+		await db
+			.update(historicalOddsFights)
+			.set({
+				canonicalFightId: null,
+				canonicalFighterAId: null,
+				canonicalFighterBId: null,
+				matchStatus: 'unmatched',
+				matchReason: reason,
+				candidateMatches: stringifyJson([]),
+				updatedAt: new Date(),
+			})
+			.where(eq(historicalOddsFights.id, historicalFight.id));
+		await db
+			.delete(unmatchedHistoricalOdds)
+			.where(
+				and(
+					eq(unmatchedHistoricalOdds.source, SOURCE),
+					eq(unmatchedHistoricalOdds.sourceEventId, historicalEvent.sourceEventId),
+					eq(unmatchedHistoricalOdds.sourceFightId, historicalFight.sourceFightId),
+				),
+			);
+		await db
+			.insert(unmatchedHistoricalOdds)
+			.values(reviewRow(historicalEvent, historicalFight, reason, []))
+			.onConflictDoNothing();
+	}
 }
 
 function emptySummary(sourceEventId: string): MatchSummary {
@@ -361,8 +388,35 @@ function eventNameTokens(normalizedEventName: string): string[] {
 function candidateRows(candidates: CanonicalFight[]) {
 	return candidates.map((candidate) => ({
 		fightId: candidate.fightId,
+		weightClass: candidate.weightClass ?? null,
 		fighters: candidate.fighters,
 	}));
+}
+
+function reviewRow(
+	historicalEvent: HistoricalEvent,
+	historicalFight: HistoricalFight,
+	reason: string,
+	candidates: CanonicalFight[],
+): typeof unmatchedHistoricalOdds.$inferInsert {
+	return {
+		id: `${historicalFight.id}:match-review`,
+		source: SOURCE,
+		sourceEventId: historicalEvent.sourceEventId,
+		sourceFightId: historicalFight.sourceFightId,
+		sourceUrl: historicalFight.sourceUrl,
+		rawEventName: historicalEvent.rawName,
+		rawEventDate: historicalEvent.eventDate,
+		rawFighterA: historicalFight.rawFighterA,
+		rawFighterB: historicalFight.rawFighterB,
+		rawSportsbook: null,
+		rawOdds: historicalFight.rawMetadata,
+		candidateMatches: stringifyJson(candidateRows(candidates)),
+		reason,
+		reviewed: false,
+		reviewedAt: null,
+		reviewNote: null,
+	};
 }
 
 function addDays(date: Date, days: number): Date {

@@ -48,6 +48,10 @@ type EventOddsData = {
 	eventOfferTable?: EventOfferTable | null;
 };
 
+type EventHeaderData = {
+	event?: EventIndexNode | null;
+};
+
 type EventIndexNode = {
 	id: string;
 	name: string;
@@ -135,6 +139,7 @@ type RangeImportSummary = {
 	eventsScanned: number;
 	eventsImported: number;
 	eventsSkipped: number;
+	eventsFailed: number;
 	fightsRead: number;
 	moneylinesRead: number;
 	matchedRows: number;
@@ -142,6 +147,7 @@ type RangeImportSummary = {
 	skippedRows: number;
 	cancelledFights: number;
 	sourceEventIds: string[];
+	failedEvents: Array<{ sourceEventId: string; error: string }>;
 };
 
 type ImportOptions = {
@@ -149,14 +155,18 @@ type ImportOptions = {
 	to: string;
 	limit: number;
 	delayMs: number;
+	eventPks: number[];
+	continueOnError: boolean;
 };
 
 function usage() {
 	console.log(`Usage:
   pnpm --filter @interceptor/db import:fightodds:event
+  pnpm --filter @interceptor/db import:fightodds:event -- --event-pks 5356,5318,5362 --continue-on-error
   pnpm --filter @interceptor/db import:fightodds:range -- --from 2024-02-01 --to 2024-03-10 --limit 3
 
-The range importer uses FightOdds allEvents pagination, filters to UFC events, and imports each event's moneyline odds with deterministic ids.`);
+The range importer uses FightOdds allEvents pagination, filters to UFC events, and imports each event's moneyline odds with deterministic ids.
+The explicit event-pk importer uses sitemap/discovered event ids and avoids the allEvents pagination endpoint.`);
 }
 
 async function main() {
@@ -166,10 +176,11 @@ async function main() {
 	}
 
 	const options = parseArgs(process.argv.slice(2));
-	const isRangeCommand = process.env.FIGHTODDS_RANGE_IMPORT === '1' || hasRangeArg(process.argv);
-	const summary = isRangeCommand
-		? await importFightOddsRange(options)
-		: await importFightOddsEvent(DEFAULT_EVENT_PK);
+	const summary = options.eventPks.length
+		? await importFightOddsPks(options)
+		: process.env.FIGHTODDS_RANGE_IMPORT === '1' || hasRangeArg(process.argv)
+			? await importFightOddsRange(options)
+			: await importFightOddsEvent(DEFAULT_EVENT_PK);
 	console.log(JSON.stringify(summary, null, 2));
 }
 
@@ -185,8 +196,45 @@ export async function importFightOddsEvent(
 
 export async function importFightOddsRange(options: ImportOptions): Promise<RangeImportSummary> {
 	const events = await fetchEventIndexRange(options);
+	return importFightOddsEvents(events, options);
+}
+
+export async function importFightOddsPks(options: ImportOptions): Promise<RangeImportSummary> {
+	const imported: EventImportSummary[] = [];
+	const failedEvents: RangeImportSummary['failedEvents'] = [];
+	for (const [index, eventPk] of options.eventPks.entries()) {
+		try {
+			const event = await fetchEventHeaderByPk(eventPk);
+			imported.push(await importFightOddsEventNode({ ...event, pk: eventPk }));
+		} catch (error) {
+			if (!options.continueOnError) {
+				throw error;
+			}
+			failedEvents.push({
+				sourceEventId: String(eventPk),
+				error: error instanceof Error ? error.message : String(error),
+			});
+		}
+		if (index < options.eventPks.length - 1 && options.delayMs > 0) {
+			await sleep(options.delayMs);
+		}
+	}
+	return buildRangeImportSummary({
+		options: { ...options, limit: options.eventPks.length },
+		eventsScanned: options.eventPks.length,
+		eventsSkipped: 0,
+		imported,
+		failedEvents,
+	});
+}
+
+async function importFightOddsEvents(
+	events: EventIndexNode[],
+	options: ImportOptions,
+): Promise<RangeImportSummary> {
 	const imported: EventImportSummary[] = [];
 	let eventsSkipped = 0;
+	const failedEvents: RangeImportSummary['failedEvents'] = [];
 	for (const [index, event] of events.entries()) {
 		if (!isUfcEvent(event)) {
 			eventsSkipped += 1;
@@ -196,27 +244,55 @@ export async function importFightOddsRange(options: ImportOptions): Promise<Rang
 			eventsSkipped += 1;
 			continue;
 		}
-		imported.push(await importFightOddsEventNode(event));
+		try {
+			imported.push(await importFightOddsEventNode(event));
+		} catch (error) {
+			if (!options.continueOnError) {
+				throw error;
+			}
+			failedEvents.push({
+				sourceEventId: String(event.pk),
+				error: error instanceof Error ? error.message : String(error),
+			});
+		}
 		if (index < events.length - 1 && options.delayMs > 0) {
 			await sleep(options.delayMs);
 		}
 	}
+	return buildRangeImportSummary({
+		options,
+		eventsScanned: events.length,
+		eventsSkipped,
+		imported,
+		failedEvents,
+	});
+}
+
+function buildRangeImportSummary(input: {
+	options: ImportOptions;
+	eventsScanned: number;
+	eventsSkipped: number;
+	imported: EventImportSummary[];
+	failedEvents: RangeImportSummary['failedEvents'];
+}): RangeImportSummary {
 	return {
 		source: SOURCE,
-		from: options.from,
-		to: options.to,
-		limit: options.limit,
-		delayMs: options.delayMs,
-		eventsScanned: events.length,
-		eventsImported: imported.length,
-		eventsSkipped,
-		fightsRead: sum(imported, 'fightsRead'),
-		moneylinesRead: sum(imported, 'moneylinesRead'),
-		matchedRows: sum(imported, 'matchedRows'),
-		unmatchedRows: sum(imported, 'unmatchedRows'),
-		skippedRows: sum(imported, 'skippedRows'),
-		cancelledFights: sum(imported, 'cancelledFights'),
-		sourceEventIds: imported.map((event) => event.sourceEventId),
+		from: input.options.from,
+		to: input.options.to,
+		limit: input.options.limit,
+		delayMs: input.options.delayMs,
+		eventsScanned: input.eventsScanned,
+		eventsImported: input.imported.length,
+		eventsSkipped: input.eventsSkipped,
+		eventsFailed: input.failedEvents.length,
+		fightsRead: sum(input.imported, 'fightsRead'),
+		moneylinesRead: sum(input.imported, 'moneylinesRead'),
+		matchedRows: sum(input.imported, 'matchedRows'),
+		unmatchedRows: sum(input.imported, 'unmatchedRows'),
+		skippedRows: sum(input.imported, 'skippedRows'),
+		cancelledFights: sum(input.imported, 'cancelledFights'),
+		sourceEventIds: input.imported.map((event) => event.sourceEventId),
+		failedEvents: input.failedEvents,
 	};
 }
 
@@ -492,8 +568,23 @@ async function fetchEventIndexByPk(eventPk: number): Promise<EventIndexNode | nu
 		to: to.toISOString().slice(0, 10),
 		limit: 2000,
 		delayMs: 0,
+		eventPks: [],
+		continueOnError: false,
 	});
 	return events.find((event) => event.pk === eventPk) ?? null;
+}
+
+async function fetchEventHeaderByPk(eventPk: number): Promise<EventIndexNode> {
+	const body = await graphql<EventHeaderData>({
+		operationName: 'EventsHeaderEventQuery',
+		variables: { eventPk },
+		query: EVENT_HEADER_QUERY,
+	});
+	const event = body.event;
+	if (!event) {
+		throw new Error(`FightOdds EventsHeaderEventQuery returned no event for pk=${eventPk}`);
+	}
+	return event;
 }
 
 async function fetchEventOfferTable(eventPk: number): Promise<EventOfferTable> {
@@ -521,7 +612,9 @@ async function graphql<T>(payload: {
 	});
 
 	if (!response.ok) {
-		throw new Error(`FightOdds ${payload.operationName} failed with HTTP ${response.status}`);
+		throw new Error(
+			`FightOdds ${payload.operationName} failed with HTTP ${response.status} for variables ${stringifyJson(payload.variables)}`,
+		);
 	}
 
 	const body = (await response.json()) as GraphqlResponse<T>;
@@ -670,6 +763,8 @@ function parseArgs(args: string[]): ImportOptions {
 		to: readArg(args, '--to') ?? DEFAULT_TO,
 		limit: Number(readArg(args, '--limit') ?? DEFAULT_LIMIT),
 		delayMs: Number(readArg(args, '--delay-ms') ?? DEFAULT_DELAY_MS),
+		eventPks: parseEventPks(readArg(args, '--event-pks')),
+		continueOnError: args.includes('--continue-on-error'),
 	};
 }
 
@@ -687,6 +782,17 @@ function readArg(args: string[], name: string): string | null {
 
 function hasRangeArg(args: string[]): boolean {
 	return ['--from', '--to', '--limit', '--delay-ms'].some((arg) => args.includes(arg));
+}
+
+function parseEventPks(value: string | null): number[] {
+	if (!value) return [];
+	return value.split(',').map((part) => {
+		const eventPk = Number(part.trim());
+		if (!Number.isInteger(eventPk)) {
+			throw new Error(`Invalid event pk: ${part}`);
+		}
+		return eventPk;
+	});
 }
 
 function isUfcEvent(event: EventIndexNode): boolean {
@@ -753,6 +859,19 @@ const EVENTS_RECENT_QUERY = `query EventsRecentQuery($after: String, $first: Int
 			}
 		}
 		pageInfo { hasNextPage endCursor }
+	}
+}`;
+
+const EVENT_HEADER_QUERY = `query EventsHeaderEventQuery($eventPk: Int) {
+	event: eventByPk(pk: $eventPk) {
+		id
+		pk
+		name
+		slug
+		date
+		venue
+		city
+		promotion { id slug shortName }
 	}
 }`;
 
