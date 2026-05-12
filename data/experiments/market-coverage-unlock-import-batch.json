@@ -1,0 +1,101 @@
+{
+  "generated_at": "2026-05-12T03:45:15Z",
+  "report": "market-coverage-unlock-import-batch",
+  "epic": "intercept-p6uo",
+  "task": "intercept-0asz",
+  "report_only": true,
+  "writes_model_versions": false,
+  "import_command": "DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor pnpm --filter @interceptor/db import:fightodds:event -- --event-pks 4594,4615,4627,4643,4654,4666,4668 --delay-ms 1500 --continue-on-error",
+  "match_command": "DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor pnpm --filter @interceptor/db match:fightodds:all",
+  "import_result": {
+    "source": "fightodds",
+    "event_pks": ["4594", "4615", "4627", "4643", "4654", "4666", "4668"],
+    "events_imported": 7,
+    "events_skipped": 0,
+    "events_failed": 0,
+    "fights_read": 108,
+    "moneylines_read": 5458,
+    "unmatched_rows_created": 108,
+    "skipped_rows": 498,
+    "cancelled_fights": 24,
+    "failed_events": []
+  },
+  "match_result": {
+    "events_read": 37,
+    "events_matched": 31,
+    "fights_read": 480,
+    "fights_matched": 299,
+    "fights_ambiguous": 0,
+    "fights_unmatched": 181,
+    "cancelled_unmatched": 104,
+    "moneyline_rows_linked": 16912
+  },
+  "supplemental_event_results": [
+    {
+      "source_event_id": "4594",
+      "raw_name": "UFC 288: Sterling vs. Cejudo",
+      "event_date": "2023-05-06",
+      "canonical_event_id": "3c6976f8182d9527",
+      "match_status": "matched"
+    },
+    {
+      "source_event_id": "4615",
+      "raw_name": "UFC on ABC 4: Rozenstruik vs. Almeida",
+      "event_date": "2023-05-13",
+      "canonical_event_id": null,
+      "match_status": "unmatched"
+    },
+    {
+      "source_event_id": "4627",
+      "raw_name": "UFC Fight Night: Dern vs. Hill",
+      "event_date": "2023-05-20",
+      "canonical_event_id": "6f812143641ceff8",
+      "match_status": "matched"
+    },
+    {
+      "source_event_id": "4643",
+      "raw_name": "UFC Fight Night: Kara-France vs. Albazi",
+      "event_date": "2023-06-03",
+      "canonical_event_id": "7abe471b61725980",
+      "match_status": "matched"
+    },
+    {
+      "source_event_id": "4654",
+      "raw_name": "UFC 289: Nunes vs. Aldana",
+      "event_date": "2023-06-10",
+      "canonical_event_id": "b6c6d1731ff00eeb",
+      "match_status": "matched"
+    },
+    {
+      "source_event_id": "4666",
+      "raw_name": "UFC Fight Night: Vettori vs. Cannonier",
+      "event_date": "2023-06-17",
+      "canonical_event_id": "b9415726dc3ec526",
+      "match_status": "matched"
+    },
+    {
+      "source_event_id": "4668",
+      "raw_name": "UFC on ABC 5: Emmett vs. Topuria",
+      "event_date": "2023-06-24",
+      "canonical_event_id": null,
+      "match_status": "unmatched"
+    }
+  ],
+  "post_import_coverage_report": "data/experiments/market-coverage-unlock-post-import-coverage.json",
+  "post_import_coverage_summary": {
+    "source_events": 37,
+    "matched_source_events": 31,
+    "source_fights": 572,
+    "matched_fights": 299,
+    "ambiguous_fights": 0,
+    "unmatched_fights": 273,
+    "cancelled_unmatched_fights": 124,
+    "moneyline_rows": 29056,
+    "linked_moneyline_rows": 16912,
+    "review_rows": 273,
+    "fight_match_rate": 0.5227272727272727,
+    "moneyline_link_rate": 0.5820484581497798
+  },
+  "next_blocker": "Two supplemental UFC on ABC events and four primary D2-HOC alias events still need deterministic event-alias rematching in intercept-p6v3.",
+  "model_improvement_unblocked_by_this_task": false
+}
