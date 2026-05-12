@@ -1,0 +1,52 @@
+{
+  "generated_at": "2026-05-12T01:24:57Z",
+  "report": "model-reliability-final-report",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "insufficient_coverage",
+  "value_status_reason": "Only 30 matched fights across 3 events were scored; need at least 200 fights across 30 events.",
+  "validation_thresholds": {
+    "min_scored_fights": 200,
+    "min_market_events": 30,
+    "min_market_roi_delta": 0.02
+  },
+  "evidence": {
+    "leakage_audit": {
+      "artifact": "data/experiments/leakage-audit.md",
+      "status": "pass",
+      "checks": 15,
+      "failed": 0,
+      "writes_model_versions": false
+    },
+    "simple_baselines": {
+      "artifact": "data/experiments/simple-baselines.md",
+      "value_status": "research_only",
+      "events": 8,
+      "samples": 99,
+      "market_covered_samples": 12,
+      "writes_model_versions": false
+    },
+    "historical_odds_coverage": {
+      "artifact": "data/experiments/historical-odds-coverage.md",
+      "source_events": 3,
+      "matched_source_events": 3,
+      "source_fights": 46,
+      "matched_fights": 30,
+      "moneyline_rows": 2173,
+      "linked_moneyline_rows": 1553,
+      "writes_model_versions": false
+    },
+    "market_gate": {
+      "artifact": "data/experiments/market-gate-report.md",
+      "value_status": "insufficient_coverage",
+      "scored_events": 3,
+      "scored_fights": 30,
+      "writes_model_versions": false
+    }
+  },
+  "policy": {
+    "artifact": "docs/model_reliability_policy.md",
+    "current_product_language": "research_only",
+    "validated_allowed": false
+  }
+}

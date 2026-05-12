@@ -44,8 +44,18 @@ const SOURCE = 'fightodds';
 const TARGET_EVENT_ID = '5362';
 
 async function main() {
-	const summary = await matchHistoricalOddsEvent(TARGET_EVENT_ID);
-	console.log(JSON.stringify(summary, null, 2));
+	try {
+		const sourceEventIds = process.argv.includes('--all')
+			? await listImportedSourceEventIds()
+			: readSourceEventIds(process.argv.slice(2));
+		const summaries = [];
+		for (const sourceEventId of sourceEventIds) {
+			summaries.push(await matchHistoricalOddsEvent(sourceEventId));
+		}
+		console.log(JSON.stringify(buildRangeSummary(summaries), null, 2));
+	} finally {
+		await sql.end();
+	}
 }
 
 export async function matchHistoricalOddsEvent(sourceEventId: string): Promise<MatchSummary> {
@@ -68,7 +78,6 @@ export async function matchHistoricalOddsEvent(sourceEventId: string): Promise<M
 			historicalEvent,
 			'no canonical event matched date/name/promotion',
 		);
-		await sql.end();
 		return emptySummary(sourceEventId);
 	}
 
@@ -113,8 +122,6 @@ export async function matchHistoricalOddsEvent(sourceEventId: string): Promise<M
 		await markFightForReview(historicalEvent, historicalFight, match);
 	}
 
-	await sql.end();
-
 	const fightsRead = historicalFights.length;
 	return {
 		sourceEventId,
@@ -127,6 +134,34 @@ export async function matchHistoricalOddsEvent(sourceEventId: string): Promise<M
 		moneylineRowsLinked,
 		matchRate: fightsRead === 0 ? 0 : fightsMatched / fightsRead,
 		unmatchedRate: fightsRead === 0 ? 0 : (fightsAmbiguous + fightsUnmatched) / fightsRead,
+	};
+}
+
+async function listImportedSourceEventIds(): Promise<string[]> {
+	const rows = await db
+		.select({ sourceEventId: historicalOddsEvents.sourceEventId })
+		.from(historicalOddsEvents)
+		.where(eq(historicalOddsEvents.source, SOURCE));
+	return rows.map((row) => row.sourceEventId).sort((a, b) => Number(a) - Number(b));
+}
+
+function readSourceEventIds(args: string[]): string[] {
+	const explicit = args.filter((arg) => !arg.startsWith('--'));
+	return explicit.length > 0 ? explicit : [TARGET_EVENT_ID];
+}
+
+function buildRangeSummary(summaries: MatchSummary[]) {
+	return {
+		source: SOURCE,
+		eventsMatched: summaries.filter((summary) => summary.canonicalEventId !== null).length,
+		eventsRead: summaries.length,
+		fightsRead: sum(summaries, 'fightsRead'),
+		fightsMatched: sum(summaries, 'fightsMatched'),
+		fightsAmbiguous: sum(summaries, 'fightsAmbiguous'),
+		fightsUnmatched: sum(summaries, 'fightsUnmatched'),
+		cancelledUnmatched: sum(summaries, 'cancelledUnmatched'),
+		moneylineRowsLinked: sum(summaries, 'moneylineRowsLinked'),
+		events: summaries,
 	};
 }
 
@@ -342,6 +377,10 @@ function dateString(date: Date): string {
 
 function stringifyJson(value: unknown): string {
 	return JSON.stringify(value);
+}
+
+function sum(rows: MatchSummary[], key: keyof MatchSummary): number {
+	return rows.reduce((total, row) => total + Number(row[key] ?? 0), 0);
 }
 
 if (process.argv[1]?.endsWith('match-historical-odds.ts')) {

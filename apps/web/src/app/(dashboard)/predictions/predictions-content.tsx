@@ -26,6 +26,11 @@ type HistoryResponse = {
 		n_bets: number;
 		roi_units: number;
 		roi_pct: number | null;
+		n_simulated_entries?: number;
+		simulated_roi_units?: number;
+		simulated_roi_pct?: number | null;
+		value_status?: 'research_only' | 'insufficient_coverage' | 'validated';
+		value_status_reason?: string;
 	};
 	rows: HistoryRow[];
 };
@@ -44,6 +49,9 @@ type HistoryRow = {
 	actual_winner_name: string | null;
 	hit: boolean | null;
 	bet_pl_units: number | null;
+	simulated_pl_units?: number | null;
+	value_status?: 'research_only' | 'insufficient_coverage' | 'validated';
+	value_status_reason?: string;
 };
 
 type ModelListResponse = {
@@ -63,8 +71,8 @@ type RoiFilter = 'all' | 'edge5' | 'edge10';
 
 const ROI_FILTERS: Array<{ label: string; value: RoiFilter; minEdge: number }> = [
 	{ label: 'All', value: 'all', minEdge: Number.NEGATIVE_INFINITY },
-	{ label: 'Edge >5%', value: 'edge5', minEdge: 0.05 },
-	{ label: 'Edge >10%', value: 'edge10', minEdge: 0.1 },
+	{ label: '>5% research', value: 'edge5', minEdge: 0.05 },
+	{ label: '>10% research', value: 'edge10', minEdge: 0.1 },
 ];
 
 export function PredictionsContent() {
@@ -123,7 +131,9 @@ export function PredictionsContent() {
 						<span className="hidden sm:inline ml-1.5">Refresh</span>
 					</Button>
 				</div>
-				<p className="text-sm text-muted-foreground">Model track record and recent picks.</p>
+				<p className="text-sm text-muted-foreground">
+					Model track record with simulated, research-only market comparisons.
+				</p>
 			</header>
 
 			{error && (
@@ -243,7 +253,7 @@ function RoiChart({
 	return (
 		<Card>
 			<CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<CardTitle className="text-base">Cumulative ROI</CardTitle>
+				<CardTitle className="text-base">Simulated Research ROI</CardTitle>
 				<div className="flex rounded-md border p-1 w-fit">
 					{ROI_FILTERS.map((option) => (
 						<Button
@@ -263,7 +273,7 @@ function RoiChart({
 				{chart ? (
 					<div className="h-72 w-full">
 						<svg className="h-full w-full overflow-visible" viewBox="0 0 640 260" role="img">
-							<title>Cumulative betting units by event date</title>
+							<title>Cumulative simulated research units by event date</title>
 							<line
 								x1={40}
 								x2={620}
@@ -319,7 +329,7 @@ function RoiChart({
 					</div>
 				) : (
 					<div className="h-40 flex items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
-						No resolved bets for this filter
+						No resolved simulated entries for this filter
 					</div>
 				)}
 			</CardContent>
@@ -329,6 +339,9 @@ function RoiChart({
 
 function MetricsGrid({ model, history }: { model: LatestModel; history: HistoryResponse }) {
 	const aggregate = history.aggregate;
+	const simulatedEntries = aggregate.n_simulated_entries ?? aggregate.n_bets;
+	const simulatedUnits = aggregate.simulated_roi_units ?? aggregate.roi_units;
+	const simulatedRoi = aggregate.simulated_roi_pct ?? aggregate.roi_pct;
 	return (
 		<div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
 			<Metric label="Model" value={model?.id ?? 'None'} compact />
@@ -338,9 +351,9 @@ function MetricsGrid({ model, history }: { model: LatestModel; history: HistoryR
 			<Metric label="Accuracy" value={formatPercent(model?.accuracy ?? aggregate.accuracy)} />
 			<Metric label="Predictions" value={aggregate.n_predictions} />
 			<Metric label="With result" value={aggregate.n_with_result} />
-			<Metric label="Bets" value={aggregate.n_bets} />
-			<Metric label="ROI units" value={formatSignedNumber(aggregate.roi_units)} />
-			<Metric label="ROI" value={formatPercent(aggregate.roi_pct)} />
+			<Metric label="Sim entries" value={simulatedEntries} />
+			<Metric label="Sim units" value={formatSignedNumber(simulatedUnits)} />
+			<Metric label="Sim ROI" value={formatPercent(simulatedRoi)} />
 		</div>
 	);
 }
@@ -381,7 +394,7 @@ function PredictionsTable({ rows }: { rows: HistoryRow[] }) {
 								<TableHead>Fighter</TableHead>
 								<TableHead>Pick</TableHead>
 								<TableHead className="text-right">WinProb</TableHead>
-								<TableHead className="text-right">Vegas</TableHead>
+								<TableHead className="text-right">Market</TableHead>
 								<TableHead>Result</TableHead>
 								<TableHead className="text-center">Hit</TableHead>
 							</TableRow>
@@ -438,7 +451,12 @@ function buildRoiSeries(rows: HistoryRow[], filter: RoiFilter) {
 			return a.predicted_at.localeCompare(b.predicted_at);
 		})
 		.map((row) => {
-			const units = typeof row.bet_pl_units === 'number' ? row.bet_pl_units : estimateBetUnits(row);
+			const units =
+				typeof row.simulated_pl_units === 'number'
+					? row.simulated_pl_units
+					: typeof row.bet_pl_units === 'number'
+						? row.bet_pl_units
+						: estimateBetUnits(row);
 			cumulativeUnits += units;
 			return {
 				key: `${row.fight_id}-${row.predicted_at}`,
