@@ -250,7 +250,12 @@ async function markFightMatched(
 		.where(eq(historicalOddsFights.id, historicalFight.id));
 	await db
 		.delete(unmatchedHistoricalOdds)
-		.where(eq(unmatchedHistoricalOdds.id, `${historicalFight.id}:match-review`));
+		.where(
+			and(
+				eq(unmatchedHistoricalOdds.source, SOURCE),
+				eq(unmatchedHistoricalOdds.sourceFightId, historicalFight.sourceFightId),
+			),
+		);
 }
 
 async function markFightForReview(
@@ -271,35 +276,18 @@ async function markFightForReview(
 		})
 		.where(eq(historicalOddsFights.id, historicalFight.id));
 	await db
+		.delete(unmatchedHistoricalOdds)
+		.where(
+			and(
+				eq(unmatchedHistoricalOdds.source, SOURCE),
+				eq(unmatchedHistoricalOdds.sourceEventId, historicalEvent.sourceEventId),
+				eq(unmatchedHistoricalOdds.sourceFightId, historicalFight.sourceFightId),
+			),
+		);
+	await db
 		.insert(unmatchedHistoricalOdds)
-		.values({
-			id: `${historicalFight.id}:match-review`,
-			source: SOURCE,
-			sourceEventId: historicalEvent.sourceEventId,
-			sourceFightId: historicalFight.sourceFightId,
-			sourceUrl: historicalFight.sourceUrl,
-			rawEventName: historicalEvent.rawName,
-			rawEventDate: historicalEvent.eventDate,
-			rawFighterA: historicalFight.rawFighterA,
-			rawFighterB: historicalFight.rawFighterB,
-			rawSportsbook: null,
-			rawOdds: historicalFight.rawMetadata,
-			candidateMatches: stringifyJson(candidateRows(match.candidates)),
-			reason: match.reason,
-			reviewed: false,
-			reviewedAt: null,
-			reviewNote: null,
-		})
-		.onConflictDoUpdate({
-			target: unmatchedHistoricalOdds.id,
-			set: {
-				candidateMatches: stringifyJson(candidateRows(match.candidates)),
-				reason: match.reason,
-				reviewed: false,
-				reviewedAt: null,
-				reviewNote: null,
-			},
-		});
+		.values(reviewRow(historicalEvent, historicalFight, match.reason, match.candidates))
+		.onConflictDoNothing();
 }
 
 async function linkMoneylines(
@@ -337,6 +325,37 @@ async function markHistoricalEventUnmatched(historicalEvent: HistoricalEvent, re
 			updatedAt: new Date(),
 		})
 		.where(eq(historicalOddsEvents.id, historicalEvent.id));
+	const historicalFights = await db
+		.select()
+		.from(historicalOddsFights)
+		.where(eq(historicalOddsFights.historicalEventId, historicalEvent.id));
+	for (const historicalFight of historicalFights) {
+		await db
+			.update(historicalOddsFights)
+			.set({
+				canonicalFightId: null,
+				canonicalFighterAId: null,
+				canonicalFighterBId: null,
+				matchStatus: 'unmatched',
+				matchReason: reason,
+				candidateMatches: stringifyJson([]),
+				updatedAt: new Date(),
+			})
+			.where(eq(historicalOddsFights.id, historicalFight.id));
+		await db
+			.delete(unmatchedHistoricalOdds)
+			.where(
+				and(
+					eq(unmatchedHistoricalOdds.source, SOURCE),
+					eq(unmatchedHistoricalOdds.sourceEventId, historicalEvent.sourceEventId),
+					eq(unmatchedHistoricalOdds.sourceFightId, historicalFight.sourceFightId),
+				),
+			);
+		await db
+			.insert(unmatchedHistoricalOdds)
+			.values(reviewRow(historicalEvent, historicalFight, reason, []))
+			.onConflictDoNothing();
+	}
 }
 
 function emptySummary(sourceEventId: string): MatchSummary {
@@ -372,6 +391,32 @@ function candidateRows(candidates: CanonicalFight[]) {
 		weightClass: candidate.weightClass ?? null,
 		fighters: candidate.fighters,
 	}));
+}
+
+function reviewRow(
+	historicalEvent: HistoricalEvent,
+	historicalFight: HistoricalFight,
+	reason: string,
+	candidates: CanonicalFight[],
+): typeof unmatchedHistoricalOdds.$inferInsert {
+	return {
+		id: `${historicalFight.id}:match-review`,
+		source: SOURCE,
+		sourceEventId: historicalEvent.sourceEventId,
+		sourceFightId: historicalFight.sourceFightId,
+		sourceUrl: historicalFight.sourceUrl,
+		rawEventName: historicalEvent.rawName,
+		rawEventDate: historicalEvent.eventDate,
+		rawFighterA: historicalFight.rawFighterA,
+		rawFighterB: historicalFight.rawFighterB,
+		rawSportsbook: null,
+		rawOdds: historicalFight.rawMetadata,
+		candidateMatches: stringifyJson(candidateRows(candidates)),
+		reason,
+		reviewed: false,
+		reviewedAt: null,
+		reviewNote: null,
+	};
 }
 
 function addDays(date: Date, days: number): Date {

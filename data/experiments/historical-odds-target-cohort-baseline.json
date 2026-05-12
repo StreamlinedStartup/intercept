@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-12T02:59:41.031Z",
+  "generated_at": "2026-05-12T03:03:55.526Z",
   "report": "historical-odds-coverage",
   "report_only": true,
   "writes_model_versions": false,
@@ -29,10 +29,24 @@
     "cancelled_unmatched_fights": 100,
     "moneyline_rows": 23598,
     "linked_moneyline_rows": 13759,
-    "review_rows": 622,
+    "review_rows": 220,
     "fight_match_rate": 0.5258620689655172,
     "moneyline_link_rate": 0.5830578862615476
   },
+  "review_reasons": [
+    {
+      "reason": "source fight is cancelled and no canonical fight pair exists on the completed event",
+      "rows": 86
+    },
+    {
+      "reason": "no canonical fight matched normalized fighter pair",
+      "rows": 72
+    },
+    {
+      "reason": "no canonical event matched date/name/promotion",
+      "rows": 62
+    }
+  ],
   "events": [
     {
       "source_event_id": "4696",
@@ -47,7 +61,7 @@
       "cancelled_unmatched_fights": 4,
       "moneyline_rows": 727,
       "linked_moneyline_rows": 385,
-      "review_rows": 25
+      "review_rows": 9
     },
     {
       "source_event_id": "4634",
@@ -62,7 +76,7 @@
       "cancelled_unmatched_fights": 4,
       "moneyline_rows": 912,
       "linked_moneyline_rows": 543,
-      "review_rows": 25
+      "review_rows": 8
     },
     {
       "source_event_id": "4702",
@@ -77,7 +91,7 @@
       "cancelled_unmatched_fights": 2,
       "moneyline_rows": 766,
       "linked_moneyline_rows": 488,
-      "review_rows": 21
+      "review_rows": 6
     },
     {
       "source_event_id": "4671",
@@ -92,7 +106,7 @@
       "cancelled_unmatched_fights": 0,
       "moneyline_rows": 826,
       "linked_moneyline_rows": 498,
-      "review_rows": 21
+      "review_rows": 6
     },
     {
       "source_event_id": "4744",
@@ -107,7 +121,7 @@
       "cancelled_unmatched_fights": 4,
       "moneyline_rows": 838,
       "linked_moneyline_rows": 548,
-      "review_rows": 21
+      "review_rows": 6
     },
     {
       "source_event_id": "4751",
@@ -152,7 +166,7 @@
       "cancelled_unmatched_fights": 3,
       "moneyline_rows": 796,
       "linked_moneyline_rows": 594,
-      "review_rows": 20
+      "review_rows": 5
     },
     {
       "source_event_id": "4755",
@@ -167,7 +181,7 @@
       "cancelled_unmatched_fights": 0,
       "moneyline_rows": 680,
       "linked_moneyline_rows": 524,
-      "review_rows": 16
+      "review_rows": 3
     },
     {
       "source_event_id": "4802",
@@ -197,7 +211,7 @@
       "cancelled_unmatched_fights": 0,
       "moneyline_rows": 658,
       "linked_moneyline_rows": 560,
-      "review_rows": 14
+      "review_rows": 2
     },
     {
       "source_event_id": "4774",
@@ -212,7 +226,7 @@
       "cancelled_unmatched_fights": 5,
       "moneyline_rows": 728,
       "linked_moneyline_rows": 530,
-      "review_rows": 23
+      "review_rows": 7
     },
     {
       "source_event_id": "4775",
@@ -227,7 +241,7 @@
       "cancelled_unmatched_fights": 1,
       "moneyline_rows": 746,
       "linked_moneyline_rows": 548,
-      "review_rows": 16
+      "review_rows": 4
     },
     {
       "source_event_id": "4776",
@@ -242,7 +256,7 @@
       "cancelled_unmatched_fights": 4,
       "moneyline_rows": 963,
       "linked_moneyline_rows": 364,
-      "review_rows": 23
+      "review_rows": 9
     },
     {
       "source_event_id": "5107",
@@ -257,7 +271,7 @@
       "cancelled_unmatched_fights": 5,
       "moneyline_rows": 814,
       "linked_moneyline_rows": 594,
-      "review_rows": 23
+      "review_rows": 7
     },
     {
       "source_event_id": "4655",
@@ -272,7 +286,7 @@
       "cancelled_unmatched_fights": 3,
       "moneyline_rows": 1006,
       "linked_moneyline_rows": 648,
-      "review_rows": 22
+      "review_rows": 6
     },
     {
       "source_event_id": "4777",
@@ -287,7 +301,7 @@
       "cancelled_unmatched_fights": 8,
       "moneyline_rows": 829,
       "linked_moneyline_rows": 326,
-      "review_rows": 30
+      "review_rows": 12
     },
     {
       "source_event_id": "5098",
@@ -302,7 +316,7 @@
       "cancelled_unmatched_fights": 3,
       "moneyline_rows": 881,
       "linked_moneyline_rows": 427,
-      "review_rows": 25
+      "review_rows": 9
     },
     {
       "source_event_id": "4778",
@@ -317,7 +331,7 @@
       "cancelled_unmatched_fights": 3,
       "moneyline_rows": 784,
       "linked_moneyline_rows": 588,
-      "review_rows": 22
+      "review_rows": 5
     },
     {
       "source_event_id": "5251",
@@ -347,7 +361,7 @@
       "cancelled_unmatched_fights": 2,
       "moneyline_rows": 633,
       "linked_moneyline_rows": 381,
-      "review_rows": 19
+      "review_rows": 6
     },
     {
       "source_event_id": "4779",
@@ -362,7 +376,7 @@
       "cancelled_unmatched_fights": 3,
       "moneyline_rows": 812,
       "linked_moneyline_rows": 628,
-      "review_rows": 19
+      "review_rows": 4
     },
     {
       "source_event_id": "5293",
@@ -377,7 +391,7 @@
       "cancelled_unmatched_fights": 6,
       "moneyline_rows": 795,
       "linked_moneyline_rows": 521,
-      "review_rows": 24
+      "review_rows": 7
     },
     {
       "source_event_id": "5306",
@@ -392,7 +406,7 @@
       "cancelled_unmatched_fights": 2,
       "moneyline_rows": 741,
       "linked_moneyline_rows": 679,
-      "review_rows": 16
+      "review_rows": 2
     },
     {
       "source_event_id": "5347",
@@ -407,7 +421,7 @@
       "cancelled_unmatched_fights": 3,
       "moneyline_rows": 743,
       "linked_moneyline_rows": 556,
-      "review_rows": 21
+      "review_rows": 5
     },
     {
       "source_event_id": "5358",
@@ -422,7 +436,7 @@
       "cancelled_unmatched_fights": 5,
       "moneyline_rows": 853,
       "linked_moneyline_rows": 399,
-      "review_rows": 30
+      "review_rows": 11
     },
     {
       "source_event_id": "5355",
@@ -437,7 +451,7 @@
       "cancelled_unmatched_fights": 7,
       "moneyline_rows": 868,
       "linked_moneyline_rows": 515,
-      "review_rows": 29
+      "review_rows": 10
     },
     {
       "source_event_id": "5362",
@@ -452,7 +466,7 @@
       "cancelled_unmatched_fights": 2,
       "moneyline_rows": 652,
       "linked_moneyline_rows": 600,
-      "review_rows": 16
+      "review_rows": 2
     },
     {
       "source_event_id": "5318",
@@ -467,7 +481,7 @@
       "cancelled_unmatched_fights": 5,
       "moneyline_rows": 688,
       "linked_moneyline_rows": 508,
-      "review_rows": 21
+      "review_rows": 5
     },
     {
       "source_event_id": "5356",
@@ -482,7 +496,7 @@
       "cancelled_unmatched_fights": 2,
       "moneyline_rows": 833,
       "linked_moneyline_rows": 807,
-      "review_rows": 18
+      "review_rows": 2
     }
   ]
 }

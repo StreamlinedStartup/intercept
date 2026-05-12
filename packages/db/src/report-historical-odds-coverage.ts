@@ -41,6 +41,11 @@ type CoverageEvent = {
 	review_rows: number;
 };
 
+type ReviewReason = {
+	reason: string;
+	rows: number;
+};
+
 type CoverageReport = {
 	generated_at: string;
 	report: 'historical-odds-coverage';
@@ -64,6 +69,7 @@ type CoverageReport = {
 		fight_match_rate: number | null;
 		moneyline_link_rate: number | null;
 	};
+	review_reasons: ReviewReason[];
 	events: CoverageEvent[];
 };
 
@@ -148,6 +154,15 @@ export async function buildCoverageReport(
 			hoe.match_status
 		ORDER BY hoe.event_date, hoe.source_event_id
 	`) as CoverageEvent[];
+	const reviewReasons = (await sql`
+		SELECT
+			reason,
+			count(*)::int AS rows
+		FROM unmatched_historical_odds
+		WHERE source = 'fightodds'
+		GROUP BY reason
+		ORDER BY rows DESC, reason
+	`) as ReviewReason[];
 	const targetEvents = targetCohort
 		? events.filter((event) => isTargetEvent(event, targetCohort))
 		: [];
@@ -177,6 +192,7 @@ export async function buildCoverageReport(
 		writes_model_versions: false,
 		target_cohort: targetCohort,
 		summary,
+		review_reasons: reviewReasons,
 		events,
 	};
 }
@@ -206,6 +222,12 @@ function renderMarkdown(report: CoverageReport): string {
 			`- Report command: \`${report.target_cohort.report_command}\``,
 			`- Rationale: ${report.target_cohort.rationale}`,
 		);
+	}
+	if (report.review_reasons.length > 0) {
+		lines.push('', '## Review Reasons', '', '| Reason | Rows |', '|---|---:|');
+		for (const reason of report.review_reasons) {
+			lines.push(`| ${escapeMd(reason.reason)} | ${reason.rows} |`);
+		}
 	}
 	lines.push(
 		'',
