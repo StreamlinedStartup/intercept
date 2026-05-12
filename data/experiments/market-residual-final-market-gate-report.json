@@ -1,0 +1,151 @@
+{
+  "generated_at": "2026-05-12T06:00:16.405942+00:00",
+  "report": "market-gate-report",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "value_status_reason": "Model ROI did not clear the market-favorite baseline gate.",
+  "validation_thresholds": {
+    "min_fights": 200,
+    "min_market_events": 30,
+    "min_market_roi_delta": 0.02
+  },
+  "coverage": {
+    "source_events_imported": 51,
+    "source_events_matched": 51,
+    "source_events_unmatched": 0,
+    "source_fights_imported": 781,
+    "source_fights_matched": 499,
+    "source_fights_unmatched": 282,
+    "moneyline_rows_imported": 40022,
+    "moneyline_rows_linked": 28038,
+    "scored_events": 51,
+    "scored_fights": 486
+  },
+  "timestamp_semantics": {
+    "label": "FightOdds source_current lines are captured at import scrape time. This report uses them as current/consensus market probabilities only, not as true closing-line value.",
+    "closing_line_value": "not_available_without_timestamped_or_open_close_lines"
+  },
+  "strategies": [
+    {
+      "name": "model_pick",
+      "description": "Leak-free UFC experience baseline pick",
+      "model_weight": 1.0,
+      "market_weight": 0.0,
+      "metrics": {
+        "count": 486,
+        "accuracy": 0.4403292181069959,
+        "avg_confidence": 0.5915637860082302,
+        "calibration_gap": -0.15123456790123435,
+        "abs_calibration_error": 0.15123456790123435,
+        "log_loss": 0.7331106662338442,
+        "brier_score": 0.2696502057613169,
+        "roc_auc": 0.44132077073253545
+      },
+      "simulated_research_roi": {
+        "entries": 486,
+        "wins": 214,
+        "units": -54.46028830037844,
+        "roi_pct": -0.1120582063793795,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    {
+      "name": "market_favorite",
+      "description": "No-vig market favorite",
+      "model_weight": 0.0,
+      "market_weight": 1.0,
+      "metrics": {
+        "count": 486,
+        "accuracy": 0.7510288065843621,
+        "avg_confidence": 0.6547877602184583,
+        "calibration_gap": 0.0962410463659038,
+        "abs_calibration_error": 0.0962410463659038,
+        "log_loss": 0.5683540607865748,
+        "brier_score": 0.191634300444208,
+        "roc_auc": 0.7890671420083184
+      },
+      "simulated_research_roi": {
+        "entries": 486,
+        "wins": 365,
+        "units": 96.98630709615934,
+        "roi_pct": 0.1995603026669945,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    {
+      "name": "blend_50_50",
+      "description": "50% model baseline probability + 50% market probability",
+      "model_weight": 0.5,
+      "market_weight": 0.5,
+      "metrics": {
+        "count": 486,
+        "accuracy": 0.6851851851851852,
+        "avg_confidence": 0.5778592457829008,
+        "calibration_gap": 0.10732593940228441,
+        "abs_calibration_error": 0.10732593940228441,
+        "log_loss": 0.6286079024797508,
+        "brier_score": 0.21854211237284626,
+        "roc_auc": 0.7441134029369324
+      },
+      "simulated_research_roi": {
+        "entries": 486,
+        "wins": 333,
+        "units": 48.92131769248093,
+        "roi_pct": 0.10066114751539286,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    {
+      "name": "blend_25_model_75_market",
+      "description": "25% model baseline probability + 75% market probability",
+      "model_weight": 0.25,
+      "market_weight": 0.75,
+      "metrics": {
+        "count": 486,
+        "accuracy": 0.742798353909465,
+        "avg_confidence": 0.6139562341937794,
+        "calibration_gap": 0.1288421197156856,
+        "abs_calibration_error": 0.1288421197156856,
+        "log_loss": 0.5931507996967803,
+        "brier_score": 0.2020631712260481,
+        "roc_auc": 0.7814616755793227
+      },
+      "simulated_research_roi": {
+        "entries": 486,
+        "wins": 361,
+        "units": 89.8787802029294,
+        "roi_pct": 0.18493576173442264,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    {
+      "name": "blend_75_model_25_market",
+      "description": "75% model baseline probability + 25% market probability",
+      "model_weight": 0.75,
+      "market_weight": 0.25,
+      "metrics": {
+        "count": 486,
+        "accuracy": 0.5123456790123457,
+        "avg_confidence": 0.5652154049397385,
+        "calibration_gap": -0.05286972592739281,
+        "abs_calibration_error": 0.05286972592739281,
+        "log_loss": 0.6746896958536805,
+        "brier_score": 0.2410711238846025,
+        "roc_auc": 0.5937526525761819
+      },
+      "simulated_research_roi": {
+        "entries": 486,
+        "wins": 249,
+        "units": -8.234428915596599,
+        "roi_pct": -0.016943269373655555,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    }
+  ]
+}
