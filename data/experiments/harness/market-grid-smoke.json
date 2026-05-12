@@ -1,0 +1,473 @@
+{
+  "generated_at": "2026-05-12T06:19:48.803990+00:00",
+  "report": "market-experiment-harness",
+  "config_path": "configs/experiments/market-grid.example.json",
+  "git_sha": "64a85f148fd392de4b5b7b741a55f939232554db",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "config": {
+    "name": "market-grid-smoke",
+    "description": "Small report-only matrix for comparing model families, pre-fight feature transforms, and market blends against the no-vig market favorite.",
+    "value_status": "research_only",
+    "report_only": true,
+    "writes_model_versions": false,
+    "corpus": {
+      "source": "matched_market_fights",
+      "market_source": "fightodds_no_vig_consensus",
+      "min_train_samples": 100,
+      "max_events": null
+    },
+    "split": {
+      "policy": "chronological_walk_forward",
+      "candidate_selection": "full_current_corpus",
+      "locked_evaluation": "future_required"
+    },
+    "gate": {
+      "baseline": "market_favorite",
+      "min_roi_delta_vs_market": 0.02,
+      "probability_quality": {
+        "require_log_loss_not_worse": true,
+        "require_brier_not_worse": true
+      }
+    },
+    "variants": [
+      {
+        "name": "market_favorite",
+        "model": "market_favorite",
+        "features": "none",
+        "market_blend_weight": null,
+        "description": "No-vig market favorite baseline."
+      },
+      {
+        "name": "xgboost_production",
+        "model": "xgboost",
+        "features": "production",
+        "market_blend_weight": null,
+        "description": "Current XGBoost model family with production pre-fight features."
+      },
+      {
+        "name": "xgboost_availability",
+        "model": "xgboost",
+        "features": "production_plus_availability",
+        "market_blend_weight": null,
+        "description": "Current XGBoost plus pre-fight feature availability indicators."
+      },
+      {
+        "name": "logistic_production",
+        "model": "logistic_regression",
+        "features": "production",
+        "market_blend_weight": null,
+        "description": "Regularized logistic baseline with production pre-fight features."
+      },
+      {
+        "name": "blend_25_xgboost_75_market",
+        "model": "xgboost",
+        "features": "production",
+        "market_blend_weight": 0.25,
+        "description": "25% XGBoost probability plus 75% no-vig market probability."
+      },
+      {
+        "name": "blend_50_xgboost_50_market",
+        "model": "xgboost",
+        "features": "production",
+        "market_blend_weight": 0.5,
+        "description": "50% XGBoost probability plus 50% no-vig market probability."
+      },
+      {
+        "name": "blend_25_availability_75_market",
+        "model": "xgboost",
+        "features": "production_plus_availability",
+        "market_blend_weight": 0.25,
+        "description": "25% availability-augmented XGBoost probability plus 75% no-vig market probability."
+      }
+    ],
+    "outputs": {
+      "json": "data/experiments/harness/market-grid-smoke.json",
+      "markdown": "data/experiments/harness/market-grid-smoke.md"
+    }
+  },
+  "coverage": {
+    "source_events_imported": 51,
+    "source_events_matched": 51,
+    "source_events_unmatched": 0,
+    "source_fights_imported": 781,
+    "source_fights_matched": 499,
+    "source_fights_unmatched": 282,
+    "moneyline_rows_imported": 40022,
+    "moneyline_rows_linked": 28038,
+    "scored_events": 51,
+    "scored_fights": 486,
+    "model_eligible_events": 40,
+    "model_eligible_fights": 379
+  },
+  "market_baseline": {
+    "name": "market_favorite",
+    "roi_pct": 0.18482808272979137,
+    "accuracy": 0.7467018469656992,
+    "log_loss": 0.5765940478013445,
+    "brier_score": 0.19523511986831754
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "description": "No-vig market favorite baseline.",
+      "params": {
+        "model": "market_favorite",
+        "features": "none",
+        "market_blend_weight": null,
+        "feature_count": 0
+      },
+      "events_scored": 40,
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.7467018469656992,
+        "avg_confidence": 0.6520807387622892,
+        "calibration_gap": 0.09462110820340996,
+        "abs_calibration_error": 0.09462110820340996,
+        "log_loss": 0.5765940478013445,
+        "brier_score": 0.19523511986831754,
+        "roc_auc": 0.7779608938547485
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 283,
+        "units": 70.04984335459093,
+        "roi_pct": 0.18482808272979137,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.0,
+      "brier_delta_vs_market": 0.0,
+      "rejection_reasons": [
+        "baseline_not_candidate"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "xgboost_production",
+      "description": "Current XGBoost model family with production pre-fight features.",
+      "params": {
+        "model": "xgboost",
+        "features": "production",
+        "market_blend_weight": null,
+        "feature_count": 45
+      },
+      "events_scored": 40,
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.5197889182058048,
+        "avg_confidence": 0.6103226479958733,
+        "calibration_gap": -0.09053372979006857,
+        "abs_calibration_error": 0.09053372979006857,
+        "log_loss": 0.7265544566102333,
+        "brier_score": 0.2641469910943604,
+        "roc_auc": 0.5145530726256984
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 197,
+        "units": -33.7840181749926,
+        "roi_pct": -0.08913988964377996,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "roi_delta_vs_market": -0.27396797237357134,
+      "log_loss_delta_vs_market": 0.14996040880888883,
+      "brier_delta_vs_market": 0.06891187122604286,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "xgboost_availability",
+      "description": "Current XGBoost plus pre-fight feature availability indicators.",
+      "params": {
+        "model": "xgboost",
+        "features": "production_plus_availability",
+        "market_blend_weight": null,
+        "feature_count": 49
+      },
+      "events_scored": 40,
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.5382585751978892,
+        "avg_confidence": 0.6132790339732233,
+        "calibration_gap": -0.07502045877533403,
+        "abs_calibration_error": 0.07502045877533403,
+        "log_loss": 0.7290904733057262,
+        "brier_score": 0.2652890209810057,
+        "roc_auc": 0.5117597765363129
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 204,
+        "units": -20.706201836460277,
+        "roi_pct": -0.05463377793261287,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "roi_delta_vs_market": -0.23946186066240424,
+      "log_loss_delta_vs_market": 0.1524964255043817,
+      "brier_delta_vs_market": 0.07005390111268817,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "logistic_production",
+      "description": "Regularized logistic baseline with production pre-fight features.",
+      "params": {
+        "model": "logistic_regression",
+        "features": "production",
+        "market_blend_weight": null,
+        "feature_count": 45
+      },
+      "events_scored": 40,
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.503957783641161,
+        "avg_confidence": 0.714705655331712,
+        "calibration_gap": -0.2107478716905511,
+        "abs_calibration_error": 0.2107478716905511,
+        "log_loss": 0.869955258351248,
+        "brier_score": 0.3031453870086521,
+        "roc_auc": 0.5204189944134078
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 191,
+        "units": -35.01104642322146,
+        "roi_pct": -0.09237743119583498,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "roi_delta_vs_market": -0.27720551392562637,
+      "log_loss_delta_vs_market": 0.2933612105499035,
+      "brier_delta_vs_market": 0.10791026714033458,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "blend_25_xgboost_75_market",
+      "description": "25% XGBoost probability plus 75% no-vig market probability.",
+      "params": {
+        "model": "xgboost",
+        "features": "production",
+        "market_blend_weight": 0.25,
+        "feature_count": 45
+      },
+      "events_scored": 40,
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.7071240105540897,
+        "avg_confidence": 0.6235343126563085,
+        "calibration_gap": 0.08358969789778115,
+        "abs_calibration_error": 0.08358969789778115,
+        "log_loss": 0.5995445418851668,
+        "brier_score": 0.20515905304896273,
+        "roc_auc": 0.7620949720670391
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 268,
+        "units": 39.82829017004239,
+        "roi_pct": 0.10508783686027016,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "roi_delta_vs_market": -0.0797402458695212,
+      "log_loss_delta_vs_market": 0.022950494083822326,
+      "brier_delta_vs_market": 0.00992393318064519,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "blend_50_xgboost_50_market",
+      "description": "50% XGBoost probability plus 50% no-vig market probability.",
+      "params": {
+        "model": "xgboost",
+        "features": "production",
+        "market_blend_weight": 0.5,
+        "feature_count": 45
+      },
+      "events_scored": 40,
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.6649076517150396,
+        "avg_confidence": 0.6030564097534552,
+        "calibration_gap": 0.061851241961584424,
+        "abs_calibration_error": 0.061851241961584424,
+        "log_loss": 0.6310210255089106,
+        "brier_score": 0.2199523426468516,
+        "roc_auc": 0.7112569832402236
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 252,
+        "units": 23.357924800694395,
+        "roi_pct": 0.061630408445103944,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "roi_delta_vs_market": -0.12319767428468742,
+      "log_loss_delta_vs_market": 0.054426977707566104,
+      "brier_delta_vs_market": 0.024717222778534054,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "blend_25_availability_75_market",
+      "description": "25% availability-augmented XGBoost probability plus 75% no-vig market probability.",
+      "params": {
+        "model": "xgboost",
+        "features": "production_plus_availability",
+        "market_blend_weight": 0.25,
+        "feature_count": 49
+      },
+      "events_scored": 40,
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.7097625329815304,
+        "avg_confidence": 0.6244214323253546,
+        "calibration_gap": 0.08534110065617573,
+        "abs_calibration_error": 0.08534110065617573,
+        "log_loss": 0.600513766143471,
+        "brier_score": 0.20556830182016003,
+        "roc_auc": 0.7596927374301676
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 269,
+        "units": 43.94682670520722,
+        "roi_pct": 0.1159546878765362,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "roi_delta_vs_market": -0.06887339485325517,
+      "log_loss_delta_vs_market": 0.023919718342126473,
+      "brier_delta_vs_market": 0.01033318195184249,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ],
+      "clears_market_gate": false
+    }
+  ],
+  "ranking": [
+    {
+      "rank": 1,
+      "name": "blend_25_availability_75_market",
+      "roi_delta_vs_market": -0.06887339485325517,
+      "log_loss_delta_vs_market": 0.023919718342126473,
+      "brier_delta_vs_market": 0.01033318195184249,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    },
+    {
+      "rank": 2,
+      "name": "blend_25_xgboost_75_market",
+      "roi_delta_vs_market": -0.0797402458695212,
+      "log_loss_delta_vs_market": 0.022950494083822326,
+      "brier_delta_vs_market": 0.00992393318064519,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    },
+    {
+      "rank": 3,
+      "name": "blend_50_xgboost_50_market",
+      "roi_delta_vs_market": -0.12319767428468742,
+      "log_loss_delta_vs_market": 0.054426977707566104,
+      "brier_delta_vs_market": 0.024717222778534054,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    },
+    {
+      "rank": 4,
+      "name": "xgboost_availability",
+      "roi_delta_vs_market": -0.23946186066240424,
+      "log_loss_delta_vs_market": 0.1524964255043817,
+      "brier_delta_vs_market": 0.07005390111268817,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    },
+    {
+      "rank": 5,
+      "name": "xgboost_production",
+      "roi_delta_vs_market": -0.27396797237357134,
+      "log_loss_delta_vs_market": 0.14996040880888883,
+      "brier_delta_vs_market": 0.06891187122604286,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    },
+    {
+      "rank": 6,
+      "name": "logistic_production",
+      "roi_delta_vs_market": -0.27720551392562637,
+      "log_loss_delta_vs_market": 0.2933612105499035,
+      "brier_delta_vs_market": 0.10791026714033458,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    },
+    {
+      "rank": 7,
+      "name": "market_favorite",
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.0,
+      "brier_delta_vs_market": 0.0,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "baseline_not_candidate"
+      ]
+    }
+  ],
+  "recommendation": {
+    "status": "research_only",
+    "reason": "blend_25_availability_75_market is the best configured candidate but does not clear the market gate."
+  },
+  "policy": "This harness is for report-only discovery. A candidate from the current corpus is not activation proof; validated status requires a locked future evaluation slice and a passing market gate."
+}
