@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-05-12T01:08:15.481Z",
+  "report": "historical-odds-coverage",
+  "report_only": true,
+  "writes_model_versions": false,
+  "summary": {
+    "source_events": 3,
+    "matched_source_events": 3,
+    "source_fights": 46,
+    "matched_fights": 30,
+    "ambiguous_fights": 0,
+    "unmatched_fights": 16,
+    "cancelled_unmatched_fights": 9,
+    "moneyline_rows": 2173,
+    "linked_moneyline_rows": 1553,
+    "review_rows": 63,
+    "fight_match_rate": 0.6521739130434783,
+    "moneyline_link_rate": 0.7146801656695813
+  },
+  "events": [
+    {
+      "source_event_id": "5362",
+      "raw_name": "UFC Fight Night 237: Moreno vs. Royval 2",
+      "event_date": "2024-02-24",
+      "canonical_event_id": "902ab9197b83d0db",
+      "match_status": "matched",
+      "source_fights": 14,
+      "matched_fights": 12,
+      "ambiguous_fights": 0,
+      "unmatched_fights": 2,
+      "cancelled_unmatched_fights": 2,
+      "moneyline_rows": 652,
+      "linked_moneyline_rows": 600,
+      "review_rows": 17
+    },
+    {
+      "source_event_id": "5318",
+      "raw_name": "UFC Fight Night 238: Rozenstruik vs. Gaziev",
+      "event_date": "2024-03-02",
+      "canonical_event_id": "e4a9dbade7c7e1a7",
+      "match_status": "matched",
+      "source_fights": 16,
+      "matched_fights": 9,
+      "ambiguous_fights": 0,
+      "unmatched_fights": 7,
+      "cancelled_unmatched_fights": 5,
+      "moneyline_rows": 688,
+      "linked_moneyline_rows": 418,
+      "review_rows": 23
+    },
+    {
+      "source_event_id": "5356",
+      "raw_name": "UFC 299: O'Malley vs. Vera 2",
+      "event_date": "2024-03-09",
+      "canonical_event_id": "a9df5ae20a97b090",
+      "match_status": "matched",
+      "source_fights": 16,
+      "matched_fights": 9,
+      "ambiguous_fights": 0,
+      "unmatched_fights": 7,
+      "cancelled_unmatched_fights": 2,
+      "moneyline_rows": 833,
+      "linked_moneyline_rows": 535,
+      "review_rows": 23
+    }
+  ]
+}
