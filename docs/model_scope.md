@@ -72,6 +72,8 @@ Compared with the previous external-corpus model, `20260511T011334074447Z`, the 
 
 This is still an early model. Treat the numbers as a working baseline, not as proof of a durable betting edge.
 
+See `docs/model_reliability_policy.md` for the current `value_status` policy. As of the D2-RV final report, the product status is `insufficient_coverage`: market comparisons and ROI remain simulated research outputs until the coverage and market-gate criteria pass.
+
 ## Features The Model Uses
 
 Most numeric features are directional. A `_diff` feature means Fighter A minus Fighter B.

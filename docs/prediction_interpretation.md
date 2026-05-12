@@ -148,6 +148,8 @@ Use probability and edge bands as review categories, not automatic betting rules
 
 The current UI already uses edge filters such as `>5%` and `>10%`. Those should remain evaluation thresholds, not automatic bet instructions.
 
+The current `value_status` policy is defined in `docs/model_reliability_policy.md`. A status of `validated` is not allowed until the leakage audit passes, market coverage reaches at least 200 scored fights across 30 events, and the model or approved blend beats the market-favorite baseline by at least 2 percentage points of simulated flat-stake ROI.
+
 ## Calibration Comes First
 
 A model is useful only if its probabilities are calibrated.
