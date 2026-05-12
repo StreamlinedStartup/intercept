@@ -78,6 +78,12 @@ OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES = [
     "adj_recent_efficiency_trend_diff",
 ]
 
+STYLE_MATCHUP_PRESSURE_FEATURE_NAMES = [
+    "striking_pressure_vs_defense_edge",
+    "wrestling_pressure_vs_tdd_edge",
+    "submission_pressure_vs_grappling_risk_edge",
+]
+
 
 def build_features(
     fight_id: str,
@@ -289,6 +295,24 @@ def build_opponent_adjusted_recent_performance_features(
         _diff(profile_a["adjusted_grappling"], profile_b["adjusted_grappling"]),
         _diff(profile_a["opponent_quality"], profile_b["opponent_quality"]),
         _diff(profile_a["efficiency_trend"], profile_b["efficiency_trend"]),
+    ]
+    return np.array(values, dtype=float)
+
+
+def build_style_matchup_pressure_features(
+    fighter_a_id: str,
+    fighter_b_id: str,
+    fight_date: date,
+) -> np.ndarray:
+    """Build report-only style matchup pressure features."""
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            stats_a = _career_stats(cur, fighter_a_id, fight_date)
+            stats_b = _career_stats(cur, fighter_b_id, fight_date)
+    values = [
+        _diff(_striking_pressure(stats_a, stats_b), _striking_pressure(stats_b, stats_a)),
+        _diff(_wrestling_pressure(stats_a, stats_b), _wrestling_pressure(stats_b, stats_a)),
+        _diff(_submission_pressure(stats_a, stats_b), _submission_pressure(stats_b, stats_a)),
     ]
     return np.array(values, dtype=float)
 
@@ -895,6 +919,33 @@ def _opponent_quality(cur: Any, fighter_id: str, target_date: date) -> float:
     if not rows:
         return math.nan
     return sum(1 for row in rows if row["outcome"] == "win") / len(rows)
+
+
+def _striking_pressure(attacker: dict[str, float], defender: dict[str, float]) -> float:
+    defense_gap = _defensive_gap(defender["str_def"])
+    if any(math.isnan(value) for value in [attacker["slpm"], attacker["str_acc"], defense_gap]):
+        return math.nan
+    return attacker["slpm"] * attacker["str_acc"] * defense_gap
+
+
+def _wrestling_pressure(attacker: dict[str, float], defender: dict[str, float]) -> float:
+    defense_gap = _defensive_gap(defender["td_def"])
+    if any(math.isnan(value) for value in [attacker["td_avg"], attacker["td_acc"], defense_gap]):
+        return math.nan
+    return attacker["td_avg"] * attacker["td_acc"] * defense_gap
+
+
+def _submission_pressure(attacker: dict[str, float], defender: dict[str, float]) -> float:
+    defense_gap = _defensive_gap(defender["td_def"])
+    if any(math.isnan(value) for value in [attacker["sub_avg"], defense_gap]):
+        return math.nan
+    return attacker["sub_avg"] * defense_gap
+
+
+def _defensive_gap(defense_rate: float) -> float:
+    if math.isnan(defense_rate):
+        return math.nan
+    return 1.0 - defense_rate
 
 
 def _is_ko_tko_loss(row: dict[str, Any]) -> bool:

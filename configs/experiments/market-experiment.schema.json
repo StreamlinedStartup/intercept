@@ -116,7 +116,8 @@
               "none",
               "production",
               "production_plus_availability",
-              "production_plus_opponent_adjusted_recent_performance"
+              "production_plus_opponent_adjusted_recent_performance",
+              "production_plus_style_matchup_pressure"
             ]
           },
           "market_blend_weight": {
