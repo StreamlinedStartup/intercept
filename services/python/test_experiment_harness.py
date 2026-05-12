@@ -10,9 +10,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from ml.experiment_harness import (
     _annotate_variant,
+    _base_prediction_key,
+    _calibrate_probability,
     _feature_count,
+    _feature_names,
     _load_config,
+    _materialize_predictions,
     _recommendation,
+    _run_model_variant,
     _validate_config,
     render_markdown,
 )
@@ -87,9 +92,106 @@ def test_validate_config_rejects_active_model_writes() -> None:
         _validate_config(config)
 
 
+def test_validate_config_rejects_unsupported_model_params() -> None:
+    config = _config()
+    config["variants"].append(
+        {
+            "name": "bad",
+            "model": "xgboost",
+            "features": "production",
+            "model_params": {"unsupported": 1},
+        }
+    )
+
+    with pytest.raises(ValueError, match="unsupported model_params"):
+        _validate_config(config)
+
+
+def test_feature_subset_resolves_named_groups() -> None:
+    variant = {
+        "name": "xgb_no_recent_form",
+        "model": "xgboost",
+        "features": "production",
+        "feature_subset": {"mode": "exclude", "names": ["recent_form"]},
+    }
+
+    names = _feature_names(variant)
+
+    assert "wins_last_3_diff" not in names
+    assert "slpm_diff" in names
+    assert _feature_count(variant) == len(names)
+
+
 def test_feature_count_tracks_availability_alignment() -> None:
     assert _feature_count("none") == 0
     assert _feature_count("production_plus_availability") == _feature_count("production") + 4
+
+
+def test_base_prediction_key_ignores_blend_and_calibration() -> None:
+    base = {"name": "a", "model": "xgboost", "features": "production", "market_blend_weight": 0.1}
+    same_base = {
+        "name": "b",
+        "model": "xgboost",
+        "features": "production",
+        "market_blend_weight": 0.9,
+        "calibration": {"method": "temperature", "temperature": 1.5},
+    }
+    different = {
+        "name": "c",
+        "model": "xgboost",
+        "features": "production",
+        "model_params": {"max_depth": 2},
+    }
+
+    assert _base_prediction_key(base, 100) == _base_prediction_key(same_base, 100)
+    assert _base_prediction_key(base, 100) != _base_prediction_key(different, 100)
+
+
+def test_calibration_is_deterministic_and_bounded() -> None:
+    assert _calibrate_probability(0.8, {"method": "none"}) == pytest.approx(0.8)
+    assert _calibrate_probability(0.8, {"method": "temperature", "temperature": 2.0}) < 0.8
+    assert 0 < _calibrate_probability(1.0, {"method": "temperature", "temperature": 2.0}) < 1
+
+
+def test_materialize_predictions_calibrates_before_blending() -> None:
+    sample = {
+        "fight_id": "fight-1",
+        "event_id": "event-1",
+        "event_date": __import__("datetime").date(2026, 1, 1),
+        "fighter_a_id": "a",
+        "fighter_b_id": "b",
+        "label": 1,
+    }
+    markets = {"fight-1": {"a": {"market_prob": 0.6, "decimal_odds": 2.0}, "b": {"market_prob": 0.4, "decimal_odds": 2.0}}}
+
+    predictions = _materialize_predictions(
+        [{"sample": sample, "model_probability": 0.8}],
+        markets,
+        {"method": "temperature", "temperature": 2.0},
+        0.5,
+    )
+
+    calibrated = _calibrate_probability(0.8, {"method": "temperature", "temperature": 2.0})
+    assert predictions[0]["fighter_a_probability"] == pytest.approx((calibrated + 0.6) / 2)
+
+
+def test_run_model_variant_reuses_base_prediction_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = 0
+
+    def fake_score(*args: object, **kwargs: object) -> list[dict]:
+        nonlocal calls
+        calls += 1
+        return []
+
+    monkeypatch.setattr("ml.experiment_harness._score_base_walk_forward", fake_score)
+    cache: dict[tuple, list[dict]] = {}
+    first = {"name": "a", "model": "xgboost", "features": "production", "market_blend_weight": 0.1}
+    second = {"name": "b", "model": "xgboost", "features": "production", "market_blend_weight": 0.9}
+
+    _run_model_variant(first, [], [], {}, 100, cache)
+    _run_model_variant(second, [], [], {}, 100, cache)
+
+    assert calls == 1
 
 
 def test_gate_annotation_requires_roi_and_probability_quality() -> None:
