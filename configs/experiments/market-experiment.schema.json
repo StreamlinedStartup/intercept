@@ -112,7 +112,12 @@
           },
           "features": {
             "type": "string",
-            "enum": ["none", "production", "production_plus_availability"]
+            "enum": [
+              "none",
+              "production",
+              "production_plus_availability",
+              "production_plus_opponent_adjusted_recent_performance"
+            ]
           },
           "market_blend_weight": {
             "type": ["number", "null"],

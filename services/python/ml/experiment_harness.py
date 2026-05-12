@@ -19,7 +19,11 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
 from ml.baselines import _load_market_consensus
-from ml.features import FEATURE_NAMES
+from ml.features import (
+    FEATURE_NAMES,
+    OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES,
+    build_opponent_adjusted_recent_performance_features,
+)
 from ml.market_blend_experiments import blend_probability, roi_delta
 from ml.market_gate_report import (
     _fmt_metric,
@@ -477,15 +481,16 @@ def _model(name: str, params: dict[str, Any] | None = None) -> Any:
 
 def _feature_fn(variant: dict[str, Any]) -> FeatureFn:
     names = _feature_names(variant)
-    if names == FEATURE_NAMES:
-        return _base_features
-    if names == [*FEATURE_NAMES, *AVAILABILITY_FEATURE_NAMES]:
-        return _availability_augmented_features
-    index_by_name = {name: index for index, name in enumerate([*FEATURE_NAMES, *AVAILABILITY_FEATURE_NAMES])}
+    spec = _feature_spec(variant)
+    base_names = _base_feature_names(spec["base"])
+    base_fn = _base_feature_fn(spec["base"])
+    if names == base_names:
+        return base_fn
+    index_by_name = {name: index for index, name in enumerate(base_names)}
     indices = [index_by_name[name] for name in names]
 
     def project(sample: dict[str, Any]) -> np.ndarray:
-        return _availability_augmented_features(sample)[indices]
+        return base_fn(sample)[indices]
 
     return project
 
@@ -501,7 +506,7 @@ def _feature_names(variant: dict[str, Any]) -> list[str]:
     spec = _feature_spec(variant)
     if spec["base"] == "none":
         return []
-    base = list(FEATURE_NAMES) if spec["base"] == "production" else [*FEATURE_NAMES, *AVAILABILITY_FEATURE_NAMES]
+    base = _base_feature_names(spec["base"])
     subset = variant.get("feature_subset")
     if subset is None:
         return base
@@ -518,9 +523,46 @@ def _feature_spec(variant: dict[str, Any]) -> dict[str, Any]:
         if variant["model"] == "market_favorite":
             return {"base": "none"}
         raise ValueError("non-market variants cannot use features='none'")
-    if features in {"production", "production_plus_availability"}:
+    if features in {
+        "production",
+        "production_plus_availability",
+        "production_plus_opponent_adjusted_recent_performance",
+    }:
         return {"base": features}
     raise ValueError(f"unsupported feature set {features!r}")
+
+
+def _base_feature_names(features: str) -> list[str]:
+    if features == "production":
+        return list(FEATURE_NAMES)
+    if features == "production_plus_availability":
+        return [*FEATURE_NAMES, *AVAILABILITY_FEATURE_NAMES]
+    if features == "production_plus_opponent_adjusted_recent_performance":
+        return [*FEATURE_NAMES, *OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES]
+    raise ValueError(f"unsupported feature set {features!r}")
+
+
+def _base_feature_fn(features: str) -> FeatureFn:
+    if features == "production":
+        return _base_features
+    if features == "production_plus_availability":
+        return _availability_augmented_features
+    if features == "production_plus_opponent_adjusted_recent_performance":
+        return _opponent_adjusted_recent_performance_features
+    raise ValueError(f"unsupported feature set {features!r}")
+
+
+def _opponent_adjusted_recent_performance_features(sample: dict[str, Any]) -> np.ndarray:
+    return np.concatenate(
+        [
+            sample["features"],
+            build_opponent_adjusted_recent_performance_features(
+                sample["fighter_a_id"],
+                sample["fighter_b_id"],
+                sample["event_date"],
+            ),
+        ]
+    )
 
 
 def _resolve_feature_names(names: list[str], base: list[str]) -> list[str]:

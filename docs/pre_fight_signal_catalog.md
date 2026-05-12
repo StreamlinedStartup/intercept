@@ -2,7 +2,7 @@
 
 The source of truth for the current signal candidates is `data/experiments/pre-fight-signal-candidates.json`.
 
-The next recommended report-only experiment is `opponent_adjusted_recent_performance_v1`.
+The previously recommended report-only experiment, `opponent_adjusted_recent_performance_v1`, has now been evaluated and did not clear the market gate. See `docs/opponent_adjusted_recent_performance_v1.md`.
 
 Why this is the next slice:
 

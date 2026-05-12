@@ -1,0 +1,60 @@
+{
+  "name": "opponent-adjusted-recent-performance-v1",
+  "description": "Report-only evaluation of opponent_adjusted_recent_performance_v1 using existing DB fight/result data and the market experiment harness.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 100,
+    "max_events": null
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "full_current_corpus",
+    "locked_evaluation": "future_required"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline."
+    },
+    {
+      "name": "xgb_current",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": null,
+      "description": "Current production-feature XGBoost baseline."
+    },
+    {
+      "name": "xgb_opponent_adjusted_recent_performance",
+      "model": "xgboost",
+      "features": "production_plus_opponent_adjusted_recent_performance",
+      "market_blend_weight": null,
+      "description": "XGBoost with opponent-adjusted recent performance features appended."
+    },
+    {
+      "name": "xgb_opponent_adjusted_recent_performance_blend_10",
+      "model": "xgboost",
+      "features": "production_plus_opponent_adjusted_recent_performance",
+      "market_blend_weight": 0.1,
+      "description": "10% opponent-adjusted model probability blended with 90% no-vig market probability."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/opponent-adjusted-recent-performance-v1.json",
+    "markdown": "data/experiments/harness/opponent-adjusted-recent-performance-v1.md"
+  }
+}
