@@ -36,3 +36,7 @@ See `data/experiments/harness/market-grid-expanded-100-recommendation.md` for th
 ## Real Axes
 
 The harness now supports cached base walk-forward predictions, variant-level model params, feature subsets/ablations, deterministic temperature calibration, and market blends. See `configs/experiments/market-grid-real-axes-smoke.json` and `data/experiments/harness/market-grid-real-axes-smoke-recommendation.md`.
+
+## Mass Edge Search
+
+See `configs/experiments/market-grid-mass-edge-search.json` and `data/experiments/harness/market-grid-mass-edge-search-recommendation.md`. The mass search covered 1,585 variants over 66 cached base keys and found 0 gate-clearing candidates; the next constraint is new signal/corpus quality, not more variants over the same current feature families.
