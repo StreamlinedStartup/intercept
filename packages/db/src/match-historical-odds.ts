@@ -2,9 +2,10 @@ import { and, eq, gte, lte } from 'drizzle-orm';
 import { db, sql } from './client.js';
 import {
 	type CanonicalFight,
+	eventNameTokens,
 	type FightMatch,
 	matchHistoricalFight,
-	normalizeName,
+	normalizeEventName,
 } from './match-historical-odds-core.js';
 import {
 	events,
@@ -371,18 +372,6 @@ function emptySummary(sourceEventId: string): MatchSummary {
 		matchRate: 0,
 		unmatchedRate: 1,
 	};
-}
-
-function normalizeEventName(value: string): string {
-	return normalizeName(value).replace(/\bufc fight night \d+\b/, 'ufc fight night');
-}
-
-function eventNameTokens(normalizedEventName: string): string[] {
-	return normalizedEventName
-		.split(' ')
-		.filter(
-			(token) => !['ufc', 'fight', 'night', 'vs'].includes(token) && Number.isNaN(Number(token)),
-		);
 }
 
 function candidateRows(candidates: CanonicalFight[]) {

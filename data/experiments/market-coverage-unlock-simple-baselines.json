@@ -1,0 +1,123 @@
+{
+  "generated_at": "2026-05-12T03:53:36.604118+00:00",
+  "report": "simple-baselines",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "value_status_reason": "Baseline ROI is simulated research output until leakage audits, market coverage, and market-gated validation pass.",
+  "chronology": {
+    "mode": "walk-forward-compatible chronological event order",
+    "start_date": null,
+    "end_date": null,
+    "max_events": null,
+    "events_evaluated": 777,
+    "samples_evaluated": 8538
+  },
+  "market_coverage": {
+    "samples": 8538,
+    "covered_samples": 345,
+    "coverage_rate": 0.040407589599437806
+  },
+  "baselines": [
+    {
+      "name": "ufc_experience",
+      "description": "Pick the fighter with more prior UFC fights.",
+      "coverage": {
+        "samples": 8538,
+        "market_samples": 345
+      },
+      "metrics": {
+        "count": 8538,
+        "accuracy": 0.5148746779105177,
+        "avg_confidence": 0.5853010072616537,
+        "calibration_gap": -0.07042632935113602,
+        "abs_calibration_error": 0.07042632935113602,
+        "log_loss": 0.705167911793868,
+        "brier_score": 0.2558713984539705,
+        "roc_auc": 0.5152493053208255
+      },
+      "simulated_research_roi": {
+        "entries": 242,
+        "units": -53.690863975446945,
+        "roi_pct": -0.22186307427870638,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    {
+      "name": "recent_form_wins_last_3",
+      "description": "Pick the fighter with more wins in the last 3 prior fights.",
+      "coverage": {
+        "samples": 8538,
+        "market_samples": 345
+      },
+      "metrics": {
+        "count": 8538,
+        "accuracy": 0.5249472944483485,
+        "avg_confidence": 0.522201920824549,
+        "calibration_gap": 0.002745373623799563,
+        "abs_calibration_error": 0.002745373623799563,
+        "log_loss": 0.6892699026953784,
+        "brier_score": 0.24807092996017807,
+        "roc_auc": 0.5457978768936318
+      },
+      "simulated_research_roi": {
+        "entries": 153,
+        "units": -19.719638311785115,
+        "roi_pct": -0.1288865249136282,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    {
+      "name": "younger_fighter",
+      "description": "Pick the younger fighter when both dates of birth are available.",
+      "coverage": {
+        "samples": 8538,
+        "market_samples": 345
+      },
+      "metrics": {
+        "count": 8538,
+        "accuracy": 0.567463106113844,
+        "avg_confidence": 0.5487702037947997,
+        "calibration_gap": 0.018692902319044302,
+        "abs_calibration_error": 0.018692902319044302,
+        "log_loss": 0.6843933651969177,
+        "brier_score": 0.24563363785429845,
+        "roc_auc": 0.5697066105362967
+      },
+      "simulated_research_roi": {
+        "entries": 141,
+        "units": -27.00606582193547,
+        "roi_pct": -0.19153238171585438,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    {
+      "name": "market_favorite",
+      "description": "Pick the fighter with higher no-vig market probability where historical odds are matched.",
+      "coverage": {
+        "samples": 345,
+        "market_samples": 345
+      },
+      "metrics": {
+        "count": 345,
+        "accuracy": 0.7507246376811594,
+        "avg_confidence": 0.6557780309473253,
+        "calibration_gap": 0.09494660673383404,
+        "abs_calibration_error": 0.09494660673383404,
+        "log_loss": 0.5707220822426257,
+        "brier_score": 0.19249851412779617,
+        "roc_auc": 0.7848735539413505
+      },
+      "simulated_research_roi": {
+        "entries": 345,
+        "units": 55.776728797966555,
+        "roi_pct": 0.16167167767526539,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    }
+  ]
+}

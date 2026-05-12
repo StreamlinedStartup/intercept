@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { matchHistoricalFight, normalizeName } from './match-historical-odds-core.js';
+import {
+	eventNameTokens,
+	matchHistoricalFight,
+	normalizeEventName,
+	normalizeName,
+} from './match-historical-odds-core.js';
 
 const canonicalFights = [
 	{
@@ -31,6 +36,22 @@ describe('historical odds matching', () => {
 		expect(normalizeName('Mateus Mendonça')).toBe('mateus mendonca');
 		expect(normalizeName('Christian Quiñónez')).toBe('christian quinonez');
 		expect(normalizeName('Michał Oleksiejczuk')).toBe('michal oleksiejczuk');
+	});
+
+	it('normalizes FightOdds event aliases to canonical UFCStats event names', () => {
+		expect(normalizeEventName('UFC on ESPN 50: Sandhagen vs. Font')).toBe(
+			'ufc fight night sandhagen vs font',
+		);
+		expect(normalizeEventName('UFC on ABC 4: Rozenstruik vs. Almeida')).toBe(
+			'ufc fight night rozenstruik vs almeida',
+		);
+		expect(normalizeEventName('UFC Fight Night 226: Gane vs. Spivak')).toBe(
+			'ufc fight night gane vs spivak',
+		);
+		expect(eventNameTokens(normalizeEventName('UFC Fight Night 226: Gane vs. Spivak'))).toEqual([
+			'gane',
+			'spivac',
+		]);
 	});
 
 	it('matches a swapped source fighter order', () => {

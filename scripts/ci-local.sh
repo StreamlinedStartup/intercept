@@ -34,13 +34,14 @@ step "Typecheck"
 pnpm turbo typecheck || fail "Typecheck failed"
 pass "Typecheck"
 
+export DATABASE_URL="${DATABASE_URL:-postgres://interceptor:interceptor@localhost:5434/interceptor}"
+
 step "Test"
 pnpm turbo test || fail "Tests failed"
 pass "Test"
 
 step "Python test"
 PYTHON_VENV="services/python/.venv/bin/python3"
-export DATABASE_URL="${DATABASE_URL:-postgres://interceptor:interceptor@localhost:5434/interceptor}"
 if [ -x "$PYTHON_VENV" ]; then
   $PYTHON_VENV -m pytest services/python/ -v || fail "Python tests failed"
 elif python3 -m pytest --version >/dev/null 2>&1; then
