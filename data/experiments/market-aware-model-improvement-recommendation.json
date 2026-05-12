@@ -1,0 +1,69 @@
+{
+  "generated_at": "2026-05-12T04:15:32Z",
+  "report": "market-aware-model-improvement-recommendation",
+  "epic": "intercept-tgq5",
+  "task": "intercept-wz5q",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "recommendation": "Do not activate a model or blend. Continue research-only work focused on expanding trainable market-covered history and improving pre-fight feature signal before any active model_versions write.",
+  "activation_allowed": false,
+  "activation_blockers": [
+    "No candidate beats the no-vig market favorite by the required +2pp simulated ROI gate.",
+    "Trainable model-family experiments have only 26 model-eligible events after requiring prior market-covered training fights.",
+    "Current XGBoost, logistic regression, and conservative feature ablations degrade ROI and probability quality versus the market favorite.",
+    "Validated/value UI, API, and docs claims remain blocked until a separate activation epic passes the gate."
+  ],
+  "frozen_dataset": {
+    "source_events_imported": 37,
+    "source_events_matched": 37,
+    "source_fights_imported": 572,
+    "source_fights_matched": 357,
+    "moneyline_rows_imported": 29056,
+    "moneyline_rows_linked": 20075,
+    "scored_events": 37,
+    "scored_fights": 345
+  },
+  "metric_contract": {
+    "primary_baseline": "no-vig market favorite",
+    "market_favorite_roi": 0.16167167767526539,
+    "minimum_candidate_roi": 0.18167167767526538,
+    "minimum_roi_delta_vs_market_favorite": 0.02
+  },
+  "experiment_results": {
+    "blend_experiments": {
+      "source": "data/experiments/market-aware-blend-experiments.json",
+      "best_candidate": "blend_25_model_75_market",
+      "best_candidate_roi": 0.1588586462200478,
+      "delta_vs_market_favorite": -0.0028130314552175795,
+      "candidate_cleared_gate": false
+    },
+    "model_family_experiments": {
+      "source": "data/experiments/market-aware-model-family-experiments.json",
+      "model_eligible_events": 26,
+      "model_eligible_fights": 241,
+      "best_candidate": "blend_25_xgboost_75_market",
+      "best_candidate_roi": 0.03471467243515668,
+      "delta_vs_market_favorite": -0.0630462419305532,
+      "candidate_cleared_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_plus_2pp_market_gate",
+        "unstable_coverage_bucket",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    }
+  },
+  "next_recommended_epic": {
+    "title": "D2-TMC: Trainable market-covered corpus expansion",
+    "parent": "intercept-8mw9",
+    "priority": "high",
+    "goal": "Increase prior-trainable market-covered events enough that walk-forward model-family experiments can score at least 30 model-eligible events while preserving leakage controls.",
+    "suggested_tasks": [
+      "Identify additional older UFC FightOdds events before the current 37-event window.",
+      "Import and entity-resolve those events into historical_odds_events, historical_odds_fights, historical_moneyline_odds, and unmatched_historical_odds.",
+      "Rerun coverage, leakage, market gate, blend, and model-family reports.",
+      "Only create an activation epic if a candidate beats the no-vig market favorite by at least +2pp with stable coverage and non-degraded probability metrics."
+    ]
+  }
+}

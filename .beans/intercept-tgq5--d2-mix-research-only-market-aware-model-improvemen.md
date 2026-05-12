@@ -1,11 +1,11 @@
 ---
 # intercept-tgq5
 title: 'D2-MIX: Research-only market-aware model improvement experiments'
-status: todo
+status: completed
 type: epic
 priority: high
 created_at: 2026-05-12T03:33:57Z
-updated_at: 2026-05-12T03:33:57Z
+updated_at: 2026-05-12T04:17:41Z
 parent: intercept-8mw9
 blocked_by:
     - intercept-136k
@@ -14,12 +14,27 @@ blocked_by:
 Run report-only model-improvement experiments only after the D2-MCU unlock decision says coverage is sufficient. The goal is to improve model quality against the market favorite without activating claims prematurely.
 
 Acceptance criteria:
-- [ ] Experiment inputs are frozen from the D2-MCU coverage-passing, research-only market gate bundle.
-- [ ] Calibration, blend, and feature/model variants are evaluated with walk-forward discipline.
-- [ ] Every result compares against the no-vig market favorite baseline.
-- [ ] Outputs are JSON/Markdown research artifacts only.
-- [ ] No active model_versions writes or validated activation happen in this epic.
+- [x] Experiment inputs are frozen from the D2-MCU coverage-passing, research-only market gate bundle.
+- [x] Calibration, blend, and feature/model variants are evaluated with walk-forward discipline.
+- [x] Every result compares against the no-vig market favorite baseline.
+- [x] Outputs are JSON/Markdown research artifacts only.
+- [x] No active model_versions writes or validated activation happen in this epic.
 
 Constraints:
 - Do not start until D2-MCU-F says research-only model-improvement experiments are unblocked.
 - Keep UI/API/docs research-only unless a separate activation gate passes.
+
+## Summary of Changes
+
+- Froze the D2-MCU evidence bundle and metric contract for research-only experiments.
+- Evaluated calibration/blend variants, feature/model-family variants, and final recommendation artifacts against the no-vig market favorite.
+- Published all outputs under `data/experiments/market-aware-*`.
+- Final decision remains `research_only`: no candidate clears the market favorite +2pp ROI gate, and no active `model_versions` writes or validated activation occurred.
+
+## Verification
+
+- `./scripts/ci-local.sh`
+- `jq empty data/experiments/market-aware-model-experiment-manifest.json`
+- `jq empty data/experiments/market-aware-blend-experiments.json`
+- `jq empty data/experiments/market-aware-model-family-experiments.json`
+- `jq empty data/experiments/market-aware-model-improvement-recommendation.json`
