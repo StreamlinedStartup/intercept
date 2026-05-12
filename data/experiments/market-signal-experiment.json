@@ -1,0 +1,260 @@
+{
+  "generated_at": "2026-05-12T05:58:15.841465+00:00",
+  "report": "market-signal-experiment",
+  "epic": "intercept-b6yf",
+  "task": "intercept-fypt",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "input_candidates": "data/experiments/market-residual-signal-candidates.json",
+  "signal": {
+    "name": "pre_fight_feature_availability_flags",
+    "base_feature_count": 45,
+    "added_feature_names": [
+      "feature_missing_count",
+      "feature_missing_rate",
+      "has_recent_form_context",
+      "has_weight_context"
+    ],
+    "candidate_feature_count": 49,
+    "leakage_status": "pre_fight_only"
+  },
+  "coverage": {
+    "source_events_imported": 51,
+    "source_events_matched": 51,
+    "source_events_unmatched": 0,
+    "source_fights_imported": 781,
+    "source_fights_matched": 499,
+    "source_fights_unmatched": 282,
+    "moneyline_rows_imported": 40022,
+    "moneyline_rows_linked": 28038,
+    "scored_events": 51,
+    "scored_fights": 486,
+    "model_eligible_events": 40,
+    "model_eligible_fights": 379
+  },
+  "strategies": [
+    {
+      "name": "market_favorite",
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.7467018469656992,
+        "avg_confidence": 0.6520807387622892,
+        "calibration_gap": 0.09462110820340996,
+        "abs_calibration_error": 0.09462110820340996,
+        "log_loss": 0.5765940478013445,
+        "brier_score": 0.19523511986831754,
+        "roc_auc": 0.7779608938547485
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 283,
+        "units": 70.04984335459093,
+        "roi_pct": 0.18482808272979137,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    {
+      "name": "xgboost_current",
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.5197889182058048,
+        "avg_confidence": 0.6103226479958733,
+        "calibration_gap": -0.09053372979006857,
+        "abs_calibration_error": 0.09053372979006857,
+        "log_loss": 0.7265544566102333,
+        "brier_score": 0.2641469910943604,
+        "roc_auc": 0.5145530726256984
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 197,
+        "units": -33.7840181749926,
+        "roi_pct": -0.08913988964377996,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    },
+    {
+      "name": "xgboost_feature_availability",
+      "metrics": {
+        "count": 379,
+        "accuracy": 0.5382585751978892,
+        "avg_confidence": 0.6132790339732233,
+        "calibration_gap": -0.07502045877533403,
+        "abs_calibration_error": 0.07502045877533403,
+        "log_loss": 0.7290904733057262,
+        "brier_score": 0.2652890209810057,
+        "roc_auc": 0.5117597765363129
+      },
+      "simulated_research_roi": {
+        "entries": 379,
+        "wins": 204,
+        "units": -20.706201836460277,
+        "roi_pct": -0.05463377793261287,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      }
+    }
+  ],
+  "deltas": {
+    "candidate_vs_market": {
+      "accuracy_delta": -0.20844327176780997,
+      "roi_delta": -0.23946186066240424,
+      "log_loss_delta": 0.1524964255043817,
+      "brier_delta": 0.07005390111268817
+    },
+    "candidate_vs_current_model": {
+      "accuracy_delta": 0.01846965699208447,
+      "roi_delta": 0.03450611171116709,
+      "log_loss_delta": 0.00253601669549286,
+      "brier_delta": 0.0011420298866453016
+    }
+  },
+  "target_cluster_checks": [
+    {
+      "cluster": "feature_availability:sparse",
+      "candidate": {
+        "name": "candidate",
+        "metrics": {
+          "count": 64,
+          "accuracy": 0.53125,
+          "avg_confidence": 0.6497214995324612,
+          "calibration_gap": -0.11847149953246117,
+          "abs_calibration_error": 0.11847149953246117,
+          "log_loss": 0.7663463352063001,
+          "brier_score": 0.2794833121698945,
+          "roc_auc": 0.4780058651026393
+        },
+        "simulated_research_roi": {
+          "entries": 64,
+          "wins": 34,
+          "units": -7.279508841517269,
+          "roi_pct": -0.11374232564870733,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      "market": {
+        "name": "market",
+        "metrics": {
+          "count": 64,
+          "accuracy": 0.8125,
+          "avg_confidence": 0.6695749086602748,
+          "calibration_gap": 0.1429250913397252,
+          "abs_calibration_error": 0.1429250913397252,
+          "log_loss": 0.5301848036781903,
+          "brier_score": 0.17573454991219029,
+          "roc_auc": 0.8279569892473118
+        },
+        "simulated_research_roi": {
+          "entries": 64,
+          "wins": 52,
+          "units": 15.686591627300977,
+          "roi_pct": 0.24510299417657777,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      "roi_delta_vs_market": -0.3588453198252851
+    },
+    {
+      "cluster": "confidence:model_70_plus",
+      "candidate": {
+        "name": "candidate",
+        "metrics": {
+          "count": 51,
+          "accuracy": 0.49019607843137253,
+          "avg_confidence": 0.7608251294084624,
+          "calibration_gap": -0.27062905097708984,
+          "abs_calibration_error": 0.27062905097708984,
+          "log_loss": 0.8820867579136379,
+          "brier_score": 0.32773301342452543,
+          "roc_auc": 0.45524691358024694
+        },
+        "simulated_research_roi": {
+          "entries": 51,
+          "wins": 25,
+          "units": -14.120629558281172,
+          "roi_pct": -0.2768750893780622,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      "market": {
+        "name": "market",
+        "metrics": {
+          "count": 51,
+          "accuracy": 0.803921568627451,
+          "avg_confidence": 0.6611074303938692,
+          "calibration_gap": 0.1428141382335818,
+          "abs_calibration_error": 0.1428141382335818,
+          "log_loss": 0.5670258986553564,
+          "brier_score": 0.18937411587491604,
+          "roc_auc": 0.7978395061728394
+        },
+        "simulated_research_roi": {
+          "entries": 51,
+          "wins": 41,
+          "units": 10.409318471334393,
+          "roi_pct": 0.20410428375165476,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      "roi_delta_vs_market": -0.48097937312971695
+    },
+    {
+      "cluster": "odds_range:heavy_favorite_75_plus",
+      "candidate": {
+        "name": "candidate",
+        "metrics": {
+          "count": 64,
+          "accuracy": 0.640625,
+          "avg_confidence": 0.6264633478131145,
+          "calibration_gap": 0.014161652186885476,
+          "abs_calibration_error": 0.014161652186885476,
+          "log_loss": 0.6577201141278228,
+          "brier_score": 0.2303897513767629,
+          "roc_auc": 0.6774193548387096
+        },
+        "simulated_research_roi": {
+          "entries": 64,
+          "wins": 41,
+          "units": -8.944863928145766,
+          "roi_pct": -0.1397634988772776,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      "market": {
+        "name": "market",
+        "metrics": {
+          "count": 64,
+          "accuracy": 0.875,
+          "avg_confidence": 0.8066180689484538,
+          "calibration_gap": 0.06838193105154622,
+          "abs_calibration_error": 0.06838193105154622,
+          "log_loss": 0.3914642518427669,
+          "brier_score": 0.11394895436120431,
+          "roc_auc": 0.8778103616813294
+        },
+        "simulated_research_roi": {
+          "entries": 64,
+          "wins": 56,
+          "units": 7.0316021201147585,
+          "roi_pct": 0.1098687831267931,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      "roi_delta_vs_market": -0.2496322820040707
+    }
+  ],
+  "recommendation": {
+    "status": "do_not_promote",
+    "reason": "Candidate remains behind the market favorite and does not improve both log loss and Brier versus the current model (ROI delta vs market -23.9%)."
+  },
+  "policy": "This experiment is report-only and does not write active model_versions or activate betting/value claims."
+}
