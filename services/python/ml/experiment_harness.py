@@ -99,6 +99,7 @@ def run_experiment_harness(
         samples = [sample for sample in samples if sample["event_id"] in keep_events]
     min_train_samples = int(config["corpus"]["min_train_samples"])
     eligible_samples = _eligible_evaluation_samples(samples, min_train_samples)
+    eligible_samples = _apply_holdout_policy(eligible_samples, config["corpus"].get("holdout"))
     markets = _load_market_consensus()
     samples = _attach_market_context(samples, markets)
     eligible_samples = _attach_market_context(eligible_samples, markets)
@@ -150,6 +151,7 @@ def run_experiment_harness(
             "scored_fights": len(samples),
             "model_eligible_events": len({sample["event_id"] for sample in eligible_samples}),
             "model_eligible_fights": len(eligible_samples),
+            "holdout": _holdout_summary(config["corpus"].get("holdout"), eligible_samples),
         },
         "market_baseline": {
             "name": market_report["name"],
@@ -288,6 +290,45 @@ def _validate_config(config: dict[str, Any]) -> None:
         _feature_names(variant)
         _calibration(variant)
         _selection_policy(variant)
+    _holdout_policy(config["corpus"].get("holdout"))
+
+
+def _holdout_policy(policy: dict[str, Any] | None) -> dict[str, Any] | None:
+    if policy is None:
+        return None
+    policy_type = policy.get("type")
+    if policy_type != "last_n_events":
+        raise ValueError(f"unsupported holdout policy {policy_type!r}")
+    event_count = int(policy.get("event_count", 0))
+    if event_count < 1:
+        raise ValueError("holdout last_n_events requires event_count >= 1")
+    return {"type": "last_n_events", "event_count": event_count}
+
+
+def _apply_holdout_policy(
+    eligible_samples: list[dict[str, Any]],
+    policy: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    normalized = _holdout_policy(policy)
+    if normalized is None:
+        return eligible_samples
+    events = _evaluation_events(eligible_samples)
+    keep_events = {event["event_id"] for event in events[-int(normalized["event_count"]) :]}
+    return [sample for sample in eligible_samples if sample["event_id"] in keep_events]
+
+
+def _holdout_summary(policy: dict[str, Any] | None, eligible_samples: list[dict[str, Any]]) -> dict[str, Any] | None:
+    normalized = _holdout_policy(policy)
+    if normalized is None:
+        return None
+    events = _evaluation_events(eligible_samples)
+    return {
+        **normalized,
+        "events": len(events),
+        "fights": len(eligible_samples),
+        "start_date": events[0]["event_date"].isoformat() if events else None,
+        "end_date": events[-1]["event_date"].isoformat() if events else None,
+    }
 
 
 def _run_model_variant(

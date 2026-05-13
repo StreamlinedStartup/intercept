@@ -11,11 +11,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 from ml.experiment_harness import (
     MARKET_CONTEXT_FEATURE_NAMES,
     _annotate_variant,
+    _apply_holdout_policy,
     _attach_market_context,
     _base_prediction_key,
     _calibrate_probability,
     _feature_count,
     _feature_names,
+    _holdout_policy,
+    _holdout_summary,
     _load_config,
     _materialize_predictions,
     _recommendation,
@@ -149,6 +152,37 @@ def test_market_context_features_are_declared_and_point_in_time_attached() -> No
     assert enriched[0]["market_context_features"].tolist() == pytest.approx([0.62, 0.38, 0.24, 0.38])
 
 
+def test_holdout_policy_keeps_last_n_chronological_events() -> None:
+    from datetime import date
+
+    samples = [
+        {"event_id": "e1", "event_date": date(2026, 1, 1), "fight_id": "f1"},
+        {"event_id": "e2", "event_date": date(2026, 1, 2), "fight_id": "f2"},
+        {"event_id": "e3", "event_date": date(2026, 1, 3), "fight_id": "f3"},
+        {"event_id": "e4", "event_date": date(2026, 1, 4), "fight_id": "f4"},
+    ]
+
+    holdout = _apply_holdout_policy(samples, {"type": "last_n_events", "event_count": 2})
+
+    assert [sample["event_id"] for sample in holdout] == ["e3", "e4"]
+    assert _holdout_summary({"type": "last_n_events", "event_count": 2}, holdout) == {
+        "type": "last_n_events",
+        "event_count": 2,
+        "events": 2,
+        "fights": 2,
+        "start_date": "2026-01-03",
+        "end_date": "2026-01-04",
+    }
+
+
+def test_holdout_policy_rejects_invalid_policy() -> None:
+    with pytest.raises(ValueError, match="unsupported holdout policy"):
+        _holdout_policy({"type": "random", "event_count": 2})
+
+    with pytest.raises(ValueError, match="event_count >= 1"):
+        _holdout_policy({"type": "last_n_events", "event_count": 0})
+
+
 def test_base_prediction_key_ignores_blend_and_calibration() -> None:
     base = {"name": "a", "model": "xgboost", "features": "production", "market_blend_weight": 0.1}
     same_base = {
@@ -259,7 +293,12 @@ def test_markdown_includes_research_only_contract() -> None:
         "variants": [
             {
                 "name": "candidate",
-                "params": {"model": "xgboost", "features": "production", "market_blend_weight": None},
+                "params": {
+                    "model": "xgboost",
+                    "features": "production",
+                    "market_blend_weight": None,
+                    "selection_policy": {"type": "all"},
+                },
                 "metrics": {"count": 1, "accuracy": 1.0, "log_loss": 0.1, "brier_score": 0.1},
                 "simulated_research_roi": {"roi_pct": 0.1},
             }
