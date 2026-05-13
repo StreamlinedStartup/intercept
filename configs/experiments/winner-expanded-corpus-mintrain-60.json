@@ -1,0 +1,57 @@
+{
+  "name": "winner-expanded-corpus-mintrain-60",
+  "description": "Frozen winner retest with min_train_samples=60.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 60,
+    "max_events": null
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "full_current_corpus",
+    "locked_evaluation": "future_required"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline."
+    },
+    {
+      "name": "log_allmarketctx_c2p5_temp2p2_blend45_min_confidence0p63",
+      "model": "logistic_regression",
+      "features": "production_plus_all_research_market_context",
+      "market_blend_weight": 0.45,
+      "model_params": {
+        "C": 2.5
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.2
+      },
+      "selection_policy": {
+        "type": "min_confidence",
+        "threshold": 0.63
+      },
+      "description": "Frozen gate-clearing candidate retested across expanded eligible corpus windows."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/winner-expanded-corpus-mintrain-60.json",
+    "markdown": "data/experiments/harness/winner-expanded-corpus-mintrain-60.md"
+  }
+}

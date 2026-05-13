@@ -10,6 +10,7 @@ from ml.experiment_harness import _validate_config
 from ml.generate_exhaustive_market_matrix import build_config
 from ml.generate_selection_gate_matrix import build_config as build_selection_config
 from ml.generate_selection_threshold_refinement import build_config as build_threshold_config
+from ml.generate_winner_expanded_corpus_configs import MIN_TRAIN_SAMPLES, WINNER_VARIANT, build_config as build_winner_config
 
 
 def test_exhaustive_market_matrix_is_research_only_and_unique() -> None:
@@ -60,3 +61,16 @@ def test_selection_threshold_refinement_matrix_is_research_only_and_unique() -> 
         0.64,
         0.65,
     }
+
+
+def test_winner_expanded_corpus_configs_freeze_candidate() -> None:
+    for min_train_samples in MIN_TRAIN_SAMPLES:
+        config = build_winner_config(min_train_samples)
+
+        _validate_config(config)
+
+        assert config["report_only"] is True
+        assert config["writes_model_versions"] is False
+        assert config["value_status"] == "research_only"
+        assert config["corpus"]["min_train_samples"] == min_train_samples
+        assert config["variants"][1] == WINNER_VARIANT
