@@ -45,6 +45,21 @@
         "max_events": {
           "type": ["integer", "null"],
           "minimum": 1
+        },
+        "holdout": {
+          "type": ["object", "null"],
+          "required": ["type", "event_count"],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "last_n_events"
+            },
+            "event_count": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
         }
       }
     },
