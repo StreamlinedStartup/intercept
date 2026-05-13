@@ -175,12 +175,37 @@ def test_holdout_policy_keeps_last_n_chronological_events() -> None:
     }
 
 
+def test_holdout_policy_keeps_events_after_date() -> None:
+    from datetime import date
+
+    samples = [
+        {"event_id": "e1", "event_date": date(2024, 3, 9), "fight_id": "f1"},
+        {"event_id": "e2", "event_date": date(2024, 3, 10), "fight_id": "f2"},
+        {"event_id": "e3", "event_date": date(2026, 1, 3), "fight_id": "f3"},
+    ]
+
+    holdout = _apply_holdout_policy(samples, {"type": "after_date", "after_date": "2024-03-09"})
+
+    assert [sample["event_id"] for sample in holdout] == ["e2", "e3"]
+    assert _holdout_summary({"type": "after_date", "after_date": "2024-03-09"}, holdout) == {
+        "type": "after_date",
+        "after_date": "2024-03-09",
+        "events": 2,
+        "fights": 2,
+        "start_date": "2024-03-10",
+        "end_date": "2026-01-03",
+    }
+
+
 def test_holdout_policy_rejects_invalid_policy() -> None:
     with pytest.raises(ValueError, match="unsupported holdout policy"):
         _holdout_policy({"type": "random", "event_count": 2})
 
     with pytest.raises(ValueError, match="event_count >= 1"):
         _holdout_policy({"type": "last_n_events", "event_count": 0})
+
+    with pytest.raises(ValueError, match="after_date requires after_date"):
+        _holdout_policy({"type": "after_date"})
 
 
 def test_base_prediction_key_ignores_blend_and_calibration() -> None:

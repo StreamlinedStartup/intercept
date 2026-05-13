@@ -6,7 +6,7 @@ import json
 import subprocess
 import warnings
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -297,12 +297,17 @@ def _holdout_policy(policy: dict[str, Any] | None) -> dict[str, Any] | None:
     if policy is None:
         return None
     policy_type = policy.get("type")
-    if policy_type != "last_n_events":
-        raise ValueError(f"unsupported holdout policy {policy_type!r}")
-    event_count = int(policy.get("event_count", 0))
-    if event_count < 1:
-        raise ValueError("holdout last_n_events requires event_count >= 1")
-    return {"type": "last_n_events", "event_count": event_count}
+    if policy_type == "last_n_events":
+        event_count = int(policy.get("event_count", 0))
+        if event_count < 1:
+            raise ValueError("holdout last_n_events requires event_count >= 1")
+        return {"type": "last_n_events", "event_count": event_count}
+    if policy_type == "after_date":
+        value = policy.get("after_date")
+        if not isinstance(value, str):
+            raise ValueError("holdout after_date requires after_date")
+        return {"type": "after_date", "after_date": date.fromisoformat(value)}
+    raise ValueError(f"unsupported holdout policy {policy_type!r}")
 
 
 def _apply_holdout_policy(
@@ -313,7 +318,14 @@ def _apply_holdout_policy(
     if normalized is None:
         return eligible_samples
     events = _evaluation_events(eligible_samples)
-    keep_events = {event["event_id"] for event in events[-int(normalized["event_count"]) :]}
+    if normalized["type"] == "last_n_events":
+        keep_events = {event["event_id"] for event in events[-int(normalized["event_count"]) :]}
+    else:
+        keep_events = {
+            event["event_id"]
+            for event in events
+            if event["event_date"] > normalized["after_date"]
+        }
     return [sample for sample in eligible_samples if sample["event_id"] in keep_events]
 
 
@@ -322,12 +334,17 @@ def _holdout_summary(policy: dict[str, Any] | None, eligible_samples: list[dict[
     if normalized is None:
         return None
     events = _evaluation_events(eligible_samples)
-    return {
-        **normalized,
+    summary = {
         "events": len(events),
         "fights": len(eligible_samples),
         "start_date": events[0]["event_date"].isoformat() if events else None,
         "end_date": events[-1]["event_date"].isoformat() if events else None,
+    }
+    if normalized["type"] == "after_date":
+        return {**summary, "type": "after_date", "after_date": normalized["after_date"].isoformat()}
+    return {
+        **normalized,
+        **summary,
     }
 
 
