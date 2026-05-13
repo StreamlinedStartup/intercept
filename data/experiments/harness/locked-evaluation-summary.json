@@ -1,0 +1,67 @@
+{
+  "report": "locked-evaluation-summary",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "config": "configs/experiments/locked-evaluation-v1.json",
+  "holdout": {
+    "type": "last_n_events",
+    "event_count": 10,
+    "events": 10,
+    "fights": 104,
+    "start_date": "2023-12-09",
+    "end_date": "2024-03-09"
+  },
+  "result": "no_candidate_cleared",
+  "recommendation": "Do not promote. Acquire/import fresh out-of-sample market-covered events for true future validation.",
+  "candidates": [
+    {
+      "name": "original_winner_allresearch_c2p5_temp2p2_blend45_conf63",
+      "events": 10,
+      "selected_fights": 59,
+      "roi": 0.0665161902085332,
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.018161138130059873,
+      "brier_delta_vs_market": 0.0065487488969495355,
+      "clears_market_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "name": "top_additional_allresearch_c2p0_temp2p2_blend55_conf66",
+      "events": 9,
+      "selected_fights": 49,
+      "roi": 0.0456368186197919,
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.021944287808193408,
+      "brier_delta_vs_market": 0.008018516189440883,
+      "clears_market_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "name": "top_marketctx_c1p0_temp2p4_blend60_conf66",
+      "events": 9,
+      "selected_fights": 37,
+      "roi": 0.005669790460260444,
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.031209906843335966,
+      "brier_delta_vs_market": 0.011220191474442642,
+      "clears_market_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    }
+  ]
+}
