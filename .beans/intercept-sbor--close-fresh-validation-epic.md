@@ -5,10 +5,10 @@ status: todo
 type: task
 priority: high
 created_at: 2026-05-13T00:57:17Z
-updated_at: 2026-05-13T00:57:40Z
+updated_at: 2026-05-13T01:10:53Z
 parent: intercept-tco0
 blocked_by:
-    - intercept-j675
+    - intercept-1gju
 ---
 
 Acceptance criteria:
