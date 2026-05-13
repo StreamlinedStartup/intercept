@@ -194,6 +194,29 @@
               }
             }
           },
+          "selection_policy": {
+            "type": "object",
+            "required": ["type"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "market_favorite_only",
+                  "market_underdog_only",
+                  "model_market_agree",
+                  "model_market_disagree",
+                  "min_confidence",
+                  "min_model_market_edge",
+                  "min_absolute_model_market_edge"
+                ]
+              },
+              "threshold": {
+                "type": "number"
+              }
+            }
+          },
           "description": {
             "type": "string"
           }
