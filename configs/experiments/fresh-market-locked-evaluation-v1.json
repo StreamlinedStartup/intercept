@@ -1,0 +1,97 @@
+{
+  "name": "fresh-market-locked-evaluation-v1",
+  "description": "Frozen selected-fight candidates evaluated on imported FightOdds UFC events after the historical holdout.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 20,
+    "max_events": null,
+    "holdout": {
+      "type": "after_date",
+      "after_date": "2024-03-09"
+    }
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "none_fresh_corpus",
+    "locked_evaluation": "frozen_candidates_only"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline."
+    },
+    {
+      "name": "original_winner_allresearch_c2p5_temp2p2_blend45_conf63",
+      "model": "logistic_regression",
+      "features": "production_plus_all_research_market_context",
+      "market_blend_weight": 0.45,
+      "model_params": {
+        "C": 2.5
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.2
+      },
+      "selection_policy": {
+        "type": "min_confidence",
+        "threshold": 0.63
+      },
+      "description": "Original gate-clearing winner that survived expanded corpus windows."
+    },
+    {
+      "name": "top_additional_allresearch_c2p0_temp2p2_blend55_conf66",
+      "model": "logistic_regression",
+      "features": "production_plus_all_research_market_context",
+      "market_blend_weight": 0.55,
+      "model_params": {
+        "C": 2.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.2
+      },
+      "selection_policy": {
+        "type": "min_confidence",
+        "threshold": 0.66
+      },
+      "description": "Top additional winner from expanded selected-fight search."
+    },
+    {
+      "name": "top_marketctx_c1p0_temp2p4_blend60_conf66",
+      "model": "logistic_regression",
+      "features": "production_plus_market_context",
+      "market_blend_weight": 0.6,
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.4
+      },
+      "selection_policy": {
+        "type": "min_confidence",
+        "threshold": 0.66
+      },
+      "description": "Best market-context-only additional winner."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/fresh-market-locked-evaluation-v1.json",
+    "markdown": "data/experiments/harness/fresh-market-locked-evaluation-v1.md"
+  }
+}

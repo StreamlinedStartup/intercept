@@ -1,0 +1,677 @@
+{
+  "generated_at": "2026-05-13T01:09:20.494264+00:00",
+  "report": "market-experiment-harness",
+  "config_path": "configs/experiments/fresh-market-locked-evaluation-v1.json",
+  "git_sha": "b86ca9bda534a9811d7d2b61bb157bdfb57dc584",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "config": {
+    "name": "fresh-market-locked-evaluation-v1",
+    "description": "Frozen selected-fight candidates evaluated on imported FightOdds UFC events after the historical holdout.",
+    "value_status": "research_only",
+    "report_only": true,
+    "writes_model_versions": false,
+    "corpus": {
+      "source": "matched_market_fights",
+      "market_source": "fightodds_no_vig_consensus",
+      "min_train_samples": 20,
+      "max_events": null,
+      "holdout": {
+        "type": "after_date",
+        "after_date": "2024-03-09"
+      }
+    },
+    "split": {
+      "policy": "chronological_walk_forward",
+      "candidate_selection": "none_fresh_corpus",
+      "locked_evaluation": "frozen_candidates_only"
+    },
+    "gate": {
+      "baseline": "market_favorite",
+      "min_roi_delta_vs_market": 0.02,
+      "probability_quality": {
+        "require_log_loss_not_worse": true,
+        "require_brier_not_worse": true
+      }
+    },
+    "variants": [
+      {
+        "name": "market_favorite",
+        "model": "market_favorite",
+        "features": "none",
+        "market_blend_weight": null,
+        "description": "No-vig market favorite baseline."
+      },
+      {
+        "name": "original_winner_allresearch_c2p5_temp2p2_blend45_conf63",
+        "model": "logistic_regression",
+        "features": "production_plus_all_research_market_context",
+        "market_blend_weight": 0.45,
+        "model_params": {
+          "C": 2.5
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 2.2
+        },
+        "selection_policy": {
+          "type": "min_confidence",
+          "threshold": 0.63
+        },
+        "description": "Original gate-clearing winner that survived expanded corpus windows."
+      },
+      {
+        "name": "top_additional_allresearch_c2p0_temp2p2_blend55_conf66",
+        "model": "logistic_regression",
+        "features": "production_plus_all_research_market_context",
+        "market_blend_weight": 0.55,
+        "model_params": {
+          "C": 2.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 2.2
+        },
+        "selection_policy": {
+          "type": "min_confidence",
+          "threshold": 0.66
+        },
+        "description": "Top additional winner from expanded selected-fight search."
+      },
+      {
+        "name": "top_marketctx_c1p0_temp2p4_blend60_conf66",
+        "model": "logistic_regression",
+        "features": "production_plus_market_context",
+        "market_blend_weight": 0.6,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 2.4
+        },
+        "selection_policy": {
+          "type": "min_confidence",
+          "threshold": 0.66
+        },
+        "description": "Best market-context-only additional winner."
+      }
+    ],
+    "outputs": {
+      "json": "data/experiments/harness/fresh-market-locked-evaluation-v1.json",
+      "markdown": "data/experiments/harness/fresh-market-locked-evaluation-v1.md"
+    }
+  },
+  "coverage": {
+    "source_events_imported": 81,
+    "source_events_matched": 81,
+    "source_events_unmatched": 0,
+    "source_fights_imported": 1219,
+    "source_fights_matched": 809,
+    "source_fights_unmatched": 410,
+    "moneyline_rows_imported": 75068,
+    "moneyline_rows_linked": 54298,
+    "scored_events": 81,
+    "scored_fights": 790,
+    "model_eligible_events": 30,
+    "model_eligible_fights": 304,
+    "holdout": {
+      "events": 30,
+      "fights": 304,
+      "start_date": "2025-08-16",
+      "end_date": "2026-05-09",
+      "type": "after_date",
+      "after_date": "2024-03-09"
+    }
+  },
+  "market_baseline": {
+    "name": "market_favorite",
+    "roi_pct": 0.0283245353021063,
+    "accuracy": 0.7039473684210527,
+    "log_loss": 0.5884959310208362,
+    "brier_score": 0.20166144754449095
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "description": "No-vig market favorite baseline.",
+      "params": {
+        "model": "market_favorite",
+        "features": "none",
+        "feature_names": [],
+        "market_blend_weight": null,
+        "model_params": {},
+        "calibration": {
+          "method": "none"
+        },
+        "selection_policy": {
+          "type": "all"
+        },
+        "feature_count": 0
+      },
+      "events_scored": 30,
+      "metrics": {
+        "count": 304,
+        "accuracy": 0.7039473684210527,
+        "avg_confidence": 0.6630160925642435,
+        "calibration_gap": 0.04093127585680911,
+        "abs_calibration_error": 0.04093127585680911,
+        "log_loss": 0.5884959310208362,
+        "brier_score": 0.20166144754449095,
+        "roc_auc": 0.7520242476726565
+      },
+      "simulated_research_roi": {
+        "entries": 304,
+        "wins": 214,
+        "units": 8.610658731840315,
+        "roi_pct": 0.0283245353021063,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.0,
+      "brier_delta_vs_market": 0.0,
+      "rejection_reasons": [
+        "baseline_not_candidate"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "original_winner_allresearch_c2p5_temp2p2_blend45_conf63",
+      "description": "Original gate-clearing winner that survived expanded corpus windows.",
+      "params": {
+        "model": "logistic_regression",
+        "features": "production_plus_all_research_market_context",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge",
+          "fighter_a_market_probability",
+          "fighter_b_market_probability",
+          "market_probability_edge",
+          "market_uncertainty"
+        ],
+        "market_blend_weight": 0.45,
+        "model_params": {
+          "C": 2.5
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 2.2
+        },
+        "selection_policy": {
+          "type": "min_confidence",
+          "threshold": 0.63
+        },
+        "feature_count": 60
+      },
+      "events_scored": 30,
+      "metrics": {
+        "count": 164,
+        "accuracy": 0.7378048780487805,
+        "avg_confidence": 0.716142245910204,
+        "calibration_gap": 0.021662632138576443,
+        "abs_calibration_error": 0.021662632138576443,
+        "log_loss": 0.5526114165421444,
+        "brier_score": 0.18498762340403083,
+        "roc_auc": 0.793402000298552
+      },
+      "simulated_research_roi": {
+        "entries": 164,
+        "wins": 121,
+        "units": -5.297149448190836,
+        "roi_pct": -0.03229969175726119,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "gate_baseline": {
+        "name": "original_winner_allresearch_c2p5_temp2p2_blend45_conf63_market_selected_baseline",
+        "description": "No-vig market favorite baseline on the selected fight subset.",
+        "params": {
+          "model": "market_favorite",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 30,
+        "metrics": {
+          "count": 164,
+          "accuracy": 0.7378048780487805,
+          "avg_confidence": 0.7306275731018722,
+          "calibration_gap": 0.0071773049469082695,
+          "abs_calibration_error": 0.0071773049469082695,
+          "log_loss": 0.5397188903610641,
+          "brier_score": 0.1804423799042213,
+          "roc_auc": 0.8016121809225258
+        },
+        "simulated_research_roi": {
+          "entries": 164,
+          "wins": 121,
+          "units": -5.297149448190836,
+          "roi_pct": -0.03229969175726119,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.012892526181080277,
+      "brier_delta_vs_market": 0.0045452434998095315,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "top_additional_allresearch_c2p0_temp2p2_blend55_conf66",
+      "description": "Top additional winner from expanded selected-fight search.",
+      "params": {
+        "model": "logistic_regression",
+        "features": "production_plus_all_research_market_context",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge",
+          "fighter_a_market_probability",
+          "fighter_b_market_probability",
+          "market_probability_edge",
+          "market_uncertainty"
+        ],
+        "market_blend_weight": 0.55,
+        "model_params": {
+          "C": 2.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 2.2
+        },
+        "selection_policy": {
+          "type": "min_confidence",
+          "threshold": 0.66
+        },
+        "feature_count": 60
+      },
+      "events_scored": 29,
+      "metrics": {
+        "count": 129,
+        "accuracy": 0.7596899224806202,
+        "avg_confidence": 0.7313281872895296,
+        "calibration_gap": 0.02836173519109053,
+        "abs_calibration_error": 0.02836173519109053,
+        "log_loss": 0.5326593866510668,
+        "brier_score": 0.17568392432594132,
+        "roc_auc": 0.8134328358208955
+      },
+      "simulated_research_roi": {
+        "entries": 129,
+        "wins": 98,
+        "units": -3.119473776486572,
+        "roi_pct": -0.02418196725958583,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "gate_baseline": {
+        "name": "top_additional_allresearch_c2p0_temp2p2_blend55_conf66_market_selected_baseline",
+        "description": "No-vig market favorite baseline on the selected fight subset.",
+        "params": {
+          "model": "market_favorite",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 29,
+        "metrics": {
+          "count": 129,
+          "accuracy": 0.7596899224806202,
+          "avg_confidence": 0.7470483194433714,
+          "calibration_gap": 0.012641603037248816,
+          "abs_calibration_error": 0.012641603037248816,
+          "log_loss": 0.5179950229634487,
+          "brier_score": 0.17105550160493024,
+          "roc_auc": 0.8249879634087625
+        },
+        "simulated_research_roi": {
+          "entries": 129,
+          "wins": 98,
+          "units": -3.119473776486572,
+          "roi_pct": -0.02418196725958583,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.014664363687618143,
+      "brier_delta_vs_market": 0.004628422721011077,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "top_marketctx_c1p0_temp2p4_blend60_conf66",
+      "description": "Best market-context-only additional winner.",
+      "params": {
+        "model": "logistic_regression",
+        "features": "production_plus_market_context",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "fighter_a_market_probability",
+          "fighter_b_market_probability",
+          "market_probability_edge",
+          "market_uncertainty"
+        ],
+        "market_blend_weight": 0.6,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 2.4
+        },
+        "selection_policy": {
+          "type": "min_confidence",
+          "threshold": 0.66
+        },
+        "feature_count": 49
+      },
+      "events_scored": 29,
+      "metrics": {
+        "count": 115,
+        "accuracy": 0.7739130434782608,
+        "avg_confidence": 0.7233342658297794,
+        "calibration_gap": 0.0505787776484814,
+        "abs_calibration_error": 0.0505787776484814,
+        "log_loss": 0.5221045413758812,
+        "brier_score": 0.17015324345982827,
+        "roc_auc": 0.8311138014527845
+      },
+      "simulated_research_roi": {
+        "entries": 115,
+        "wins": 89,
+        "units": -1.8655241390693629,
+        "roi_pct": -0.016221949035385763,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "gate_baseline": {
+        "name": "top_marketctx_c1p0_temp2p4_blend60_conf66_market_selected_baseline",
+        "description": "No-vig market favorite baseline on the selected fight subset.",
+        "params": {
+          "model": "market_favorite",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 29,
+        "metrics": {
+          "count": 115,
+          "accuracy": 0.7739130434782608,
+          "avg_confidence": 0.7544725231482693,
+          "calibration_gap": 0.01944052032999155,
+          "abs_calibration_error": 0.01944052032999155,
+          "log_loss": 0.5010411700911676,
+          "brier_score": 0.16356720481512618,
+          "roc_auc": 0.8401937046004843
+        },
+        "simulated_research_roi": {
+          "entries": 115,
+          "wins": 89,
+          "units": -1.8655241390693629,
+          "roi_pct": -0.016221949035385763,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only"
+        }
+      },
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.021063371284713694,
+      "brier_delta_vs_market": 0.006586038644702086,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ],
+      "clears_market_gate": false
+    }
+  ],
+  "ranking": [
+    {
+      "rank": 1,
+      "name": "original_winner_allresearch_c2p5_temp2p2_blend45_conf63",
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.012892526181080277,
+      "brier_delta_vs_market": 0.0045452434998095315,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 2,
+      "name": "top_additional_allresearch_c2p0_temp2p2_blend55_conf66",
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.014664363687618143,
+      "brier_delta_vs_market": 0.004628422721011077,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 3,
+      "name": "top_marketctx_c1p0_temp2p4_blend60_conf66",
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.021063371284713694,
+      "brier_delta_vs_market": 0.006586038644702086,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 4,
+      "name": "market_favorite",
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.0,
+      "brier_delta_vs_market": 0.0,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "baseline_not_candidate"
+      ]
+    }
+  ],
+  "recommendation": {
+    "status": "research_only",
+    "reason": "original_winner_allresearch_c2p5_temp2p2_blend45_conf63 is the best configured candidate but does not clear the market gate."
+  },
+  "policy": "This harness is for report-only discovery. A candidate from the current corpus is not activation proof; validated status requires a locked future evaluation slice and a passing market gate."
+}
