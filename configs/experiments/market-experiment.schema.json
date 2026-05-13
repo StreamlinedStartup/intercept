@@ -117,7 +117,10 @@
               "production",
               "production_plus_availability",
               "production_plus_opponent_adjusted_recent_performance",
-              "production_plus_style_matchup_pressure"
+              "production_plus_style_matchup_pressure",
+              "production_plus_market_context",
+              "production_plus_all_research",
+              "production_plus_all_research_market_context"
             ]
           },
           "market_blend_weight": {
@@ -188,6 +191,29 @@
               "temperature": {
                 "type": "number",
                 "exclusiveMinimum": 0
+              }
+            }
+          },
+          "selection_policy": {
+            "type": "object",
+            "required": ["type"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "market_favorite_only",
+                  "market_underdog_only",
+                  "model_market_agree",
+                  "model_market_disagree",
+                  "min_confidence",
+                  "min_model_market_edge",
+                  "min_absolute_model_market_edge"
+                ]
+              },
+              "threshold": {
+                "type": "number"
               }
             }
           },

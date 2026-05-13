@@ -65,6 +65,12 @@ FEATURE_GROUPS = {
     "recent_form": RECENT_FORM_FEATURES,
     "stance": STANCE_FEATURES,
 }
+MARKET_CONTEXT_FEATURE_NAMES = [
+    "fighter_a_market_probability",
+    "fighter_b_market_probability",
+    "market_probability_edge",
+    "market_uncertainty",
+]
 XGBOOST_PARAM_DEFAULTS = {
     "n_estimators": 40,
     "max_depth": 3,
@@ -94,8 +100,11 @@ def run_experiment_harness(
     min_train_samples = int(config["corpus"]["min_train_samples"])
     eligible_samples = _eligible_evaluation_samples(samples, min_train_samples)
     markets = _load_market_consensus()
+    samples = _attach_market_context(samples, markets)
+    eligible_samples = _attach_market_context(eligible_samples, markets)
     market_predictions = [_market_prediction(sample, markets) for sample in eligible_samples]
     base_prediction_cache: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+    feature_vector_cache: dict[tuple[tuple[str, ...], str], np.ndarray] = {}
     market_report = _variant_report(
         {
             "name": "market_favorite",
@@ -118,8 +127,9 @@ def run_experiment_harness(
                 markets,
                 min_train_samples,
                 base_prediction_cache,
+                feature_vector_cache,
             )
-        _annotate_variant(report, market_report, config["gate"])
+        _annotate_variant(report, report.get("gate_baseline", market_report), config["gate"])
         reports.append(report)
     if not any(report["name"] == "market_favorite" for report in reports):
         _annotate_variant(market_report, market_report, config["gate"])
@@ -277,6 +287,7 @@ def _validate_config(config: dict[str, Any]) -> None:
         _feature_spec(variant)
         _feature_names(variant)
         _calibration(variant)
+        _selection_policy(variant)
 
 
 def _run_model_variant(
@@ -286,13 +297,37 @@ def _run_model_variant(
     markets: dict[str, dict[str, dict[str, float]]],
     min_train_samples: int,
     base_prediction_cache: dict[tuple[Any, ...], list[dict[str, Any]]] | None = None,
+    feature_vector_cache: dict[tuple[tuple[str, ...], str], np.ndarray] | None = None,
 ) -> dict[str, Any]:
     cache = base_prediction_cache if base_prediction_cache is not None else {}
     key = _base_prediction_key(variant, min_train_samples)
     if key not in cache:
-        cache[key] = _score_base_walk_forward(variant, training_samples, evaluation_samples, min_train_samples)
+        cache[key] = _score_base_walk_forward(
+            variant,
+            training_samples,
+            evaluation_samples,
+            min_train_samples,
+            feature_vector_cache,
+        )
     predictions = _materialize_predictions(cache[key], markets, _calibration(variant), variant.get("market_blend_weight"))
-    return _variant_report(variant, predictions)
+    selected_predictions = _apply_selection_policy(predictions, _selection_policy(variant))
+    report = _variant_report(variant, selected_predictions)
+    if _selection_policy(variant)["type"] != "all":
+        selected_ids = {prediction["fight_id"] for prediction in selected_predictions}
+        selected_samples = [
+            base_prediction["sample"] for base_prediction in cache[key] if base_prediction["sample"]["fight_id"] in selected_ids
+        ]
+        report["gate_baseline"] = _variant_report(
+            {
+                "name": f"{variant['name']}_market_selected_baseline",
+                "model": "market_favorite",
+                "features": "none",
+                "market_blend_weight": None,
+                "description": "No-vig market favorite baseline on the selected fight subset.",
+            },
+            [_market_prediction(sample, markets) for sample in selected_samples],
+        )
+    return report
 
 
 def _score_base_walk_forward(
@@ -300,25 +335,40 @@ def _score_base_walk_forward(
     training_samples: list[dict[str, Any]],
     evaluation_samples: list[dict[str, Any]],
     min_train_samples: int,
+    feature_vector_cache: dict[tuple[tuple[str, ...], str], np.ndarray] | None = None,
 ) -> list[dict[str, Any]]:
     predictions: list[dict[str, Any]] = []
     feature_fn = _feature_fn(variant)
+    feature_names = tuple(_feature_names(variant))
+    cache = feature_vector_cache if feature_vector_cache is not None else {}
     for event in _evaluation_events(evaluation_samples):
         train_samples = [sample for sample in training_samples if sample["event_date"] < event["event_date"]]
         target_samples = [sample for sample in evaluation_samples if sample["event_id"] == event["event_id"]]
         if len(train_samples) < min_train_samples or not target_samples:
             continue
         model = _model(variant["model"], _model_params(variant))
-        train_x = np.vstack([feature_fn(sample) for sample in train_samples])
+        train_x = np.vstack([_cached_feature_vector(sample, feature_names, feature_fn, cache) for sample in train_samples])
         train_y = np.array([sample["label"] for sample in train_samples], dtype=int)
         model.fit(train_x, train_y)
-        target_x = np.vstack([feature_fn(sample) for sample in target_samples])
+        target_x = np.vstack([_cached_feature_vector(sample, feature_names, feature_fn, cache) for sample in target_samples])
         probabilities = model.predict_proba(target_x)[:, 1]
         predictions.extend(
             {"sample": sample, "model_probability": float(probability)}
             for sample, probability in zip(target_samples, probabilities, strict=True)
         )
     return predictions
+
+
+def _cached_feature_vector(
+    sample: dict[str, Any],
+    feature_names: tuple[str, ...],
+    feature_fn: FeatureFn,
+    cache: dict[tuple[tuple[str, ...], str], np.ndarray],
+) -> np.ndarray:
+    key = (feature_names, str(sample["fight_id"]))
+    if key not in cache:
+        cache[key] = feature_fn(sample)
+    return cache[key]
 
 
 def _materialize_predictions(
@@ -336,6 +386,57 @@ def _materialize_predictions(
         )
         for base_prediction in base_predictions
     ]
+
+
+def _apply_selection_policy(
+    predictions: list[dict[str, Any]],
+    policy: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    if policy is None or policy["type"] == "all":
+        return predictions
+    policy_type = policy["type"]
+    if policy_type == "market_favorite_only":
+        return [prediction for prediction in predictions if prediction["picked_market_probability"] >= 0.5]
+    if policy_type == "market_underdog_only":
+        return [prediction for prediction in predictions if prediction["picked_market_probability"] < 0.5]
+    if policy_type == "model_market_agree":
+        return [prediction for prediction in predictions if prediction["predicted_label"] == prediction["market_predicted_label"]]
+    if policy_type == "model_market_disagree":
+        return [prediction for prediction in predictions if prediction["predicted_label"] != prediction["market_predicted_label"]]
+    if policy_type == "min_confidence":
+        threshold = float(policy["threshold"])
+        return [prediction for prediction in predictions if prediction["confidence"] >= threshold]
+    if policy_type == "min_model_market_edge":
+        threshold = float(policy["threshold"])
+        return [prediction for prediction in predictions if prediction["picked_model_market_edge"] >= threshold]
+    if policy_type == "min_absolute_model_market_edge":
+        threshold = float(policy["threshold"])
+        return [prediction for prediction in predictions if abs(prediction["picked_model_market_edge"]) >= threshold]
+    raise ValueError(f"unsupported selection policy {policy_type!r}")
+
+
+def _selection_policy(variant: dict[str, Any]) -> dict[str, Any]:
+    policy = dict(variant.get("selection_policy") or {"type": "all"})
+    policy_type = policy.get("type")
+    supported = {
+        "all",
+        "market_favorite_only",
+        "market_underdog_only",
+        "model_market_agree",
+        "model_market_disagree",
+        "min_confidence",
+        "min_model_market_edge",
+        "min_absolute_model_market_edge",
+    }
+    if policy_type not in supported:
+        raise ValueError(f"unsupported selection policy {policy_type!r}")
+    if policy_type in {"min_confidence", "min_model_market_edge", "min_absolute_model_market_edge"}:
+        if "threshold" not in policy:
+            raise ValueError(f"selection policy {policy_type!r} requires threshold")
+        policy["threshold"] = float(policy["threshold"])
+    elif "threshold" in policy:
+        raise ValueError(f"selection policy {policy_type!r} cannot set threshold")
+    return policy
 
 
 def _market_prediction(
@@ -361,14 +462,25 @@ def _prediction(
         else model_probability
     )
     prediction = _prediction_fields(sample, market, probability)
+    predicted_label = int(prediction["predicted_label"])
+    market_predicted_label = 1 if market_probability >= 0.5 else 0
+    picked_fighter_id = sample["fighter_a_id"] if predicted_label == 1 else sample["fighter_b_id"]
+    picked_model_probability = probability if predicted_label == 1 else 1 - probability
+    picked_market_probability = float(market[picked_fighter_id]["market_prob"])
     return {
         "fight_id": sample["fight_id"],
         "event_id": sample["event_id"],
         "event_date": sample["event_date"].isoformat(),
         "fighter_a_probability": prediction["fighter_a_probability"],
+        "model_probability": model_probability,
+        "market_probability": market_probability,
         "actual_label": sample["label"],
         "predicted_label": prediction["predicted_label"],
+        "market_predicted_label": market_predicted_label,
         "confidence": prediction["confidence"],
+        "picked_model_probability": picked_model_probability,
+        "picked_market_probability": picked_market_probability,
+        "picked_model_market_edge": picked_model_probability - picked_market_probability,
         "won": prediction["won"],
         "decimal_odds": prediction["decimal_odds"],
         "net_profit": prediction["net_profit"],
@@ -386,6 +498,7 @@ def _variant_report(variant: dict[str, Any], predictions: list[dict[str, Any]]) 
             "market_blend_weight": variant.get("market_blend_weight"),
             "model_params": _model_params(variant),
             "calibration": _calibration(variant),
+            "selection_policy": _selection_policy(variant),
             "feature_count": _feature_count(variant),
         },
         "events_scored": len({prediction["event_id"] for prediction in predictions}),
@@ -425,14 +538,16 @@ def _rejection_reasons(report: dict[str, Any], gate: dict[str, Any]) -> list[str
 
 def _recommendation(ranked: list[dict[str, Any]]) -> dict[str, Any]:
     candidates = [row for row in ranked if row["name"] != "market_favorite"]
+    clearing = [row for row in candidates if row["clears_market_gate"]]
+    if clearing:
+        best_clearing = clearing[0]
+        return {
+            "status": "candidate_for_locked_evaluation",
+            "reason": f"{best_clearing['name']} clears the configured discovery gate; evaluate on a locked future slice before activation.",
+        }
     best = candidates[0] if candidates else None
     if best is None:
         return {"status": "no_candidates", "reason": "No non-market variants were configured."}
-    if best["clears_market_gate"]:
-        return {
-            "status": "candidate_for_locked_evaluation",
-            "reason": f"{best['name']} clears the configured discovery gate; evaluate on a locked future slice before activation.",
-        }
     return {
         "status": "research_only",
         "reason": f"{best['name']} is the best configured candidate but does not clear the market gate.",
@@ -530,6 +645,9 @@ def _feature_spec(variant: dict[str, Any]) -> dict[str, Any]:
         "production_plus_availability",
         "production_plus_opponent_adjusted_recent_performance",
         "production_plus_style_matchup_pressure",
+        "production_plus_market_context",
+        "production_plus_all_research",
+        "production_plus_all_research_market_context",
     }:
         return {"base": features}
     raise ValueError(f"unsupported feature set {features!r}")
@@ -544,6 +662,23 @@ def _base_feature_names(features: str) -> list[str]:
         return [*FEATURE_NAMES, *OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES]
     if features == "production_plus_style_matchup_pressure":
         return [*FEATURE_NAMES, *STYLE_MATCHUP_PRESSURE_FEATURE_NAMES]
+    if features == "production_plus_market_context":
+        return [*FEATURE_NAMES, *MARKET_CONTEXT_FEATURE_NAMES]
+    if features == "production_plus_all_research":
+        return [
+            *FEATURE_NAMES,
+            *AVAILABILITY_FEATURE_NAMES,
+            *OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES,
+            *STYLE_MATCHUP_PRESSURE_FEATURE_NAMES,
+        ]
+    if features == "production_plus_all_research_market_context":
+        return [
+            *FEATURE_NAMES,
+            *AVAILABILITY_FEATURE_NAMES,
+            *OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES,
+            *STYLE_MATCHUP_PRESSURE_FEATURE_NAMES,
+            *MARKET_CONTEXT_FEATURE_NAMES,
+        ]
     raise ValueError(f"unsupported feature set {features!r}")
 
 
@@ -556,6 +691,12 @@ def _base_feature_fn(features: str) -> FeatureFn:
         return _opponent_adjusted_recent_performance_features
     if features == "production_plus_style_matchup_pressure":
         return _style_matchup_pressure_features
+    if features == "production_plus_market_context":
+        return _market_context_features
+    if features == "production_plus_all_research":
+        return _all_research_features
+    if features == "production_plus_all_research_market_context":
+        return _all_research_market_context_features
     raise ValueError(f"unsupported feature set {features!r}")
 
 
@@ -583,6 +724,64 @@ def _style_matchup_pressure_features(sample: dict[str, Any]) -> np.ndarray:
             ),
         ]
     )
+
+
+def _all_research_features(sample: dict[str, Any]) -> np.ndarray:
+    return np.concatenate(
+        [
+            sample["features"],
+            _availability_augmented_features(sample)[len(FEATURE_NAMES) :],
+            build_opponent_adjusted_recent_performance_features(
+                sample["fighter_a_id"],
+                sample["fighter_b_id"],
+                sample["event_date"],
+            ),
+            build_style_matchup_pressure_features(
+                sample["fighter_a_id"],
+                sample["fighter_b_id"],
+                sample["event_date"],
+            ),
+        ]
+    )
+
+
+def _market_context_features(sample: dict[str, Any]) -> np.ndarray:
+    return np.concatenate([sample["features"], np.array(sample["market_context_features"], dtype=float)])
+
+
+def _all_research_market_context_features(sample: dict[str, Any]) -> np.ndarray:
+    return np.concatenate(
+        [
+            _all_research_features(sample),
+            np.array(sample["market_context_features"], dtype=float),
+        ]
+    )
+
+
+def _attach_market_context(
+    samples: list[dict[str, Any]],
+    markets: dict[str, dict[str, dict[str, float]]],
+) -> list[dict[str, Any]]:
+    enriched = []
+    for sample in samples:
+        market = markets[sample["fight_id"]]
+        fighter_a_probability = float(market[sample["fighter_a_id"]]["market_prob"])
+        fighter_b_probability = float(market[sample["fighter_b_id"]]["market_prob"])
+        enriched.append(
+            {
+                **sample,
+                "market_context_features": np.array(
+                    [
+                        fighter_a_probability,
+                        fighter_b_probability,
+                        fighter_a_probability - fighter_b_probability,
+                        min(fighter_a_probability, fighter_b_probability),
+                    ],
+                    dtype=float,
+                ),
+            }
+        )
+    return enriched
 
 
 def _resolve_feature_names(names: list[str], base: list[str]) -> list[str]:
