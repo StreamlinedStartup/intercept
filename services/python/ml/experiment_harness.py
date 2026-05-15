@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from psycopg.rows import dict_row
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -19,6 +20,7 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
 from ml.baselines import _load_market_consensus
+from ml.db import pool
 from ml.features import (
     FEATURE_NAMES,
     OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES,
@@ -94,6 +96,7 @@ def run_experiment_harness(
     markdown_path = markdown_path or _resolve_repo_path(Path(config["outputs"]["markdown"]))
     coverage = _load_source_coverage()
     samples = _load_matched_market_samples(coverage)
+    samples = _attach_target_labels(samples)
     max_events = config["corpus"].get("max_events")
     if max_events is not None:
         keep_events = {event["event_id"] for event in _evaluation_events(samples)[: int(max_events)]}
@@ -288,6 +291,8 @@ def _validate_config(config: dict[str, Any]) -> None:
         if variant.get("market_blend_weight") is not None and variant["model"] == "market_favorite":
             raise ValueError("market_favorite variant cannot set market_blend_weight")
         _target(variant)
+        if variant.get("market_blend_weight") is not None and _target(variant) != "winner":
+            raise ValueError("market_blend_weight requires target='winner'")
         _validate_model_params(variant)
         _feature_spec(variant)
         _feature_names(variant)
@@ -370,7 +375,13 @@ def _run_model_variant(
             min_train_samples,
             feature_vector_cache,
         )
-    predictions = _materialize_predictions(cache[key], markets, _calibration(variant), variant.get("market_blend_weight"))
+    predictions = _materialize_predictions(
+        cache[key],
+        markets,
+        _calibration(variant),
+        variant.get("market_blend_weight"),
+        _target(variant),
+    )
     selected_predictions = _apply_selection_policy(predictions, _selection_policy(variant))
     report = _variant_report(variant, selected_predictions)
     if _selection_policy(variant)["type"] != "all":
@@ -399,6 +410,7 @@ def _score_base_walk_forward(
     feature_vector_cache: dict[tuple[tuple[str, ...], str], np.ndarray] | None = None,
 ) -> list[dict[str, Any]]:
     predictions: list[dict[str, Any]] = []
+    target = _target(variant)
     feature_fn = _feature_fn(variant)
     feature_names = tuple(_feature_names(variant))
     cache = feature_vector_cache if feature_vector_cache is not None else {}
@@ -408,14 +420,30 @@ def _score_base_walk_forward(
         if len(train_samples) < min_train_samples or not target_samples:
             continue
         model = _model(variant["model"], _model_params(variant))
-        train_x = np.vstack([_cached_feature_vector(sample, feature_names, feature_fn, cache) for sample in train_samples])
-        train_y = np.array([sample["label"] for sample in train_samples], dtype=int)
+        train_labels = [_target_label(sample, target) for sample in train_samples]
+        target_labels = [_target_label(sample, target) for sample in target_samples]
+        train_pairs = [
+            (sample, label)
+            for sample, label in zip(train_samples, train_labels, strict=True)
+            if label is not None
+        ]
+        target_pairs = [
+            (sample, label)
+            for sample, label in zip(target_samples, target_labels, strict=True)
+            if label is not None
+        ]
+        if len(train_pairs) < min_train_samples or not target_pairs:
+            continue
+        train_y = np.array([label for _sample, label in train_pairs], dtype=int)
+        if len(set(train_y.tolist())) < 2:
+            continue
+        train_x = np.vstack([_cached_feature_vector(sample, feature_names, feature_fn, cache) for sample, _label in train_pairs])
         model.fit(train_x, train_y)
-        target_x = np.vstack([_cached_feature_vector(sample, feature_names, feature_fn, cache) for sample in target_samples])
+        target_x = np.vstack([_cached_feature_vector(sample, feature_names, feature_fn, cache) for sample, _label in target_pairs])
         probabilities = model.predict_proba(target_x)[:, 1]
         predictions.extend(
             {"sample": sample, "model_probability": float(probability)}
-            for sample, probability in zip(target_samples, probabilities, strict=True)
+            for (sample, _label), probability in zip(target_pairs, probabilities, strict=True)
         )
     return predictions
 
@@ -437,13 +465,15 @@ def _materialize_predictions(
     markets: dict[str, dict[str, dict[str, float]]],
     calibration: dict[str, Any],
     market_blend_weight: float | None,
+    target: str = "winner",
 ) -> list[dict[str, Any]]:
     return [
-        _prediction(
+        _target_prediction(
             base_prediction["sample"],
             markets,
             _calibrate_probability(float(base_prediction["model_probability"]), calibration),
             market_blend_weight,
+            target,
         )
         for base_prediction in base_predictions
     ]
@@ -509,6 +539,42 @@ def _market_prediction(
     return _prediction(sample, markets, probability, None)
 
 
+def _target_prediction(
+    sample: dict[str, Any],
+    markets: dict[str, dict[str, dict[str, float]]],
+    model_probability: float,
+    market_blend_weight: float | None,
+    target: str,
+) -> dict[str, Any]:
+    if target == "winner":
+        return _prediction(sample, markets, model_probability, market_blend_weight)
+    if market_blend_weight is not None:
+        raise ValueError(f"market_blend_weight requires target='winner', got {target!r}")
+    actual_label = _target_label(sample, target)
+    if actual_label is None:
+        raise ValueError(f"sample {sample['fight_id']} missing {target!r} label")
+    probability = float(np.clip(model_probability, 0.001, 0.999))
+    predicted_label = 1 if probability >= 0.5 else 0
+    confidence = probability if predicted_label == 1 else 1 - probability
+    return {
+        "fight_id": sample["fight_id"],
+        "event_id": sample["event_id"],
+        "event_date": sample["event_date"].isoformat(),
+        "target": target,
+        "fighter_a_probability": probability,
+        "model_probability": model_probability,
+        "market_probability": None,
+        "actual_label": actual_label,
+        "predicted_label": predicted_label,
+        "market_predicted_label": None,
+        "confidence": confidence,
+        "picked_model_probability": confidence,
+        "picked_market_probability": None,
+        "picked_model_market_edge": None,
+        "won": predicted_label == actual_label,
+    }
+
+
 def _prediction(
     sample: dict[str, Any],
     markets: dict[str, dict[str, dict[str, float]]],
@@ -532,6 +598,7 @@ def _prediction(
         "fight_id": sample["fight_id"],
         "event_id": sample["event_id"],
         "event_date": sample["event_date"].isoformat(),
+        "target": "winner",
         "fighter_a_probability": prediction["fighter_a_probability"],
         "model_probability": model_probability,
         "market_probability": market_probability,
@@ -565,11 +632,18 @@ def _variant_report(variant: dict[str, Any], predictions: list[dict[str, Any]]) 
         },
         "events_scored": len({prediction["event_id"] for prediction in predictions}),
         "metrics": _safe_metrics(predictions),
-        "simulated_research_roi": _roi(predictions),
+        "simulated_research_roi": _target_roi(_target(variant), predictions),
     }
 
 
 def _annotate_variant(report: dict[str, Any], market: dict[str, Any], gate: dict[str, Any]) -> None:
+    if report["params"]["target"] != market["params"]["target"]:
+        report["roi_delta_vs_market"] = None
+        report["log_loss_delta_vs_market"] = None
+        report["brier_delta_vs_market"] = None
+        report["rejection_reasons"] = ["market_baseline_unavailable_for_target"]
+        report["clears_market_gate"] = False
+        return
     report["roi_delta_vs_market"] = roi_delta(
         report["simulated_research_roi"]["roi_pct"],
         market["simulated_research_roi"]["roi_pct"],
@@ -596,6 +670,19 @@ def _rejection_reasons(report: dict[str, Any], gate: dict[str, Any]) -> list[str
     if report["metrics"]["count"] < 200 or report["events_scored"] < 30:
         reasons.append("unstable_coverage")
     return reasons
+
+
+def _target_roi(target: str, predictions: list[dict[str, Any]]) -> dict[str, Any]:
+    if target == "winner":
+        return _roi(predictions)
+    return {
+        "entries": 0,
+        "wins": None,
+        "units": None,
+        "roi_pct": None,
+        "stake_unit": "flat_1u",
+        "status": f"{target}_market_odds_unavailable",
+    }
 
 
 def _recommendation(ranked: list[dict[str, Any]]) -> dict[str, Any]:
@@ -845,6 +932,55 @@ def _attach_market_context(
             }
         )
     return enriched
+
+
+def _attach_target_labels(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not samples:
+        return []
+    labels = _load_target_labels([sample["fight_id"] for sample in samples])
+    return [
+        {**sample, "target_labels": labels[sample["fight_id"]]}
+        for sample in samples
+        if sample["fight_id"] in labels
+    ]
+
+
+def _load_target_labels(fight_ids: list[str]) -> dict[str, dict[str, int]]:
+    with pool.borrow() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT
+                    fr.fight_id,
+                    fr.method
+                FROM fight_results fr
+                WHERE fr.fight_id = ANY(%s)
+                    AND fr.outcome IN ('win', 'loss')
+                """,
+                (fight_ids,),
+            )
+            rows = cur.fetchall()
+    by_fight: dict[str, list[str]] = {}
+    for row in rows:
+        method = str(row["method"] or "").strip().lower()
+        if method:
+            by_fight.setdefault(str(row["fight_id"]), []).append(method)
+    labels = {}
+    for fight_id, methods in by_fight.items():
+        decision = any("decision" in method for method in methods)
+        labels[fight_id] = {
+            "decision": 1 if decision else 0,
+            "finish": 0 if decision else 1,
+        }
+    return labels
+
+
+def _target_label(sample: dict[str, Any], target: str) -> int | None:
+    if target == "winner":
+        return int(sample["label"])
+    labels = sample.get("target_labels") or {}
+    value = labels.get(target)
+    return None if value is None else int(value)
 
 
 def _resolve_feature_names(names: list[str], base: list[str]) -> list[str]:

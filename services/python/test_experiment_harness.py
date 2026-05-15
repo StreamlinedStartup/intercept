@@ -24,6 +24,9 @@ from ml.experiment_harness import (
     _recommendation,
     _run_model_variant,
     _target,
+    _target_label,
+    _target_prediction,
+    _target_roi,
     _validate_config,
     render_markdown,
 )
@@ -65,6 +68,7 @@ def _config() -> dict:
 def _variant(name: str, roi: float, log_loss: float, brier: float) -> dict:
     return {
         "name": name,
+        "params": {"target": "winner"},
         "events_scored": 40,
         "metrics": {"count": 379, "accuracy": 0.6, "log_loss": log_loss, "brier_score": brier},
         "simulated_research_roi": {"roi_pct": roi},
@@ -129,6 +133,22 @@ def test_validate_config_rejects_non_winner_market_favorite_target() -> None:
     config["variants"][0]["target"] = "decision"
 
     with pytest.raises(ValueError, match="market_favorite baseline only supports target='winner'"):
+        _validate_config(config)
+
+
+def test_validate_config_rejects_market_blend_for_non_winner_target() -> None:
+    config = _config()
+    config["variants"].append(
+        {
+            "name": "decision_blend",
+            "model": "xgboost",
+            "target": "decision",
+            "features": "production",
+            "market_blend_weight": 0.5,
+        }
+    )
+
+    with pytest.raises(ValueError, match="market_blend_weight requires target='winner'"):
         _validate_config(config)
 
 
@@ -296,6 +316,46 @@ def test_materialize_predictions_calibrates_before_blending() -> None:
 
     calibrated = _calibrate_probability(0.8, {"method": "temperature", "temperature": 2.0})
     assert predictions[0]["fighter_a_probability"] == pytest.approx((calibrated + 0.6) / 2)
+
+
+def test_target_label_reads_winner_decision_and_finish_labels() -> None:
+    sample = {"label": 1, "target_labels": {"decision": 0, "finish": 1}}
+
+    assert _target_label(sample, "winner") == 1
+    assert _target_label(sample, "decision") == 0
+    assert _target_label(sample, "finish") == 1
+    assert _target_label({"label": 0}, "decision") is None
+
+
+def test_non_winner_target_prediction_uses_target_label_without_market_roi() -> None:
+    sample = {
+        "fight_id": "fight-1",
+        "event_id": "event-1",
+        "event_date": __import__("datetime").date(2026, 1, 1),
+        "label": 0,
+        "target_labels": {"decision": 1, "finish": 0},
+    }
+
+    prediction = _target_prediction(sample, {}, 0.7, None, "decision")
+
+    assert prediction["target"] == "decision"
+    assert prediction["actual_label"] == 1
+    assert prediction["predicted_label"] == 1
+    assert prediction["won"] is True
+    assert prediction["market_probability"] is None
+    assert _target_roi("decision", [prediction])["status"] == "decision_market_odds_unavailable"
+
+
+def test_non_winner_target_prediction_rejects_market_blend() -> None:
+    sample = {
+        "fight_id": "fight-1",
+        "event_id": "event-1",
+        "event_date": __import__("datetime").date(2026, 1, 1),
+        "target_labels": {"finish": 1},
+    }
+
+    with pytest.raises(ValueError, match="market_blend_weight requires target='winner'"):
+        _target_prediction(sample, {}, 0.7, 0.5, "finish")
 
 
 def test_run_model_variant_reuses_base_prediction_cache(monkeypatch: pytest.MonkeyPatch) -> None:
