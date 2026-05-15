@@ -1,0 +1,145 @@
+{
+  "name": "market-opportunity-matrix-v1",
+  "description": "Focused report-only matrix for market residual betting opportunities across moneyline, decision, finish, and abstain selectors.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 100,
+    "max_events": null
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "full_current_corpus",
+    "locked_evaluation": "future_required"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "target": "winner",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline."
+    },
+    {
+      "name": "winner_overpriced_favorite_log_c1_edge05",
+      "model": "logistic_regression",
+      "target": "winner",
+      "features": "production_plus_all_research_market_context",
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.0
+      },
+      "selection_policy": {
+        "type": "overpriced_favorite",
+        "threshold": 0.05
+      },
+      "description": "Find market favorites whose no-vig price is materially stronger than model support."
+    },
+    {
+      "name": "winner_undervalued_underdog_log_c1_edge05",
+      "model": "logistic_regression",
+      "target": "winner",
+      "features": "production_plus_all_research_market_context",
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.0
+      },
+      "selection_policy": {
+        "type": "undervalued_underdog",
+        "threshold": 0.05
+      },
+      "description": "Find model-supported underdogs with positive model-vs-market edge."
+    },
+    {
+      "name": "winner_underdog_blend40_edge04",
+      "model": "logistic_regression",
+      "target": "winner",
+      "features": "production_plus_all_research_market_context",
+      "market_blend_weight": 0.4,
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.0
+      },
+      "selection_policy": {
+        "type": "undervalued_underdog",
+        "threshold": 0.04
+      },
+      "description": "Reuse the same base predictions with a market blend before underdog edge selection."
+    },
+    {
+      "name": "decision_edge_log_c1_conf62",
+      "model": "logistic_regression",
+      "target": "decision",
+      "features": "production_plus_all_research",
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 1.6
+      },
+      "selection_policy": {
+        "type": "decision_edge",
+        "threshold": 0.62
+      },
+      "description": "Find fights with elevated decision probability. ROI stays unavailable until decision prop odds exist."
+    },
+    {
+      "name": "finish_edge_log_c1_conf62",
+      "model": "logistic_regression",
+      "target": "finish",
+      "features": "production_plus_all_research",
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 1.6
+      },
+      "selection_policy": {
+        "type": "finish_edge",
+        "threshold": 0.62
+      },
+      "description": "Find fights with elevated finish probability. ROI stays unavailable until finish prop odds exist."
+    },
+    {
+      "name": "winner_abstain_log_c1_conf55",
+      "model": "logistic_regression",
+      "target": "winner",
+      "features": "production_plus_all_research_market_context",
+      "model_params": {
+        "C": 1.0
+      },
+      "selection_policy": {
+        "type": "abstain",
+        "threshold": 0.55
+      },
+      "description": "Identify low-confidence winner rows that should be passed instead of forced into a pick."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/market-opportunity-matrix-v1.json",
+    "markdown": "data/experiments/harness/market-opportunity-matrix-v1.md"
+  }
+}
