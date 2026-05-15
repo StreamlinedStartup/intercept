@@ -80,6 +80,7 @@ XGBOOST_PARAM_DEFAULTS = {
 }
 XGBOOST_PARAM_KEYS = set(XGBOOST_PARAM_DEFAULTS)
 LOGISTIC_PARAM_KEYS = {"C"}
+SUPPORTED_TARGETS = {"winner", "decision", "finish"}
 
 
 def run_experiment_harness(
@@ -219,16 +220,17 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             "## Variants",
             "",
-            "| Variant | Model | Features | Blend weight | Count | Accuracy | Log loss | Brier | ROI |",
-            "|---|---|---|---:|---:|---:|---:|---:|---:|",
+            "| Variant | Target | Model | Features | Blend weight | Count | Accuracy | Log loss | Brier | ROI |",
+            "|---|---|---|---|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for variant in report["variants"]:
         metrics = variant["metrics"]
         roi = variant["simulated_research_roi"]
         lines.append(
-            "| {name} | {model} | {features} | {weight} | {count} | {accuracy} | {log_loss} | {brier} | {roi} |".format(
+            "| {name} | {target} | {model} | {features} | {weight} | {count} | {accuracy} | {log_loss} | {brier} | {roi} |".format(
                 name=variant["name"],
+                target=variant["params"]["target"],
                 model=variant["params"]["model"],
                 features=variant["params"]["features"],
                 weight="" if variant["params"]["market_blend_weight"] is None else variant["params"]["market_blend_weight"],
@@ -285,6 +287,7 @@ def _validate_config(config: dict[str, Any]) -> None:
             raise ValueError("market_favorite variant must use features='none'")
         if variant.get("market_blend_weight") is not None and variant["model"] == "market_favorite":
             raise ValueError("market_favorite variant cannot set market_blend_weight")
+        _target(variant)
         _validate_model_params(variant)
         _feature_spec(variant)
         _feature_names(variant)
@@ -551,6 +554,7 @@ def _variant_report(variant: dict[str, Any], predictions: list[dict[str, Any]]) 
         "description": variant.get("description", ""),
         "params": {
             "model": variant["model"],
+            "target": _target(variant),
             "features": variant["features"],
             "feature_names": _feature_names(variant),
             "market_blend_weight": variant.get("market_blend_weight"),
@@ -630,6 +634,7 @@ def _ranking_key(report: dict[str, Any]) -> tuple[int, float, float, float, str]
 def _base_prediction_key(variant: dict[str, Any], min_train_samples: int) -> tuple[Any, ...]:
     return (
         variant["model"],
+        _target(variant),
         _stable_items(_model_params(variant)),
         tuple(_feature_names(variant)),
         min_train_samples,
@@ -862,6 +867,15 @@ def _resolve_feature_names(names: list[str], base: list[str]) -> list[str]:
 
 def _model_params(variant: dict[str, Any]) -> dict[str, Any]:
     return dict(variant.get("model_params") or {})
+
+
+def _target(variant: dict[str, Any]) -> str:
+    target = str(variant.get("target") or "winner")
+    if target not in SUPPORTED_TARGETS:
+        raise ValueError(f"unsupported target {target!r}")
+    if variant["model"] == "market_favorite" and target != "winner":
+        raise ValueError("market_favorite baseline only supports target='winner'")
+    return target
 
 
 def _validate_model_params(variant: dict[str, Any]) -> None:

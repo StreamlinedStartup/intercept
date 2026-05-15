@@ -23,6 +23,7 @@ from ml.experiment_harness import (
     _materialize_predictions,
     _recommendation,
     _run_model_variant,
+    _target,
     _validate_config,
     render_markdown,
 )
@@ -94,6 +95,40 @@ def test_validate_config_rejects_active_model_writes() -> None:
     config["writes_model_versions"] = True
 
     with pytest.raises(ValueError, match="writes_model_versions=false"):
+        _validate_config(config)
+
+
+def test_variant_target_defaults_to_winner() -> None:
+    assert _target({"name": "candidate", "model": "xgboost", "features": "production"}) == "winner"
+
+
+def test_validate_config_accepts_decision_and_finish_targets() -> None:
+    config = _config()
+    config["variants"].extend(
+        [
+            {"name": "decision_candidate", "model": "xgboost", "target": "decision", "features": "production"},
+            {"name": "finish_candidate", "model": "logistic_regression", "target": "finish", "features": "production"},
+        ]
+    )
+
+    _validate_config(config)
+
+
+def test_validate_config_rejects_unknown_target() -> None:
+    config = _config()
+    config["variants"].append(
+        {"name": "bad_target", "model": "xgboost", "target": "submission", "features": "production"}
+    )
+
+    with pytest.raises(ValueError, match="unsupported target"):
+        _validate_config(config)
+
+
+def test_validate_config_rejects_non_winner_market_favorite_target() -> None:
+    config = _config()
+    config["variants"][0]["target"] = "decision"
+
+    with pytest.raises(ValueError, match="market_favorite baseline only supports target='winner'"):
         _validate_config(config)
 
 
@@ -228,6 +263,13 @@ def test_base_prediction_key_ignores_blend_and_calibration() -> None:
     assert _base_prediction_key(base, 100) != _base_prediction_key(different, 100)
 
 
+def test_base_prediction_key_includes_target() -> None:
+    winner = {"name": "a", "model": "xgboost", "features": "production", "target": "winner"}
+    decision = {"name": "b", "model": "xgboost", "features": "production", "target": "decision"}
+
+    assert _base_prediction_key(winner, 100) != _base_prediction_key(decision, 100)
+
+
 def test_calibration_is_deterministic_and_bounded() -> None:
     assert _calibrate_probability(0.8, {"method": "none"}) == pytest.approx(0.8)
     assert _calibrate_probability(0.8, {"method": "temperature", "temperature": 2.0}) < 0.8
@@ -320,6 +362,7 @@ def test_markdown_includes_research_only_contract() -> None:
                 "name": "candidate",
                 "params": {
                     "model": "xgboost",
+                    "target": "winner",
                     "features": "production",
                     "market_blend_weight": None,
                     "selection_policy": {"type": "all"},

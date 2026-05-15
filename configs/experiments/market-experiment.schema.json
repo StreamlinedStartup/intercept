@@ -125,6 +125,11 @@
             "type": "string",
             "enum": ["market_favorite", "xgboost", "logistic_regression"]
           },
+          "target": {
+            "type": "string",
+            "enum": ["winner", "decision", "finish"],
+            "default": "winner"
+          },
           "features": {
             "type": "string",
             "enum": [
