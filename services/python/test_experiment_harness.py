@@ -12,6 +12,7 @@ from ml.experiment_harness import (
     MARKET_CONTEXT_FEATURE_NAMES,
     _annotate_variant,
     _apply_holdout_policy,
+    _apply_selection_policy,
     _attach_market_context,
     _base_prediction_key,
     _calibrate_probability,
@@ -23,6 +24,10 @@ from ml.experiment_harness import (
     _materialize_predictions,
     _recommendation,
     _run_model_variant,
+    _target,
+    _target_label,
+    _target_prediction,
+    _target_roi,
     _validate_config,
     render_markdown,
 )
@@ -64,6 +69,7 @@ def _config() -> dict:
 def _variant(name: str, roi: float, log_loss: float, brier: float) -> dict:
     return {
         "name": name,
+        "params": {"target": "winner"},
         "events_scored": 40,
         "metrics": {"count": 379, "accuracy": 0.6, "log_loss": log_loss, "brier_score": brier},
         "simulated_research_roi": {"roi_pct": roi},
@@ -89,11 +95,73 @@ def test_load_config_accepts_real_axes_smoke_example() -> None:
     assert variants["xgb_temperature_150"]["calibration"]["temperature"] == 1.5
 
 
+def test_load_config_accepts_market_opportunity_configs() -> None:
+    smoke = _load_config(Path("configs/experiments/market-opportunity-smoke.json"))
+    matrix = _load_config(Path("configs/experiments/market-opportunity-matrix-v1.json"))
+
+    smoke_variants = {variant["name"]: variant for variant in smoke["variants"]}
+    matrix_variants = {variant["name"]: variant for variant in matrix["variants"]}
+    assert smoke_variants["decision_edge_smoke"]["target"] == "decision"
+    assert smoke_variants["finish_edge_smoke"]["selection_policy"]["type"] == "finish_edge"
+    assert matrix_variants["winner_overpriced_favorite_log_c1_edge05"]["selection_policy"]["type"] == "overpriced_favorite"
+    assert matrix_variants["winner_underdog_blend40_edge04"]["market_blend_weight"] == 0.4
+
+
 def test_validate_config_rejects_active_model_writes() -> None:
     config = _config()
     config["writes_model_versions"] = True
 
     with pytest.raises(ValueError, match="writes_model_versions=false"):
+        _validate_config(config)
+
+
+def test_variant_target_defaults_to_winner() -> None:
+    assert _target({"name": "candidate", "model": "xgboost", "features": "production"}) == "winner"
+
+
+def test_validate_config_accepts_decision_and_finish_targets() -> None:
+    config = _config()
+    config["variants"].extend(
+        [
+            {"name": "decision_candidate", "model": "xgboost", "target": "decision", "features": "production"},
+            {"name": "finish_candidate", "model": "logistic_regression", "target": "finish", "features": "production"},
+        ]
+    )
+
+    _validate_config(config)
+
+
+def test_validate_config_rejects_unknown_target() -> None:
+    config = _config()
+    config["variants"].append(
+        {"name": "bad_target", "model": "xgboost", "target": "submission", "features": "production"}
+    )
+
+    with pytest.raises(ValueError, match="unsupported target"):
+        _validate_config(config)
+
+
+def test_validate_config_rejects_non_winner_market_favorite_target() -> None:
+    config = _config()
+    config["variants"][0]["target"] = "decision"
+
+    with pytest.raises(ValueError, match="market_favorite baseline only supports target='winner'"):
+        _validate_config(config)
+
+
+def test_validate_config_rejects_market_blend_for_non_winner_target() -> None:
+    config = _config()
+    config["variants"].append(
+        {
+            "name": "decision_blend",
+            "model": "xgboost",
+            "target": "decision",
+            "features": "production",
+            "market_blend_weight": 0.5,
+        }
+    )
+
+    with pytest.raises(ValueError, match="market_blend_weight requires target='winner'"):
         _validate_config(config)
 
 
@@ -228,6 +296,13 @@ def test_base_prediction_key_ignores_blend_and_calibration() -> None:
     assert _base_prediction_key(base, 100) != _base_prediction_key(different, 100)
 
 
+def test_base_prediction_key_includes_target() -> None:
+    winner = {"name": "a", "model": "xgboost", "features": "production", "target": "winner"}
+    decision = {"name": "b", "model": "xgboost", "features": "production", "target": "decision"}
+
+    assert _base_prediction_key(winner, 100) != _base_prediction_key(decision, 100)
+
+
 def test_calibration_is_deterministic_and_bounded() -> None:
     assert _calibrate_probability(0.8, {"method": "none"}) == pytest.approx(0.8)
     assert _calibrate_probability(0.8, {"method": "temperature", "temperature": 2.0}) < 0.8
@@ -254,6 +329,118 @@ def test_materialize_predictions_calibrates_before_blending() -> None:
 
     calibrated = _calibrate_probability(0.8, {"method": "temperature", "temperature": 2.0})
     assert predictions[0]["fighter_a_probability"] == pytest.approx((calibrated + 0.6) / 2)
+
+
+def test_target_label_reads_winner_decision_and_finish_labels() -> None:
+    sample = {"label": 1, "target_labels": {"decision": 0, "finish": 1}}
+
+    assert _target_label(sample, "winner") == 1
+    assert _target_label(sample, "decision") == 0
+    assert _target_label(sample, "finish") == 1
+    assert _target_label({"label": 0}, "decision") is None
+
+
+def test_non_winner_target_prediction_uses_target_label_without_market_roi() -> None:
+    sample = {
+        "fight_id": "fight-1",
+        "event_id": "event-1",
+        "event_date": __import__("datetime").date(2026, 1, 1),
+        "label": 0,
+        "target_labels": {"decision": 1, "finish": 0},
+    }
+
+    prediction = _target_prediction(sample, {}, 0.7, None, "decision")
+
+    assert prediction["target"] == "decision"
+    assert prediction["actual_label"] == 1
+    assert prediction["predicted_label"] == 1
+    assert prediction["won"] is True
+    assert prediction["market_probability"] is None
+    assert _target_roi("decision", [prediction])["status"] == "decision_market_odds_unavailable"
+
+
+def test_non_winner_target_prediction_rejects_market_blend() -> None:
+    sample = {
+        "fight_id": "fight-1",
+        "event_id": "event-1",
+        "event_date": __import__("datetime").date(2026, 1, 1),
+        "target_labels": {"finish": 1},
+    }
+
+    with pytest.raises(ValueError, match="market_blend_weight requires target='winner'"):
+        _target_prediction(sample, {}, 0.7, 0.5, "finish")
+
+
+def test_opportunity_selection_policies_pick_expected_rows() -> None:
+    predictions = [
+        {
+            "fight_id": "overpriced-favorite",
+            "target": "winner",
+            "market_predicted_label": 1,
+            "predicted_label": 0,
+            "market_probability": 0.75,
+            "fighter_a_probability": 0.55,
+            "picked_model_market_edge": 0.10,
+            "confidence": 0.45,
+        },
+        {
+            "fight_id": "undervalued-underdog",
+            "target": "winner",
+            "market_predicted_label": 1,
+            "predicted_label": 0,
+            "market_probability": 0.70,
+            "fighter_a_probability": 0.40,
+            "picked_model_market_edge": 0.20,
+            "confidence": 0.60,
+        },
+        {
+            "fight_id": "decision-edge",
+            "target": "decision",
+            "predicted_label": 1,
+            "picked_model_probability": 0.68,
+            "confidence": 0.68,
+            "market_predicted_label": None,
+        },
+        {
+            "fight_id": "finish-edge",
+            "target": "finish",
+            "predicted_label": 1,
+            "picked_model_probability": 0.66,
+            "confidence": 0.66,
+            "market_predicted_label": None,
+        },
+        {
+            "fight_id": "pass",
+            "target": "winner",
+            "market_predicted_label": 1,
+            "predicted_label": 1,
+            "market_probability": 0.53,
+            "fighter_a_probability": 0.52,
+            "picked_model_market_edge": -0.01,
+            "confidence": 0.52,
+        },
+    ]
+
+    assert [
+        row["fight_id"]
+        for row in _apply_selection_policy(predictions, {"type": "overpriced_favorite", "threshold": 0.15})
+    ] == ["overpriced-favorite", "undervalued-underdog"]
+    assert [
+        row["fight_id"]
+        for row in _apply_selection_policy(predictions, {"type": "undervalued_underdog", "threshold": 0.15})
+    ] == ["undervalued-underdog"]
+    assert [
+        row["fight_id"]
+        for row in _apply_selection_policy(predictions, {"type": "decision_edge", "threshold": 0.65})
+    ] == ["decision-edge"]
+    assert [
+        row["fight_id"]
+        for row in _apply_selection_policy(predictions, {"type": "finish_edge", "threshold": 0.65})
+    ] == ["finish-edge"]
+    assert [row["fight_id"] for row in _apply_selection_policy(predictions, {"type": "abstain", "threshold": 0.55})] == [
+        "overpriced-favorite",
+        "pass",
+    ]
 
 
 def test_run_model_variant_reuses_base_prediction_cache(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -320,6 +507,7 @@ def test_markdown_includes_research_only_contract() -> None:
                 "name": "candidate",
                 "params": {
                     "model": "xgboost",
+                    "target": "winner",
                     "features": "production",
                     "market_blend_weight": None,
                     "selection_policy": {"type": "all"},
