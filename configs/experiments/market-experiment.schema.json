@@ -229,7 +229,12 @@
                   "model_market_disagree",
                   "min_confidence",
                   "min_model_market_edge",
-                  "min_absolute_model_market_edge"
+                  "min_absolute_model_market_edge",
+                  "overpriced_favorite",
+                  "undervalued_underdog",
+                  "decision_edge",
+                  "finish_edge",
+                  "abstain"
                 ]
               },
               "threshold": {

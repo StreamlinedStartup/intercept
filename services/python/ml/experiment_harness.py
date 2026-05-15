@@ -503,6 +503,31 @@ def _apply_selection_policy(
     if policy_type == "min_absolute_model_market_edge":
         threshold = float(policy["threshold"])
         return [prediction for prediction in predictions if abs(prediction["picked_model_market_edge"]) >= threshold]
+    if policy_type == "overpriced_favorite":
+        threshold = float(policy["threshold"])
+        return [prediction for prediction in predictions if _overpriced_favorite_edge(prediction) >= threshold]
+    if policy_type == "undervalued_underdog":
+        threshold = float(policy["threshold"])
+        return [prediction for prediction in predictions if _undervalued_underdog_edge(prediction) >= threshold]
+    if policy_type == "decision_edge":
+        threshold = float(policy["threshold"])
+        return [
+            prediction for prediction in predictions
+            if prediction["target"] == "decision"
+            and prediction["predicted_label"] == 1
+            and prediction["picked_model_probability"] >= threshold
+        ]
+    if policy_type == "finish_edge":
+        threshold = float(policy["threshold"])
+        return [
+            prediction for prediction in predictions
+            if prediction["target"] == "finish"
+            and prediction["predicted_label"] == 1
+            and prediction["picked_model_probability"] >= threshold
+        ]
+    if policy_type == "abstain":
+        threshold = float(policy["threshold"])
+        return [prediction for prediction in predictions if prediction["confidence"] <= threshold]
     raise ValueError(f"unsupported selection policy {policy_type!r}")
 
 
@@ -518,16 +543,56 @@ def _selection_policy(variant: dict[str, Any]) -> dict[str, Any]:
         "min_confidence",
         "min_model_market_edge",
         "min_absolute_model_market_edge",
+        "overpriced_favorite",
+        "undervalued_underdog",
+        "decision_edge",
+        "finish_edge",
+        "abstain",
     }
     if policy_type not in supported:
         raise ValueError(f"unsupported selection policy {policy_type!r}")
-    if policy_type in {"min_confidence", "min_model_market_edge", "min_absolute_model_market_edge"}:
+    threshold_policies = {
+        "min_confidence",
+        "min_model_market_edge",
+        "min_absolute_model_market_edge",
+        "overpriced_favorite",
+        "undervalued_underdog",
+        "decision_edge",
+        "finish_edge",
+        "abstain",
+    }
+    if policy_type in threshold_policies:
         if "threshold" not in policy:
             raise ValueError(f"selection policy {policy_type!r} requires threshold")
         policy["threshold"] = float(policy["threshold"])
     elif "threshold" in policy:
         raise ValueError(f"selection policy {policy_type!r} cannot set threshold")
     return policy
+
+
+def _overpriced_favorite_edge(prediction: dict[str, Any]) -> float:
+    if prediction["target"] != "winner" or prediction["market_predicted_label"] is None:
+        return float("-inf")
+    market_favorite_probability = (
+        prediction["market_probability"]
+        if prediction["market_predicted_label"] == 1
+        else 1 - prediction["market_probability"]
+    )
+    model_favorite_probability = (
+        prediction["fighter_a_probability"]
+        if prediction["market_predicted_label"] == 1
+        else 1 - prediction["fighter_a_probability"]
+    )
+    return float(market_favorite_probability - model_favorite_probability)
+
+
+def _undervalued_underdog_edge(prediction: dict[str, Any]) -> float:
+    if prediction["target"] != "winner" or prediction["market_predicted_label"] is None:
+        return float("-inf")
+    if prediction["predicted_label"] == prediction["market_predicted_label"]:
+        return float("-inf")
+    edge_value = prediction["picked_model_market_edge"]
+    return float(edge_value) if edge_value is not None else float("-inf")
 
 
 def _market_prediction(

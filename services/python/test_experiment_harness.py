@@ -12,6 +12,7 @@ from ml.experiment_harness import (
     MARKET_CONTEXT_FEATURE_NAMES,
     _annotate_variant,
     _apply_holdout_policy,
+    _apply_selection_policy,
     _attach_market_context,
     _base_prediction_key,
     _calibrate_probability,
@@ -356,6 +357,78 @@ def test_non_winner_target_prediction_rejects_market_blend() -> None:
 
     with pytest.raises(ValueError, match="market_blend_weight requires target='winner'"):
         _target_prediction(sample, {}, 0.7, 0.5, "finish")
+
+
+def test_opportunity_selection_policies_pick_expected_rows() -> None:
+    predictions = [
+        {
+            "fight_id": "overpriced-favorite",
+            "target": "winner",
+            "market_predicted_label": 1,
+            "predicted_label": 0,
+            "market_probability": 0.75,
+            "fighter_a_probability": 0.55,
+            "picked_model_market_edge": 0.10,
+            "confidence": 0.45,
+        },
+        {
+            "fight_id": "undervalued-underdog",
+            "target": "winner",
+            "market_predicted_label": 1,
+            "predicted_label": 0,
+            "market_probability": 0.70,
+            "fighter_a_probability": 0.40,
+            "picked_model_market_edge": 0.20,
+            "confidence": 0.60,
+        },
+        {
+            "fight_id": "decision-edge",
+            "target": "decision",
+            "predicted_label": 1,
+            "picked_model_probability": 0.68,
+            "confidence": 0.68,
+            "market_predicted_label": None,
+        },
+        {
+            "fight_id": "finish-edge",
+            "target": "finish",
+            "predicted_label": 1,
+            "picked_model_probability": 0.66,
+            "confidence": 0.66,
+            "market_predicted_label": None,
+        },
+        {
+            "fight_id": "pass",
+            "target": "winner",
+            "market_predicted_label": 1,
+            "predicted_label": 1,
+            "market_probability": 0.53,
+            "fighter_a_probability": 0.52,
+            "picked_model_market_edge": -0.01,
+            "confidence": 0.52,
+        },
+    ]
+
+    assert [
+        row["fight_id"]
+        for row in _apply_selection_policy(predictions, {"type": "overpriced_favorite", "threshold": 0.15})
+    ] == ["overpriced-favorite", "undervalued-underdog"]
+    assert [
+        row["fight_id"]
+        for row in _apply_selection_policy(predictions, {"type": "undervalued_underdog", "threshold": 0.15})
+    ] == ["undervalued-underdog"]
+    assert [
+        row["fight_id"]
+        for row in _apply_selection_policy(predictions, {"type": "decision_edge", "threshold": 0.65})
+    ] == ["decision-edge"]
+    assert [
+        row["fight_id"]
+        for row in _apply_selection_policy(predictions, {"type": "finish_edge", "threshold": 0.65})
+    ] == ["finish-edge"]
+    assert [row["fight_id"] for row in _apply_selection_policy(predictions, {"type": "abstain", "threshold": 0.55})] == [
+        "overpriced-favorite",
+        "pass",
+    ]
 
 
 def test_run_model_variant_reuses_base_prediction_cache(monkeypatch: pytest.MonkeyPatch) -> None:
