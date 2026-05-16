@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-15T17:41:19.594020+00:00",
+  "generated_at": "2026-05-16T01:02:21.438159+00:00",
   "report": "market-experiment-harness",
   "config_path": "configs/experiments/market-opportunity-matrix-v1.json",
-  "git_sha": "f804517fcb0a9c2dd24e30fe37e3ff283f9a73df",
+  "git_sha": "b1d629273d5ac8744c7f7e04c0c8a9669e5d1abc",
   "report_only": true,
   "writes_model_versions": false,
   "value_status": "research_only",
@@ -323,7 +323,7 @@
       },
       "gate_baseline": {
         "name": "winner_overpriced_favorite_log_c1_edge05_market_selected_baseline",
-        "description": "No-vig market favorite baseline on the selected fight subset.",
+        "description": "No-vig market baseline on the selected fight subset.",
         "params": {
           "model": "market_favorite",
           "target": "winner",
@@ -473,7 +473,7 @@
       },
       "gate_baseline": {
         "name": "winner_undervalued_underdog_log_c1_edge05_market_selected_baseline",
-        "description": "No-vig market favorite baseline on the selected fight subset.",
+        "description": "No-vig market baseline on the selected fight subset.",
         "params": {
           "model": "market_favorite",
           "target": "winner",
@@ -624,7 +624,7 @@
       },
       "gate_baseline": {
         "name": "winner_underdog_blend40_edge04_market_selected_baseline",
-        "description": "No-vig market favorite baseline on the selected fight subset.",
+        "description": "No-vig market baseline on the selected fight subset.",
         "params": {
           "model": "market_favorite",
           "target": "winner",
@@ -762,19 +762,21 @@
         "roc_auc": 0.5528085443037977
       },
       "simulated_research_roi": {
-        "entries": 0,
-        "wins": null,
-        "units": null,
-        "roi_pct": null,
+        "entries": 4,
+        "wins": 1,
+        "units": -1.7547138023968145,
+        "roi_pct": -0.43867845059920363,
         "stake_unit": "flat_1u",
-        "status": "decision_market_odds_unavailable"
+        "status": "simulated_research_only",
+        "selected_entries": 143,
+        "market_backed_entries": 4
       },
       "gate_baseline": {
         "name": "decision_edge_log_c1_conf62_market_selected_baseline",
-        "description": "No-vig market favorite baseline on the selected fight subset.",
+        "description": "No-vig market baseline on the selected fight subset.",
         "params": {
-          "model": "market_favorite",
-          "target": "winner",
+          "model": "prop_market_baseline",
+          "target": "decision",
           "features": "none",
           "feature_names": [],
           "market_blend_weight": null,
@@ -787,31 +789,36 @@
           },
           "feature_count": 0
         },
-        "events_scored": 59,
+        "events_scored": 1,
         "metrics": {
-          "count": 143,
-          "accuracy": 0.6993006993006993,
-          "avg_confidence": 0.64419335682476,
-          "calibration_gap": 0.05510734247593929,
-          "abs_calibration_error": 0.05510734247593929,
-          "log_loss": 0.6249209937950607,
-          "brier_score": 0.2172594493210539,
-          "roc_auc": 0.7027080844285145
+          "count": 4,
+          "accuracy": 0.75,
+          "avg_confidence": 0.6569530108345778,
+          "calibration_gap": 0.0930469891654222,
+          "abs_calibration_error": 0.0930469891654222,
+          "log_loss": 0.484231638120061,
+          "brier_score": 0.15336714577574606,
+          "roc_auc": 1.0
         },
         "simulated_research_roi": {
-          "entries": 143,
-          "wins": 100,
-          "units": 15.866520039661776,
-          "roi_pct": 0.11095468559204039,
+          "entries": 4,
+          "wins": 3,
+          "units": 0.3965334357318957,
+          "roi_pct": 0.09913335893297393,
           "stake_unit": "flat_1u",
-          "status": "simulated_research_only"
+          "status": "simulated_research_only",
+          "selected_entries": 4,
+          "market_backed_entries": 4
         }
       },
-      "roi_delta_vs_market": null,
-      "log_loss_delta_vs_market": null,
-      "brier_delta_vs_market": null,
+      "roi_delta_vs_market": -0.5378118095321776,
+      "log_loss_delta_vs_market": 0.2837721687151915,
+      "brier_delta_vs_market": 0.12353022479168357,
       "rejection_reasons": [
-        "market_baseline_unavailable_for_target"
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
       ],
       "clears_market_gate": false
     },
@@ -906,19 +913,21 @@
         "roc_auc": 0.5717521652231846
       },
       "simulated_research_roi": {
-        "entries": 0,
-        "wins": null,
-        "units": null,
-        "roi_pct": null,
+        "entries": 1,
+        "wins": 1,
+        "units": 0.572092484811259,
+        "roi_pct": 0.572092484811259,
         "stake_unit": "flat_1u",
-        "status": "finish_market_odds_unavailable"
+        "status": "simulated_research_only",
+        "selected_entries": 174,
+        "market_backed_entries": 1
       },
       "gate_baseline": {
         "name": "finish_edge_log_c1_conf62_market_selected_baseline",
-        "description": "No-vig market favorite baseline on the selected fight subset.",
+        "description": "No-vig market baseline on the selected fight subset.",
         "params": {
-          "model": "market_favorite",
-          "target": "winner",
+          "model": "prop_market_baseline",
+          "target": "finish",
           "features": "none",
           "feature_names": [],
           "market_blend_weight": null,
@@ -931,31 +940,36 @@
           },
           "feature_count": 0
         },
-        "events_scored": 68,
+        "events_scored": 1,
         "metrics": {
-          "count": 174,
-          "accuracy": 0.7586206896551724,
-          "avg_confidence": 0.6581054211811855,
-          "calibration_gap": 0.10051526847398684,
-          "abs_calibration_error": 0.10051526847398684,
-          "log_loss": 0.5491919643814412,
-          "brier_score": 0.18343079050485142,
-          "roc_auc": 0.814937210839392
+          "count": 1,
+          "accuracy": 1.0,
+          "avg_confidence": 0.6360948924198039,
+          "calibration_gap": 0.3639051075801961,
+          "abs_calibration_error": 0.3639051075801961,
+          "log_loss": 0.45240752485358343,
+          "brier_score": 0.1324269273229541,
+          "roc_auc": null
         },
         "simulated_research_roi": {
-          "entries": 174,
-          "wins": 132,
-          "units": 28.884466296978605,
-          "roi_pct": 0.16600267986769313,
+          "entries": 1,
+          "wins": 1,
+          "units": 0.572092484811259,
+          "roi_pct": 0.572092484811259,
           "stake_unit": "flat_1u",
-          "status": "simulated_research_only"
+          "status": "simulated_research_only",
+          "selected_entries": 1,
+          "market_backed_entries": 1
         }
       },
-      "roi_delta_vs_market": null,
-      "log_loss_delta_vs_market": null,
-      "brier_delta_vs_market": null,
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.3276430334038379,
+      "brier_delta_vs_market": 0.14339974070622094,
       "rejection_reasons": [
-        "market_baseline_unavailable_for_target"
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
       ],
       "clears_market_gate": false
     },
@@ -1062,7 +1076,7 @@
       },
       "gate_baseline": {
         "name": "winner_abstain_log_c1_conf55_market_selected_baseline",
-        "description": "No-vig market favorite baseline on the selected fight subset.",
+        "description": "No-vig market baseline on the selected fight subset.",
         "params": {
           "model": "market_favorite",
           "target": "winner",
@@ -1113,6 +1127,20 @@
   "ranking": [
     {
       "rank": 1,
+      "name": "finish_edge_log_c1_conf62",
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.3276430334038379,
+      "brier_delta_vs_market": 0.14339974070622094,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 2,
       "name": "winner_abstain_log_c1_conf55",
       "roi_delta_vs_market": -0.07099613035592651,
       "log_loss_delta_vs_market": 0.04585431039826082,
@@ -1126,7 +1154,7 @@
       ]
     },
     {
-      "rank": 2,
+      "rank": 3,
       "name": "winner_overpriced_favorite_log_c1_edge05",
       "roi_delta_vs_market": -0.2182780572244281,
       "log_loss_delta_vs_market": 0.1673779493675721,
@@ -1139,7 +1167,7 @@
       ]
     },
     {
-      "rank": 3,
+      "rank": 4,
       "name": "winner_undervalued_underdog_log_c1_edge05",
       "roi_delta_vs_market": -0.5281549420341073,
       "log_loss_delta_vs_market": 0.27660470273517723,
@@ -1153,7 +1181,21 @@
       ]
     },
     {
-      "rank": 4,
+      "rank": 5,
+      "name": "decision_edge_log_c1_conf62",
+      "roi_delta_vs_market": -0.5378118095321776,
+      "log_loss_delta_vs_market": 0.2837721687151915,
+      "brier_delta_vs_market": 0.12353022479168357,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 6,
       "name": "winner_underdog_blend40_edge04",
       "roi_delta_vs_market": -0.5927765427130975,
       "log_loss_delta_vs_market": 0.10567319135941688,
@@ -1164,28 +1206,6 @@
         "log_loss_worse_than_market",
         "brier_worse_than_market",
         "unstable_coverage"
-      ]
-    },
-    {
-      "rank": 5,
-      "name": "decision_edge_log_c1_conf62",
-      "roi_delta_vs_market": null,
-      "log_loss_delta_vs_market": null,
-      "brier_delta_vs_market": null,
-      "clears_gate": false,
-      "rejection_reasons": [
-        "market_baseline_unavailable_for_target"
-      ]
-    },
-    {
-      "rank": 6,
-      "name": "finish_edge_log_c1_conf62",
-      "roi_delta_vs_market": null,
-      "log_loss_delta_vs_market": null,
-      "brier_delta_vs_market": null,
-      "clears_gate": false,
-      "rejection_reasons": [
-        "market_baseline_unavailable_for_target"
       ]
     },
     {
@@ -1202,7 +1222,7 @@
   ],
   "recommendation": {
     "status": "research_only",
-    "reason": "winner_abstain_log_c1_conf55 is the best configured candidate but does not clear the market gate."
+    "reason": "finish_edge_log_c1_conf62 is the best configured candidate but does not clear the market gate."
   },
   "policy": "This harness is for report-only discovery. A candidate from the current corpus is not activation proof; validated status requires a locked future evaluation slice and a passing market gate."
 }
