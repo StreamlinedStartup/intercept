@@ -12,6 +12,7 @@ export async function getBridge(): Promise<PythonBridge> {
 		workerPath: resolve(import.meta.dirname, '../../../services/python/worker.py'),
 		pythonPath:
 			process.env.PYTHON_PATH ?? (existsSync(localVenvPython) ? localVenvPython : 'python3'),
+		timeoutMs: 30_000,
 	});
 	await instance.start();
 	return instance;
