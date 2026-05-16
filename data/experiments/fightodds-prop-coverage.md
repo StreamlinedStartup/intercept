@@ -1,6 +1,6 @@
 # FightOdds Prop Coverage
 
-- Generated: `2026-05-16T02:10:53.989Z`
+- Generated: `2026-05-16T02:20:59.647Z`
 - Report only: `true`
 - Writes `model_versions`: `false`
 - Source events with prop rows: 31
