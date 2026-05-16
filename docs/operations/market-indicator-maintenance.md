@@ -34,3 +34,27 @@ Steps 4 and 5 require `FIGHTODDS_EVENT_PKS` because FightOdds historical prop im
 ```
 
 The command exits non-zero on hard failures. Keep `ODDS_API_KEY` available to the API service before enabling the cron entry.
+
+## Weekly Evaluation
+
+After results settle, refresh completed-result data, then run:
+
+```bash
+pnpm data:ufcstats:snapshot
+DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor \
+pnpm --filter @interceptor/db import:ufcstats data/external/ufcstats/<snapshot-id>
+```
+
+Then evaluate the frozen report-only snapshots:
+
+```bash
+DATABASE_URL=postgres://interceptor:interceptor@localhost:5434/interceptor \
+pnpm --filter @interceptor/db report:market-indicators
+```
+
+The report writes:
+
+- `data/experiments/indicator-evaluation.json`
+- `data/experiments/indicator-evaluation.md`
+
+It compares prior `market_indicator_snapshots` against actual outcomes for supported targets: decision, finish, KO/TKO, submission, and Over/Under round thresholds. The report summarizes hit rate, Brier score, candidate hit rate, edge behavior, stale/missing-data rates, and limitations. It is report-only and never retrains, promotes artifacts, or activates betting recommendations.

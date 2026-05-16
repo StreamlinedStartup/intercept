@@ -22,6 +22,7 @@
 		"report:fightodds:props": "tsx src/report-fightodds-props.ts",
 		"report:market-blend-experiments": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.market_blend_experiments",
 		"report:model-family-experiments": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.model_family_experiments",
+		"report:market-indicators": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.evaluate_market_indicators",
 		"report:odds-aware:event": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.odds_aware_report",
 		"report:odds-aware:evaluation": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.odds_aware_report --final",
 		"refresh:market-indicators": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.refresh_market_indicators",
