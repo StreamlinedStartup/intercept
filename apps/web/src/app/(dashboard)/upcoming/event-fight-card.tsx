@@ -33,11 +33,21 @@ type FightPrediction = {
 	predicted_winner_id: string;
 	win_prob: number;
 	model_version: string;
+	over_2_5_indicator?: Over25Indicator;
 	contributing_features: Array<{
 		name: string;
 		value: number | null;
 		shap: number;
 	}>;
+};
+
+type Over25Indicator = {
+	model_probability: number | null;
+	market_probability: number | null;
+	edge_pct: number | null;
+	threshold: number;
+	candidate: boolean;
+	value_status: 'report_only' | 'insufficient_coverage' | 'insufficient_training';
 };
 
 type EventPredictionResponse = {
@@ -538,16 +548,31 @@ function PredictionChip({
 	}
 
 	const winner = fight.fighters.find((fighter) => fighter.id === prediction.predicted_winner_id);
+	const over25 = prediction.over_2_5_indicator;
 	return (
-		<Badge
-			className={`text-xs gap-1 bg-emerald-600 hover:bg-emerald-600 text-white whitespace-nowrap ${className}`}
-		>
-			<span className="truncate max-w-32">
-				{Math.round(prediction.win_prob * 100)}% {winner?.name ?? 'Pick'}
-			</span>
-			<Check className="w-3 h-3" />
-		</Badge>
+		<div className={`flex flex-wrap gap-1 justify-end ${className}`}>
+			<Badge className="text-xs gap-1 bg-emerald-600 hover:bg-emerald-600 text-white whitespace-nowrap">
+				<span className="truncate max-w-32">
+					{Math.round(prediction.win_prob * 100)}% {winner?.name ?? 'Pick'}
+				</span>
+				<Check className="w-3 h-3" />
+			</Badge>
+			{over25?.candidate && (
+				<Badge
+					variant="outline"
+					className="text-xs border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300 whitespace-nowrap"
+				>
+					O2.5 {formatSignedPct(over25.edge_pct)}
+				</Badge>
+			)}
+		</div>
 	);
+}
+
+function formatSignedPct(value: number | null | undefined): string {
+	if (typeof value !== 'number') return 'signal';
+	const pct = Math.round(value * 100);
+	return `${pct > 0 ? '+' : ''}${pct}%`;
 }
 
 function CompactFighterCell({
