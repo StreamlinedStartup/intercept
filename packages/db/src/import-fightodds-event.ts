@@ -815,7 +815,7 @@ async function buildPropOddsRows(
 		for (const edge of propTable.propOffers.edges) {
 			const prop = edge.node;
 			result.marketsRead += 1;
-			if (prop.offerType.offerTypeId !== 'DISTANCE') {
+			if (!isSupportedPropOfferType(prop.offerType.offerTypeId)) {
 				incrementReason(
 					result.skippedMarketReasons,
 					`ignored_offer_type:${prop.offerType.offerTypeId}`,
@@ -852,12 +852,26 @@ async function buildPropOddsRows(
 			if (result.rows.length > before) {
 				result.marketsImported += 1;
 			} else {
-				incrementReason(result.skippedMarketReasons, 'distance_without_importable_lines');
+				incrementReason(result.skippedMarketReasons, 'supported_prop_without_importable_lines');
 				result.marketsSkipped += 1;
 			}
 		}
 	}
 	return result;
+}
+
+function isSupportedPropOfferType(offerTypeId: string): boolean {
+	return offerTypeId === 'DISTANCE' || offerTypeId.startsWith('OVERUNDER_');
+}
+
+function propMarketFamily(offerTypeId: string): string {
+	if (offerTypeId === 'DISTANCE') {
+		return 'fight_distance';
+	}
+	if (offerTypeId.startsWith('OVERUNDER_')) {
+		return 'fight_round_total';
+	}
+	return 'unsupported';
 }
 
 function propOutcomeRows(input: {
@@ -922,7 +936,7 @@ function propOddsRow(
 		sourceMarketId,
 		sourceOfferId: input.offer.id,
 		sourceOfferTypeId: input.prop.offerType.offerTypeId,
-		marketFamily: 'fight_distance',
+		marketFamily: propMarketFamily(input.prop.offerType.offerTypeId),
 		marketLabel: input.prop.offerType.description,
 		propName: input.outcomeSide === 'outcome1' ? input.prop.propName1 : input.prop.propName2,
 		sportsbookId: input.offer.sportsbook.id,
