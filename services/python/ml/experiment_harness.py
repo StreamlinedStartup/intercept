@@ -604,6 +604,79 @@ def _market_prediction(
     return _prediction(sample, markets, probability, None)
 
 
+def _load_prop_market_consensus() -> dict[str, dict[str, dict[str, float]]]:
+    with pool.borrow() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT
+                    hof.canonical_fight_id AS fight_id,
+                    hpo.source_market_id,
+                    hpo.sportsbook_slug,
+                    hpo.outcome_side,
+                    hpo.implied_probability
+                FROM historical_prop_odds hpo
+                JOIN historical_odds_fights hof ON hof.id = hpo.historical_fight_id
+                WHERE hpo.source_offer_type_id = 'DISTANCE'
+                    AND hpo.market_family = 'fight_distance'
+                    AND hpo.line_kind = 'source_current'
+                    AND hof.canonical_fight_id IS NOT NULL
+                """,
+            )
+            rows = cur.fetchall()
+    return _prop_market_consensus_from_rows(rows)
+
+
+def _prop_market_consensus_from_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, dict[str, float]]]:
+    pairs: dict[tuple[str, str, str], dict[str, float]] = {}
+    for row in rows:
+        key = (str(row["fight_id"]), str(row["source_market_id"]), str(row["sportsbook_slug"]))
+        pairs.setdefault(key, {})[str(row["outcome_side"])] = float(row["implied_probability"])
+    by_fight: dict[str, list[dict[str, float]]] = {}
+    for (fight_id, _source_market_id, _sportsbook_slug), pair in pairs.items():
+        probabilities = _novig_distance_probabilities(pair)
+        if probabilities is not None:
+            by_fight.setdefault(fight_id, []).append(probabilities)
+    consensus: dict[str, dict[str, dict[str, float]]] = {}
+    for fight_id, probabilities in by_fight.items():
+        decision_probability = float(np.mean([row["decision"] for row in probabilities]))
+        finish_probability = float(np.mean([row["finish"] for row in probabilities]))
+        pair_count = len(probabilities)
+        consensus[fight_id] = {
+            "decision": {"market_prob": decision_probability, "pair_count": pair_count},
+            "finish": {"market_prob": finish_probability, "pair_count": pair_count},
+        }
+    return consensus
+
+
+def _novig_distance_probabilities(pair: dict[str, float]) -> dict[str, float] | None:
+    decision_implied = pair.get("outcome1")
+    finish_implied = pair.get("outcome2")
+    if decision_implied is None or finish_implied is None:
+        return None
+    total = decision_implied + finish_implied
+    if total <= 0:
+        return None
+    decision_probability = decision_implied / total
+    return {
+        "decision": decision_probability,
+        "finish": 1 - decision_probability,
+    }
+
+
+def _prop_market_probability(
+    prop_markets: dict[str, dict[str, dict[str, float]]],
+    fight_id: str,
+    target: str,
+) -> float | None:
+    if target not in {"decision", "finish"}:
+        return None
+    market = prop_markets.get(fight_id, {}).get(target)
+    if market is None:
+        return None
+    return float(market["market_prob"])
+
+
 def _target_prediction(
     sample: dict[str, Any],
     markets: dict[str, dict[str, dict[str, float]]],

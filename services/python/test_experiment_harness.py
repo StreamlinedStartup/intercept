@@ -22,6 +22,9 @@ from ml.experiment_harness import (
     _holdout_summary,
     _load_config,
     _materialize_predictions,
+    _novig_distance_probabilities,
+    _prop_market_consensus_from_rows,
+    _prop_market_probability,
     _recommendation,
     _run_model_variant,
     _target,
@@ -369,6 +372,67 @@ def test_non_winner_target_prediction_rejects_market_blend() -> None:
 
     with pytest.raises(ValueError, match="market_blend_weight requires target='winner'"):
         _target_prediction(sample, {}, 0.7, 0.5, "finish")
+
+
+def test_novig_distance_probabilities_require_paired_outcomes() -> None:
+    assert _novig_distance_probabilities({"outcome1": 0.6}) is None
+    probabilities = _novig_distance_probabilities({"outcome1": 0.6, "outcome2": 0.5})
+
+    assert probabilities is not None
+    assert probabilities["decision"] == pytest.approx(0.6 / 1.1)
+    assert probabilities["finish"] == pytest.approx(0.5 / 1.1)
+
+
+def test_prop_market_consensus_maps_distance_rows_to_targets() -> None:
+    consensus = _prop_market_consensus_from_rows(
+        [
+            {
+                "fight_id": "fight-1",
+                "source_market_id": "market-1",
+                "sportsbook_slug": "book-a",
+                "outcome_side": "outcome1",
+                "implied_probability": 0.60,
+            },
+            {
+                "fight_id": "fight-1",
+                "source_market_id": "market-1",
+                "sportsbook_slug": "book-a",
+                "outcome_side": "outcome2",
+                "implied_probability": 0.50,
+            },
+            {
+                "fight_id": "fight-1",
+                "source_market_id": "market-1",
+                "sportsbook_slug": "book-b",
+                "outcome_side": "outcome1",
+                "implied_probability": 0.55,
+            },
+            {
+                "fight_id": "fight-1",
+                "source_market_id": "market-1",
+                "sportsbook_slug": "book-b",
+                "outcome_side": "outcome2",
+                "implied_probability": 0.55,
+            },
+            {
+                "fight_id": "fight-2",
+                "source_market_id": "market-2",
+                "sportsbook_slug": "book-a",
+                "outcome_side": "outcome1",
+                "implied_probability": 0.60,
+            },
+        ]
+    )
+
+    expected_decision = ((0.60 / 1.10) + (0.55 / 1.10)) / 2
+    assert consensus["fight-1"]["decision"]["market_prob"] == pytest.approx(expected_decision)
+    assert consensus["fight-1"]["finish"]["market_prob"] == pytest.approx(1 - expected_decision)
+    assert consensus["fight-1"]["decision"]["pair_count"] == 2
+    assert "fight-2" not in consensus
+    assert _prop_market_probability(consensus, "fight-1", "decision") == pytest.approx(expected_decision)
+    assert _prop_market_probability(consensus, "fight-1", "finish") == pytest.approx(1 - expected_decision)
+    assert _prop_market_probability(consensus, "fight-1", "winner") is None
+    assert _prop_market_probability(consensus, "missing", "decision") is None
 
 
 def test_opportunity_selection_policies_pick_expected_rows() -> None:
