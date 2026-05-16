@@ -106,16 +106,20 @@ def test_load_config_accepts_market_opportunity_configs() -> None:
     smoke = _load_config(Path("configs/experiments/market-opportunity-smoke.json"))
     matrix = _load_config(Path("configs/experiments/market-opportunity-matrix-v1.json"))
     locked = _load_config(Path("configs/experiments/prop-signal-locked-validation-v1.json"))
+    method_round = _load_config(Path("configs/experiments/method-round-prop-targets-v1.json"))
 
     smoke_variants = {variant["name"]: variant for variant in smoke["variants"]}
     matrix_variants = {variant["name"]: variant for variant in matrix["variants"]}
     locked_variants = {variant["name"]: variant for variant in locked["variants"]}
+    method_round_variants = {variant["name"]: variant for variant in method_round["variants"]}
     assert smoke_variants["decision_edge_smoke"]["target"] == "decision"
     assert smoke_variants["finish_edge_smoke"]["selection_policy"]["type"] == "finish_edge"
     assert matrix_variants["winner_overpriced_favorite_log_c1_edge05"]["selection_policy"]["type"] == "overpriced_favorite"
     assert matrix_variants["winner_underdog_blend40_edge04"]["market_blend_weight"] == 0.4
     assert locked["corpus"]["holdout"] == {"type": "last_n_events", "event_count": 20}
     assert locked_variants["locked_decision_market_strength_conf62"]["target"] == "decision"
+    assert method_round_variants["ko_tko_positive_log_c1_conf32"]["target"] == "ko_tko"
+    assert method_round_variants["over_2_5_positive_log_c1_conf58"]["selection_policy"]["type"] == "positive_target_edge"
 
 
 def test_validate_config_rejects_active_model_writes() -> None:
