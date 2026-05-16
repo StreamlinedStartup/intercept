@@ -16,6 +16,13 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { DEBUG } from '@/lib/debug';
 import {
+	type Over25Indicator,
+	over25BadgeText,
+	over25BadgeTone,
+	over25Name,
+	over25Primary,
+} from './over25-indicator';
+import {
 	ageFromDob,
 	cleanRecord,
 	type FighterDetail,
@@ -97,20 +104,6 @@ type FightPrediction = {
 	market_prob?: number;
 	value_status?: 'research_only' | 'insufficient_coverage' | 'validated';
 	value_status_reason?: string;
-};
-
-type Over25Indicator = {
-	label: string;
-	model_version: string;
-	model_probability: number | null;
-	market_probability: number | null;
-	edge_pct: number | null;
-	threshold: number;
-	candidate: boolean;
-	market_pair_count: number;
-	training_sample_count: number;
-	value_status: 'report_only' | 'insufficient_coverage' | 'insufficient_training';
-	value_status_reason: string;
 };
 
 const INITIAL: FighterState = { data: null, loading: false, error: null };
@@ -763,36 +756,6 @@ function valueRowsForPrediction(target: NonNullable<Target>, prediction: FightPr
 			edge: market ? modelProb - market.market_prob : null,
 		};
 	});
-}
-
-function over25Name(indicator: Over25Indicator | undefined): string {
-	if (!indicator) return 'Signal unavailable';
-	if (indicator.value_status === 'insufficient_training') return 'Needs training data';
-	if (indicator.value_status === 'insufficient_coverage') return 'Market unavailable';
-	return indicator.candidate ? 'Candidate active' : 'No signal';
-}
-
-function over25Primary(indicator: Over25Indicator | undefined): string {
-	if (!indicator || indicator.model_probability === null) return 'Need model output';
-	const model = `Model ${formatPct(indicator.model_probability)}`;
-	const market =
-		indicator.market_probability === null
-			? 'market unavailable'
-			: `market ${formatPct(indicator.market_probability)}`;
-	const edge = indicator.edge_pct === null ? '' : `, edge ${formatSignedPct(indicator.edge_pct)}`;
-	return `${model}, ${market}${edge}`;
-}
-
-function over25BadgeText(indicator: Over25Indicator): string {
-	if (indicator.value_status === 'insufficient_training') return 'Need data';
-	if (indicator.value_status === 'insufficient_coverage') return 'Need props';
-	return indicator.candidate ? 'Report only' : `Below ${formatPct(indicator.threshold)}`;
-}
-
-function over25BadgeTone(indicator: Over25Indicator): 'green' | 'amber' | 'red' | 'neutral' {
-	if (indicator.value_status === 'insufficient_training') return 'neutral';
-	if (indicator.value_status === 'insufficient_coverage') return 'amber';
-	return indicator.candidate ? 'amber' : 'neutral';
 }
 
 function probabilityForFighter(prediction: FightPrediction, fighterId: string): number {

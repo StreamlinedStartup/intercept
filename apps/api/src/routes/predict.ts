@@ -97,8 +97,29 @@ type Over25Indicator = {
 	candidate: boolean;
 	market_pair_count: number;
 	training_sample_count: number;
-	value_status: 'report_only' | 'insufficient_coverage' | 'insufficient_training';
+	value_status:
+		| 'report_only'
+		| 'insufficient_coverage'
+		| 'insufficient_training'
+		| 'missing_snapshot'
+		| 'stale_snapshot';
 	value_status_reason: string;
+	computed_at: string | null;
+	snapshot_status: 'current' | 'stale' | 'missing';
+};
+
+type Over25SnapshotRow = {
+	fight_id: string;
+	model_version: string;
+	computed_at: string | Date;
+	model_probability: number | null;
+	market_probability: number | null;
+	edge_pct: number | null;
+	candidate: boolean;
+	market_pair_count: number;
+	value_status: 'report_only' | 'insufficient_coverage' | 'insufficient_training';
+	source_config: string | null;
+	raw_metadata: string;
 };
 
 type PredictionHistoryRow = {
@@ -353,15 +374,10 @@ async function predictAndPersist(
 		'ml.predict',
 		buildMlPredictParams(fighterA, fighterB),
 	);
-	const over25Result = await bridge.call<MlOver25IndicatorResult>(
-		'ml.prop_indicator.over_2_5',
-		buildMlPredictParams(fighterA, fighterB),
-	);
 	const market = await loadMarketOdds(fightId);
-	const over25Market = await loadOver25Market(fightId);
 	const predictedMarketOdds = market.find((odds) => odds.fighter_id === result.predicted_winner_id);
 	const edgePct = predictedMarketOdds ? result.win_prob - predictedMarketOdds.market_prob : null;
-	const over25Indicator = mergeOver25Indicator(over25Result, over25Market);
+	const over25Indicator = await loadOver25IndicatorSnapshot(fightId);
 
 	await db.insert(predictions).values({
 		fightId,
@@ -391,6 +407,85 @@ async function predictAndPersist(
 		value_status: valueStatus.status,
 		value_status_reason: valueStatus.reason,
 	};
+}
+
+async function loadOver25IndicatorSnapshot(fightId: string): Promise<Over25Indicator> {
+	const rows = (await sql`
+		SELECT
+			fight_id,
+			model_version,
+			computed_at,
+			model_probability,
+			market_probability,
+			edge_pct,
+			candidate,
+			market_pair_count,
+			value_status,
+			source_config,
+			raw_metadata
+		FROM market_indicator_snapshots
+		WHERE fight_id = ${fightId}
+			AND target = 'over_2_5'
+			AND indicator_name = 'locked_over_2_5_positive_edge'
+		ORDER BY computed_at DESC
+		LIMIT 1
+	`) as Over25SnapshotRow[];
+	if (!rows[0]) return missingOver25Snapshot();
+	return over25IndicatorFromSnapshot(rows[0], new Date());
+}
+
+export function over25IndicatorFromSnapshot(row: Over25SnapshotRow, now: Date): Over25Indicator {
+	const computedAt = row.computed_at instanceof Date ? row.computed_at : new Date(row.computed_at);
+	const stale = now.getTime() - computedAt.getTime() > 36 * 60 * 60 * 1000;
+	const metadata = parseJson(row.raw_metadata);
+	const sourceConfig = parseJson(row.source_config);
+	return {
+		target: 'over_2_5',
+		label: String(metadata.label ?? 'Over 2.5 rounds'),
+		model_version: row.model_version,
+		model_probability: row.model_probability,
+		market_probability: row.market_probability,
+		edge_pct: row.edge_pct,
+		threshold: Number(sourceConfig.threshold ?? 0.58),
+		candidate: row.candidate,
+		market_pair_count: row.market_pair_count,
+		training_sample_count: Number(metadata.training_sample_count ?? 0),
+		value_status: stale ? 'stale_snapshot' : row.value_status,
+		value_status_reason: stale
+			? 'Indicator snapshot is older than the daily refresh window. Run market indicator maintenance.'
+			: String(metadata.value_status_reason ?? 'Snapshot-backed report-only indicator.'),
+		computed_at: formatDbTimestamp(computedAt),
+		snapshot_status: stale ? 'stale' : 'current',
+	};
+}
+
+function missingOver25Snapshot(): Over25Indicator {
+	return {
+		target: 'over_2_5',
+		label: 'Over 2.5 rounds',
+		model_version: 'snapshot_unavailable',
+		model_probability: null,
+		market_probability: null,
+		edge_pct: null,
+		threshold: 0.58,
+		candidate: false,
+		market_pair_count: 0,
+		training_sample_count: 0,
+		value_status: 'missing_snapshot',
+		value_status_reason: 'Run market indicator maintenance to materialize the Over 2.5 snapshot.',
+		computed_at: null,
+		snapshot_status: 'missing',
+	};
+}
+
+function parseJson(value: string | null): Record<string, unknown> {
+	if (!value) return {};
+	try {
+		const parsed = JSON.parse(value);
+		return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+	} catch {
+		return {};
+	}
 }
 
 export function getValueStatus(hasMatchedMarketOdds: boolean): {
@@ -469,30 +564,6 @@ async function loadMarketOdds(fightId: string): Promise<MarketOdds[]> {
 	}));
 }
 
-async function loadOver25Market(fightId: string): Promise<{
-	market_probability: number;
-	pair_count: number;
-} | null> {
-	const rows = (await sql`
-		SELECT
-			hpo.source_market_id,
-			hpo.sportsbook_slug,
-			hpo.outcome_side,
-			hpo.implied_probability
-		FROM historical_prop_odds hpo
-		JOIN historical_odds_fights hof ON hof.id = hpo.historical_fight_id
-		WHERE hof.canonical_fight_id = ${fightId}
-			AND hpo.source_offer_type_id = 'OVERUNDER_2.5'
-			AND hpo.line_kind = 'source_current'
-	`) as Array<{
-		source_market_id: string;
-		sportsbook_slug: string;
-		outcome_side: string;
-		implied_probability: number;
-	}>;
-	return over25NoVigMarket(rows);
-}
-
 export function over25NoVigMarket(
 	rows: Array<{
 		source_market_id: string;
@@ -543,6 +614,8 @@ export function mergeOver25Indicator(
 			training_sample_count: model.training_sample_count,
 			value_status: 'insufficient_training',
 			value_status_reason: model.value_status_reason,
+			computed_at: null,
+			snapshot_status: 'missing',
 		};
 	}
 	if (!market) {
@@ -560,6 +633,8 @@ export function mergeOver25Indicator(
 			value_status: 'insufficient_coverage',
 			value_status_reason:
 				'Matched OVERUNDER_2.5 prop market is required before edge can be evaluated.',
+			computed_at: null,
+			snapshot_status: 'missing',
 		};
 	}
 	return {
@@ -575,6 +650,8 @@ export function mergeOver25Indicator(
 		training_sample_count: model.training_sample_count,
 		value_status: 'report_only',
 		value_status_reason: model.value_status_reason,
+		computed_at: null,
+		snapshot_status: 'missing',
 	};
 }
 

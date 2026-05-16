@@ -3,6 +3,7 @@ import {
 	buildMlPredictParams,
 	getValueStatus,
 	mergeOver25Indicator,
+	over25IndicatorFromSnapshot,
 	over25NoVigMarket,
 } from './predict';
 
@@ -107,7 +108,7 @@ describe('mergeOver25Indicator', () => {
 	};
 
 	it('attaches market probability and report-only edge', () => {
-		expect(mergeOver25Indicator(model, { market_probability: 0.52, pair_count: 8 })).toEqual({
+		expect(mergeOver25Indicator(model, { market_probability: 0.52, pair_count: 8 })).toMatchObject({
 			target: 'over_2_5',
 			label: 'Over 2.5 rounds',
 			model_version: 'locked_over_2_5_positive_log_c1_conf58',
@@ -130,6 +131,53 @@ describe('mergeOver25Indicator', () => {
 			market_probability: null,
 			edge_pct: null,
 			value_status: 'insufficient_coverage',
+		});
+	});
+});
+
+describe('over25IndicatorFromSnapshot', () => {
+	const row = {
+		fight_id: 'fight-1',
+		model_version: 'locked_over_2_5_positive_log_c1_conf58',
+		computed_at: new Date('2026-05-16T10:00:00.000Z'),
+		model_probability: 0.64,
+		market_probability: 0.52,
+		edge_pct: 0.12,
+		candidate: true,
+		market_pair_count: 8,
+		value_status: 'report_only' as const,
+		source_config: JSON.stringify({ threshold: 0.58 }),
+		raw_metadata: JSON.stringify({
+			label: 'Over 2.5 rounds',
+			value_status_reason: 'Snapshot-backed report-only indicator.',
+			training_sample_count: 358,
+		}),
+	};
+
+	it('returns current snapshot-backed indicator data', () => {
+		expect(over25IndicatorFromSnapshot(row, new Date('2026-05-16T20:00:00.000Z'))).toEqual({
+			target: 'over_2_5',
+			label: 'Over 2.5 rounds',
+			model_version: 'locked_over_2_5_positive_log_c1_conf58',
+			model_probability: 0.64,
+			market_probability: 0.52,
+			edge_pct: 0.12,
+			threshold: 0.58,
+			candidate: true,
+			market_pair_count: 8,
+			training_sample_count: 358,
+			value_status: 'report_only',
+			value_status_reason: 'Snapshot-backed report-only indicator.',
+			computed_at: '2026-05-16T10:00:00.000Z',
+			snapshot_status: 'current',
+		});
+	});
+
+	it('marks old snapshots stale without recomputing them', () => {
+		expect(over25IndicatorFromSnapshot(row, new Date('2026-05-18T00:00:01.000Z'))).toMatchObject({
+			value_status: 'stale_snapshot',
+			snapshot_status: 'stale',
+			model_probability: 0.64,
 		});
 	});
 });
