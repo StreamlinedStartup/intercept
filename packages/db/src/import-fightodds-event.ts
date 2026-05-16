@@ -5,6 +5,7 @@ import {
 	historicalOddsEvents,
 	historicalOddsFights,
 	historicalOddsImportRuns,
+	historicalPropOdds,
 	unmatchedHistoricalOdds,
 } from './schema.js';
 
@@ -46,6 +47,10 @@ type EventsRecentData = {
 
 type EventOddsData = {
 	eventOfferTable?: EventOfferTable | null;
+};
+
+type FightPropOffersData = {
+	fightPropOfferTable?: FightPropOfferTable | null;
 };
 
 type EventHeaderData = {
@@ -115,6 +120,80 @@ type SourceOutcome = {
 };
 
 type MoneylineRow = typeof historicalMoneylineOdds.$inferInsert;
+type PropOddsRow = typeof historicalPropOdds.$inferInsert;
+
+type FightPropOfferTable = {
+	id: string;
+	fight: {
+		id: string;
+		pk: number;
+		slug: string;
+		fighter1: SourceFighter;
+		fighter2: SourceFighter;
+		fightItdOdds: number | null;
+		fighter1ItdOdds: number | null;
+		fighter2ItdOdds: number | null;
+		fighter1KoOdds: number | null;
+		fighter2KoOdds: number | null;
+		fighter1SubOdds: number | null;
+		fighter2SubOdds: number | null;
+		fighter1DecOdds: number | null;
+		fighter2DecOdds: number | null;
+	};
+	propOffers: {
+		edges: Array<{ node: PropOfferNode }>;
+	};
+};
+
+type PropOfferNode = {
+	offerType: {
+		offerTypeId: string;
+		category: string;
+		subCategory: string;
+		description: string;
+		value: string | null;
+		notDescription: string;
+	};
+	propName1: string;
+	propName2: string;
+	bestOdds1: number | null;
+	bestOdds2: number | null;
+	offers: {
+		edges: Array<{ node: PropSportsbookOfferNode }>;
+	};
+};
+
+type PropSportsbookOfferNode = {
+	id: string;
+	sportsbook: {
+		id: string;
+		shortName: string;
+		slug: string;
+	};
+	outcome1: PropOutcome | null;
+	outcome2: PropOutcome | null;
+};
+
+type PropOutcome = {
+	id: string;
+	name: string;
+	odds: number | null;
+	oddsPrev: number | null;
+	oddsOpen: number | null;
+	oddsBest: number | null;
+	oddsWorst: number | null;
+	isNot: boolean;
+	fighter: SourceFighter | null;
+};
+
+type PropImportResult = {
+	rows: PropOddsRow[];
+	skippedRows: number;
+	marketsRead: number;
+	marketsImported: number;
+	marketsSkipped: number;
+	skippedMarketReasons: Record<string, number>;
+};
 
 type EventImportSummary = {
 	source: typeof SOURCE;
@@ -123,6 +202,12 @@ type EventImportSummary = {
 	eventsRead: number;
 	fightsRead: number;
 	moneylinesRead: number;
+	propLinesRead: number;
+	propLinesSkipped: number;
+	propMarketsRead: number;
+	propMarketsImported: number;
+	propMarketsSkipped: number;
+	propSkippedMarketReasons: Record<string, number>;
 	rowsUpserted: number;
 	matchedRows: number;
 	unmatchedRows: number;
@@ -142,6 +227,12 @@ type RangeImportSummary = {
 	eventsFailed: number;
 	fightsRead: number;
 	moneylinesRead: number;
+	propLinesRead: number;
+	propLinesSkipped: number;
+	propMarketsRead: number;
+	propMarketsImported: number;
+	propMarketsSkipped: number;
+	propSkippedMarketReasons: Record<string, number>;
 	matchedRows: number;
 	unmatchedRows: number;
 	skippedRows: number;
@@ -157,16 +248,23 @@ type ImportOptions = {
 	delayMs: number;
 	eventPks: number[];
 	continueOnError: boolean;
+	includeProps: boolean;
+};
+
+type EventImportOptions = {
+	includeProps: boolean;
 };
 
 function usage() {
 	console.log(`Usage:
   pnpm --filter @interceptor/db import:fightodds:event
+  pnpm --filter @interceptor/db import:fightodds:event -- --include-props
   pnpm --filter @interceptor/db import:fightodds:event -- --event-pks 5356,5318,5362 --continue-on-error
   pnpm --filter @interceptor/db import:fightodds:range -- --from 2024-02-01 --to 2024-03-10 --limit 3
 
 The range importer uses FightOdds allEvents pagination, filters to UFC events, and imports each event's moneyline odds with deterministic ids.
-The explicit event-pk importer uses sitemap/discovered event ids and avoids the allEvents pagination endpoint.`);
+The explicit event-pk importer uses sitemap/discovered event ids and avoids the allEvents pagination endpoint.
+The optional --include-props flag imports the first decision/finish prop slice: the two-way DISTANCE market.`);
 }
 
 async function main() {
@@ -180,18 +278,19 @@ async function main() {
 		? await importFightOddsPks(options)
 		: process.env.FIGHTODDS_RANGE_IMPORT === '1' || hasRangeArg(process.argv)
 			? await importFightOddsRange(options)
-			: await importFightOddsEvent(DEFAULT_EVENT_PK);
+			: await importFightOddsEvent(DEFAULT_EVENT_PK, { includeProps: options.includeProps });
 	console.log(JSON.stringify(summary, null, 2));
 }
 
 export async function importFightOddsEvent(
 	eventPk = DEFAULT_EVENT_PK,
+	options: EventImportOptions = { includeProps: false },
 ): Promise<EventImportSummary> {
 	const event = eventPk === DEFAULT_EVENT_PK ? DEFAULT_EVENT : await fetchEventIndexByPk(eventPk);
 	if (!event) {
 		throw new Error(`No FightOdds event found for pk=${eventPk}`);
 	}
-	return importFightOddsEventNode(event);
+	return importFightOddsEventNode(event, options);
 }
 
 export async function importFightOddsRange(options: ImportOptions): Promise<RangeImportSummary> {
@@ -205,7 +304,7 @@ export async function importFightOddsPks(options: ImportOptions): Promise<RangeI
 	for (const [index, eventPk] of options.eventPks.entries()) {
 		try {
 			const event = await fetchEventHeaderByPk(eventPk);
-			imported.push(await importFightOddsEventNode({ ...event, pk: eventPk }));
+			imported.push(await importFightOddsEventNode({ ...event, pk: eventPk }, options));
 		} catch (error) {
 			if (!options.continueOnError) {
 				throw error;
@@ -245,7 +344,7 @@ async function importFightOddsEvents(
 			continue;
 		}
 		try {
-			imported.push(await importFightOddsEventNode(event));
+			imported.push(await importFightOddsEventNode(event, options));
 		} catch (error) {
 			if (!options.continueOnError) {
 				throw error;
@@ -287,6 +386,14 @@ function buildRangeImportSummary(input: {
 		eventsFailed: input.failedEvents.length,
 		fightsRead: sum(input.imported, 'fightsRead'),
 		moneylinesRead: sum(input.imported, 'moneylinesRead'),
+		propLinesRead: sum(input.imported, 'propLinesRead'),
+		propLinesSkipped: sum(input.imported, 'propLinesSkipped'),
+		propMarketsRead: sum(input.imported, 'propMarketsRead'),
+		propMarketsImported: sum(input.imported, 'propMarketsImported'),
+		propMarketsSkipped: sum(input.imported, 'propMarketsSkipped'),
+		propSkippedMarketReasons: mergeReasonCounts(
+			input.imported.map((event) => event.propSkippedMarketReasons),
+		),
 		matchedRows: sum(input.imported, 'matchedRows'),
 		unmatchedRows: sum(input.imported, 'unmatchedRows'),
 		skippedRows: sum(input.imported, 'skippedRows'),
@@ -296,7 +403,10 @@ function buildRangeImportSummary(input: {
 	};
 }
 
-async function importFightOddsEventNode(event: EventIndexNode): Promise<EventImportSummary> {
+async function importFightOddsEventNode(
+	event: EventIndexNode,
+	options: EventImportOptions,
+): Promise<EventImportSummary> {
 	const startedAt = new Date();
 	const scrapedAt = startedAt;
 	const sourceEventId = String(event.pk);
@@ -308,6 +418,9 @@ async function importFightOddsEventNode(event: EventIndexNode): Promise<EventImp
 	const historicalEventId = eventId(sourceEventId);
 	const fights = eventOfferTable.fightOffers.edges.map((edge) => edge.node);
 	const { rows: moneylineRows, skippedRows } = buildMoneylineRows(sourceEventId, fights, scrapedAt);
+	const propResult = options.includeProps
+		? await buildPropOddsRows(sourceEventId, fights, scrapedAt)
+		: emptyPropImportResult();
 	const unmatchedRows = fights.map((fight) => ({
 		id: stableId(SOURCE, 'unmatched', sourceEventId, fight.id),
 		source: SOURCE,
@@ -355,6 +468,7 @@ async function importFightOddsEventNode(event: EventIndexNode): Promise<EventImp
 				rawMetadata: stringifyJson({
 					operationName: 'EventOddsQuery',
 					variables: { eventPk: event.pk },
+					includeProps: options.includeProps,
 					sourceEventGlobalId: event.id,
 				}),
 			})
@@ -372,6 +486,7 @@ async function importFightOddsEventNode(event: EventIndexNode): Promise<EventImp
 					rawMetadata: stringifyJson({
 						operationName: 'EventOddsQuery',
 						variables: { eventPk: event.pk },
+						includeProps: options.includeProps,
 						sourceEventGlobalId: event.id,
 					}),
 				},
@@ -509,6 +624,25 @@ async function importFightOddsEventNode(event: EventIndexNode): Promise<EventImp
 				});
 		}
 
+		for (const row of propResult.rows) {
+			await tx
+				.insert(historicalPropOdds)
+				.values(row)
+				.onConflictDoUpdate({
+					target: historicalPropOdds.id,
+					set: {
+						americanOdds: row.americanOdds,
+						decimalOdds: row.decimalOdds,
+						impliedProbability: row.impliedProbability,
+						marketTimestamp: row.marketTimestamp,
+						marketTimestampSemantics: row.marketTimestampSemantics,
+						scrapedAt,
+						rawMetadata: row.rawMetadata,
+						updatedAt: finishedAt,
+					},
+				});
+		}
+
 		for (const row of unmatchedRows) {
 			await tx.insert(unmatchedHistoricalOdds).values(row).onConflictDoNothing();
 		}
@@ -521,7 +655,14 @@ async function importFightOddsEventNode(event: EventIndexNode): Promise<EventImp
 		eventsRead: 1,
 		fightsRead: fights.length,
 		moneylinesRead: moneylineRows.length,
-		rowsUpserted: 1 + fights.length + moneylineRows.length + unmatchedRows.length,
+		propLinesRead: propResult.rows.length,
+		propLinesSkipped: propResult.skippedRows,
+		propMarketsRead: propResult.marketsRead,
+		propMarketsImported: propResult.marketsImported,
+		propMarketsSkipped: propResult.marketsSkipped,
+		propSkippedMarketReasons: propResult.skippedMarketReasons,
+		rowsUpserted:
+			1 + fights.length + moneylineRows.length + propResult.rows.length + unmatchedRows.length,
 		matchedRows,
 		unmatchedRows: unmatchedRowCount,
 		skippedRows,
@@ -570,6 +711,7 @@ async function fetchEventIndexByPk(eventPk: number): Promise<EventIndexNode | nu
 		delayMs: 0,
 		eventPks: [],
 		continueOnError: false,
+		includeProps: false,
 	});
 	return events.find((event) => event.pk === eventPk) ?? null;
 }
@@ -600,6 +742,15 @@ async function fetchEventOfferTable(eventPk: number): Promise<EventOfferTable> {
 	return eventOfferTable;
 }
 
+async function fetchFightPropOfferTable(slug: string): Promise<FightPropOfferTable | null> {
+	const body = await graphql<FightPropOffersData>({
+		operationName: 'FightPropOfferTableQuery',
+		variables: { slug },
+		query: FIGHT_PROP_OFFER_TABLE_QUERY,
+	});
+	return body.fightPropOfferTable ?? null;
+}
+
 async function graphql<T>(payload: {
 	operationName: string;
 	variables: Record<string, unknown>;
@@ -627,6 +778,192 @@ async function graphql<T>(payload: {
 		throw new Error(`FightOdds ${payload.operationName} returned no data`);
 	}
 	return body.data;
+}
+
+function emptyPropImportResult(): PropImportResult {
+	return {
+		rows: [],
+		skippedRows: 0,
+		marketsRead: 0,
+		marketsImported: 0,
+		marketsSkipped: 0,
+		skippedMarketReasons: {},
+	};
+}
+
+async function buildPropOddsRows(
+	sourceEventId: string,
+	fights: FightOfferNode[],
+	scrapedAt: Date,
+): Promise<PropImportResult> {
+	const result = emptyPropImportResult();
+	for (const fight of fights) {
+		if (fight.isCancelled || fight.propCount === 0) {
+			incrementReason(
+				result.skippedMarketReasons,
+				fight.isCancelled ? 'cancelled_fight' : 'no_props',
+			);
+			result.marketsSkipped += 1;
+			continue;
+		}
+		const propTable = await fetchFightPropOfferTable(fight.slug);
+		if (!propTable) {
+			incrementReason(result.skippedMarketReasons, 'missing_prop_table');
+			result.marketsSkipped += 1;
+			continue;
+		}
+		for (const edge of propTable.propOffers.edges) {
+			const prop = edge.node;
+			result.marketsRead += 1;
+			if (prop.offerType.offerTypeId !== 'DISTANCE') {
+				incrementReason(
+					result.skippedMarketReasons,
+					`ignored_offer_type:${prop.offerType.offerTypeId}`,
+				);
+				result.marketsSkipped += 1;
+				continue;
+			}
+			const before = result.rows.length;
+			for (const offerEdge of prop.offers.edges) {
+				const offer = offerEdge.node;
+				const outcome1 = propOutcomeRows({
+					sourceEventId,
+					fight,
+					propTable,
+					prop,
+					offer,
+					outcome: offer.outcome1,
+					outcomeSide: 'outcome1',
+					scrapedAt,
+				});
+				const outcome2 = propOutcomeRows({
+					sourceEventId,
+					fight,
+					propTable,
+					prop,
+					offer,
+					outcome: offer.outcome2,
+					outcomeSide: 'outcome2',
+					scrapedAt,
+				});
+				result.rows.push(...outcome1.rows, ...outcome2.rows);
+				result.skippedRows += outcome1.skippedRows + outcome2.skippedRows;
+			}
+			if (result.rows.length > before) {
+				result.marketsImported += 1;
+			} else {
+				incrementReason(result.skippedMarketReasons, 'distance_without_importable_lines');
+				result.marketsSkipped += 1;
+			}
+		}
+	}
+	return result;
+}
+
+function propOutcomeRows(input: {
+	sourceEventId: string;
+	fight: FightOfferNode;
+	propTable: FightPropOfferTable;
+	prop: PropOfferNode;
+	offer: PropSportsbookOfferNode;
+	outcome: PropOutcome | null;
+	outcomeSide: 'outcome1' | 'outcome2';
+	scrapedAt: Date;
+}): { rows: PropOddsRow[]; skippedRows: number } {
+	const rows: PropOddsRow[] = [];
+	let skippedRows = 0;
+	if (input.outcome === null) {
+		return { rows, skippedRows: 2 };
+	}
+	const rowInput = { ...input, outcome: input.outcome };
+	if (input.outcome.odds !== null) {
+		rows.push(propOddsRow(rowInput, input.outcome.odds, 'source_current'));
+	} else {
+		skippedRows += 1;
+	}
+	if (input.outcome.oddsPrev !== null) {
+		rows.push(propOddsRow(rowInput, input.outcome.oddsPrev, 'source_previous'));
+	} else {
+		skippedRows += 1;
+	}
+	return { rows, skippedRows };
+}
+
+function propOddsRow(
+	input: {
+		sourceEventId: string;
+		fight: FightOfferNode;
+		propTable: FightPropOfferTable;
+		prop: PropOfferNode;
+		offer: PropSportsbookOfferNode;
+		outcome: PropOutcome;
+		outcomeSide: 'outcome1' | 'outcome2';
+		scrapedAt: Date;
+	},
+	americanOdds: number,
+	lineKind: 'source_current' | 'source_previous',
+): PropOddsRow {
+	const importRunId = importRunIdFor(input.sourceEventId);
+	const sourceMarketId = propMarketId(input.fight, input.prop);
+	return {
+		id: stableId(
+			SOURCE,
+			'prop',
+			importRunId,
+			sourceMarketId,
+			input.offer.id,
+			input.outcome.id,
+			lineKind,
+		),
+		importRunId,
+		historicalFightId: fightId(input.sourceEventId, input.fight.id),
+		sourceEventId: input.sourceEventId,
+		sourceFightId: input.fight.id,
+		sourceMarketId,
+		sourceOfferId: input.offer.id,
+		sourceOfferTypeId: input.prop.offerType.offerTypeId,
+		marketFamily: 'fight_distance',
+		marketLabel: input.prop.offerType.description,
+		propName: input.outcomeSide === 'outcome1' ? input.prop.propName1 : input.prop.propName2,
+		sportsbookId: input.offer.sportsbook.id,
+		sportsbookSlug: input.offer.sportsbook.slug,
+		sportsbookName: input.offer.sportsbook.shortName,
+		sourceOutcomeId: input.outcome.id,
+		rawOutcomeName: input.outcome.name,
+		rawFighterName: input.outcome.fighter ? fighterName(input.outcome.fighter) : null,
+		sourceFighterId: input.outcome.fighter?.id ?? null,
+		canonicalFighterId: null,
+		side: 'fight',
+		outcomeSide: input.outcomeSide,
+		isNot: input.outcome.isNot,
+		lineKind,
+		americanOdds,
+		decimalOdds: americanToDecimal(americanOdds),
+		impliedProbability: americanToImpliedProbability(americanOdds),
+		marketTimestamp: null,
+		marketTimestampSemantics:
+			lineKind === 'source_current' ? 'source_current_at_scrape' : 'source_previous_unknown_time',
+		scrapedAt: input.scrapedAt,
+		rawMetadata: stringifyJson({
+			fightSlug: input.fight.slug,
+			propFight: input.propTable.fight,
+			sourceMarketId,
+			offerType: input.prop.offerType,
+			propName1: input.prop.propName1,
+			propName2: input.prop.propName2,
+			bestOdds1: input.prop.bestOdds1,
+			bestOdds2: input.prop.bestOdds2,
+			offerId: input.offer.id,
+			outcomeId: input.outcome.id,
+			outcomeSide: input.outcomeSide,
+			lineKind,
+			odds: americanOdds,
+			oddsOpen: input.outcome.oddsOpen,
+			oddsBest: input.outcome.oddsBest,
+			oddsWorst: input.outcome.oddsWorst,
+			sportsbook: input.offer.sportsbook,
+		}),
+	};
 }
 
 function buildMoneylineRows(
@@ -765,6 +1102,7 @@ function parseArgs(args: string[]): ImportOptions {
 		delayMs: Number(readArg(args, '--delay-ms') ?? DEFAULT_DELAY_MS),
 		eventPks: parseEventPks(readArg(args, '--event-pks')),
 		continueOnError: args.includes('--continue-on-error'),
+		includeProps: args.includes('--include-props'),
 	};
 }
 
@@ -811,6 +1149,17 @@ function importRunIdFor(sourceEventId: string): string {
 	return `${SOURCE}:${sourceEventId}:single-event-moneyline`;
 }
 
+function propMarketId(fight: FightOfferNode, prop: PropOfferNode): string {
+	return stableId(
+		SOURCE,
+		'prop-market',
+		fight.id,
+		prop.offerType.offerTypeId,
+		prop.propName1,
+		prop.propName2,
+	);
+}
+
 function eventUrl(pk: number, slug: string): string {
 	return `https://fightodds.io/mma-events/${pk}/${slug}/odds`;
 }
@@ -833,6 +1182,20 @@ function stableId(...parts: string[]): string {
 
 function stringifyJson(value: unknown): string {
 	return JSON.stringify(value);
+}
+
+function incrementReason(reasons: Record<string, number>, reason: string): void {
+	reasons[reason] = (reasons[reason] ?? 0) + 1;
+}
+
+function mergeReasonCounts(rows: Array<Record<string, number>>): Record<string, number> {
+	const merged: Record<string, number> = {};
+	for (const row of rows) {
+		for (const [reason, count] of Object.entries(row)) {
+			merged[reason] = (merged[reason] ?? 0) + count;
+		}
+	}
+	return merged;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -898,6 +1261,76 @@ const EVENT_ODDS_QUERY = `query EventOddsQuery($eventPk: Int!) {
 								sportsbook { id shortName slug }
 								outcome1 { id odds oddsPrev }
 								outcome2 { id odds oddsPrev }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}`;
+
+const FIGHT_PROP_OFFER_TABLE_QUERY = `query FightPropOfferTableQuery($slug: String!) {
+	fightPropOfferTable(slug: $slug) {
+		id
+		fight {
+			id
+			pk
+			slug
+			fighter1 { id firstName lastName slug }
+			fighter2 { id firstName lastName slug }
+			fightItdOdds
+			fighter1ItdOdds
+			fighter2ItdOdds
+			fighter1KoOdds
+			fighter2KoOdds
+			fighter1SubOdds
+			fighter2SubOdds
+			fighter1DecOdds
+			fighter2DecOdds
+		}
+		propOffers {
+			edges {
+				node {
+					offerType {
+						offerTypeId
+						category
+						subCategory
+						description
+						value
+						notDescription
+					}
+					propName1
+					propName2
+					bestOdds1
+					bestOdds2
+					offers {
+						edges {
+							node {
+								id
+								sportsbook { id shortName slug }
+								outcome1 {
+									id
+									name
+									odds
+									oddsPrev
+									oddsOpen
+									oddsBest
+									oddsWorst
+									isNot
+									fighter { id firstName lastName slug }
+								}
+								outcome2 {
+									id
+									name
+									odds
+									oddsPrev
+									oddsOpen
+									oddsBest
+									oddsWorst
+									isNot
+									fighter { id firstName lastName slug }
+								}
 							}
 						}
 					}
