@@ -10,7 +10,13 @@ import pytest
 
 # Import handler functions directly for unit tests
 sys.path.insert(0, str(Path(__file__).parent))
-from worker import handle_health, handle_compute, handle_classify_headlines, handle_ml_predict
+from worker import (
+    handle_health,
+    handle_compute,
+    handle_classify_headlines,
+    handle_ml_predict,
+    handle_ml_over_2_5_indicator,
+)
 
 EXPECTED_METHODS = [
     "health",
@@ -18,6 +24,7 @@ EXPECTED_METHODS = [
     "classify_headlines",
     "ml.train",
     "ml.predict",
+    "ml.prop_indicator.over_2_5",
     "ml.list_models",
 ]
 
@@ -134,6 +141,36 @@ class TestMlPredictHandler:
         })
 
         assert result["predicted_winner_id"] == "fighter-a"
+        assert captured["args"] == ("fighter-a", "fighter-b", "2026-06-01", "Welterweight")
+
+
+class TestMlOver25IndicatorHandler:
+    def test_forwards_weight_class(self, monkeypatch):
+        captured = {}
+        prop_module = types.ModuleType("ml.prop_indicators")
+
+        def fake_over_2_5_indicator(fighter_a_id, fighter_b_id, fight_date, target_weight_class=None):
+            captured["args"] = (fighter_a_id, fighter_b_id, fight_date, target_weight_class)
+            return {
+                "target": "over_2_5",
+                "model_probability": 0.64,
+                "threshold": 0.58,
+                "candidate": True,
+                "value_status": "report_only",
+            }
+
+        prop_module.over_2_5_indicator = fake_over_2_5_indicator
+        monkeypatch.setitem(sys.modules, "ml.prop_indicators", prop_module)
+
+        result = handle_ml_over_2_5_indicator({
+            "fighter_a_id": "fighter-a",
+            "fighter_b_id": "fighter-b",
+            "fight_date": "2026-06-01",
+            "weight_class": "Welterweight",
+        })
+
+        assert result["target"] == "over_2_5"
+        assert result["candidate"] is True
         assert captured["args"] == ("fighter-a", "fighter-b", "2026-06-01", "Welterweight")
 
 
