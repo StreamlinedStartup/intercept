@@ -9,6 +9,7 @@
 		"typecheck": "turbo typecheck",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
+		"ops:market-indicators:daily": "node scripts/daily-market-indicator-maintenance.mjs",
 		"e2e": "npx playwright test",
 		"e2e:ui": "npx playwright test --ui",
 		"prepare": "husky"

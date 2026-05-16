@@ -4,6 +4,7 @@ import { Check, ChevronRight, Loader2, Star } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { type Over25Indicator, over25BadgeText } from './over25-indicator';
 import type { EventDetail, FightCardEntry } from './upcoming-types';
 
 type BackfillStatus = 'none' | 'current' | 'stale_count' | 'stale_stats' | 'in_progress' | 'failed';
@@ -39,15 +40,6 @@ type FightPrediction = {
 		value: number | null;
 		shap: number;
 	}>;
-};
-
-type Over25Indicator = {
-	model_probability: number | null;
-	market_probability: number | null;
-	edge_pct: number | null;
-	threshold: number;
-	candidate: boolean;
-	value_status: 'report_only' | 'insufficient_coverage' | 'insufficient_training';
 };
 
 type EventPredictionResponse = {
@@ -557,16 +549,28 @@ function PredictionChip({
 				</span>
 				<Check className="w-3 h-3" />
 			</Badge>
-			{over25?.candidate && (
-				<Badge
-					variant="outline"
-					className="text-xs border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300 whitespace-nowrap"
-				>
-					O2.5 {formatSignedPct(over25.edge_pct)}
+			{over25 && shouldShowOver25Chip(over25) && (
+				<Badge variant="outline" className={`text-xs whitespace-nowrap ${over25ChipClass(over25)}`}>
+					O2.5 {over25.candidate ? formatSignedPct(over25.edge_pct) : over25BadgeText(over25)}
 				</Badge>
 			)}
 		</div>
 	);
+}
+
+function shouldShowOver25Chip(indicator: Over25Indicator): boolean {
+	return (
+		indicator.candidate ||
+		indicator.value_status === 'missing_snapshot' ||
+		indicator.value_status === 'stale_snapshot'
+	);
+}
+
+function over25ChipClass(indicator: Over25Indicator): string {
+	if (indicator.value_status === 'missing_snapshot') {
+		return 'border-muted-foreground/40 bg-muted/60 text-muted-foreground';
+	}
+	return 'border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-300';
 }
 
 function formatSignedPct(value: number | null | undefined): string {

@@ -339,90 +339,92 @@ These are read by Claude Code's skill system. Other harnesses can read them as p
 <claude-mem-context>
 # Memory Context
 
-# [intercept] recent context, 2026-05-09 5:10pm MST
+# [intercept] recent context, 2026-05-11 9:59am MST
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (19,490t read) | 1,952,930t work | 99% savings
+Stats: 50 obs (19,433t read) | 3,739,105t work | 99% savings
 
 ### May 9, 2026
-S527 UFC Fight Predictor v1 project bootstrap complete; agent-browser CLI confirmed available for ufcstats.com API discovery (May 9 at 11:31 AM)
-1919 11:59a 🟣 Phase 4 Predict API + UI task graph completed — full 46-task beans graph verified
-1921 12:16p 🔴 Cross-phase blocking dependencies added — beans list --ready now enforces sequential phase execution
-S529 UFC Fight Predictor v1 full bootstrap complete — beans graph finalized with smoke gates, context handoff prompt generated for next session (May 9 at 12:16 PM)
-S525 Bootstrap /Users/vulturestudio/intercept UFC Fight Predictor v1 project with beans task graph and coding agent documentation (May 9 at 12:16 PM)
-S526 UFC Fight Predictor v1 project bootstrap complete — beginning Phase 0 implementation with agent-browser discovery (May 9 at 12:16 PM)
-1922 12:22p ⚖️ agent-browser smoke gate policy added to CLAUDE.md
-1923 12:24p 🟣 Smoke gate beans created for Phases 0, 1, 2, and 4
-1924 12:25p 🔵 beans update supports explicit edge removal via --remove-blocked-by and --remove-blocking
-1925 " ✅ Cross-phase blocking chain rewired through smoke gate tasks
-1926 " ✅ Final beans graph state: 56 beans, 50 tasks, 4 smoke gates, roadmap regenerated
 S530 UFC Fight Predictor Phase 0 infra: completed tasks intercept-tmtz (Postgres+TimescaleDB), intercept-dvmr (@interceptor/db skeleton), and intercept-dwtm (events+fighters schema + first migration) (May 9 at 12:25 PM)
-S528 UFC Fight Predictor v1 beans graph finalized with agent-browser smoke gates; all cross-phase dependencies rewired; ready to begin Phase 0 implementation (May 9 at 12:25 PM)
-1927 12:27p 🔵 UFC Fight Predictor Project Session Resumed in /intercept
 S531 UFC Fight Predictor Phase 0 — Postgres/TimescaleDB/Drizzle infra + API DB wiring + smoke gate (completed full epic) (May 9 at 12:32 PM)
-1928 12:33p 🟣 Drizzle Schema for events + fighters Completed with First Migration
-1929 " 🟣 @interceptor/db Client Singleton and Migration Runner Created
-1930 " 🟣 Migration Applied to Live TimescaleDB — events and fighters Tables Confirmed
-1931 12:34p 🟣 Phase 0 End-to-End Smoke Script Created
-1932 " 🟣 Phase 0 Vertical Slice Proven — Smoke Test Passes End-to-End
-1933 " ✅ @interceptor/db README Documents Hypertable Architecture Constraint
-1934 " 🔵 Phase 0-E Completion Unblocks Two Parallel Tasks: 0-F and 0-H
-1935 12:35p 🔵 Phase 0 Remaining Schema Tables Specified — 7 Tables for Task 0-F
-1936 " 🟣 Full Database Schema Written — All 9 Tables Defined in schema.ts
-1937 " 🟣 Second Migration Generated and Applied — All 10 Tables Now Live in Database
-1939 " 🟣 Smoke Script Extended to Round-Trip All 10 Tables
-1938 12:36p 🔵 All 10 Tables Confirmed Present in Live interceptor-postgres Container
-1940 " 🟣 Full 10-Table Smoke Test Passes — Phase 0-F Complete
-1941 " 🔵 Drizzle Composite PK Deprecation Warning Deferred — TS6387 extraConfig Callback Form
-1942 12:37p 🔵 Task 0-G: TimescaleDB Hypertable Conversion Pattern Specified
-1943 " 🟣 TimescaleDB Hypertables Created via Post-Migration Hook in migrate.ts
-1944 " 🔵 Hypertables Confirmed Active and migrate.ts Idempotency Verified
-1945 " 🔵 migrate_data => TRUE Required When Hypertable Table Already Has Rows
-1946 12:38p 🔵 apps/api Existing Structure Examined Before DATABASE_URL Wiring
-1947 " ✅ @interceptor/db Added as Workspace Dependency to apps/api
 S532 Resume UFC Fight Predictor — Phase 0 commit prep, schema cleanup (varchar→text), migration, and CI verification before proceeding to Phase 1/2 (May 9 at 12:38 PM)
 S533 Phase 0 schema cleanup: varchar→text migration + full clean-install verification on fresh DB (May 9 at 12:43 PM)
-S534 Phase 0 schema fix fully verified: varchar→text migration confirmed clean on fresh DB, bean 0-G updated to reflect deferred warning now resolved (May 9 at 12:50 PM)
-1948 4:41p ⚖️ Intercept Fork: Upstream PR Ban and Workflow Constraints Established
-1949 4:42p 🔵 CLAUDE.md and AGENTS.md Are Not Byte-Identical — Constraint Violation
-1950 " 🔵 Phase 2 Odds-MMA Plugin Fully Implemented — Only Verification Bean Remains
-1951 " 🔵 Local Branch and Fork/Main Have Diverged — Squash vs Detailed History
-1952 " 🔵 Ready Beans at Session Start: Phase 2 Verification and Phase 3 Python Setup
-1953 " 🔵 cp CLAUDE.md AGENTS.md Silently Fails — AGENTS.md Remains 32 KB Despite Copy
-1962 " ⚖️ Intercept Fork: Upstream PR Submission Permanently Banned
-1955 4:52p 🔵 Phase 2 odds-mma domain plugin: full route and env var map
-1956 " 🔵 Bean intercept-1fhe verification commands and test targets mapped
-1957 " 🔵 DB schema for odds-mma: odds_snapshots and unmatched_odds tables
-1958 " 🔵 Files to stage if only bean status or summary changes in intercept-1fhe
-1954 4:53p 🔵 UFC Fight Predictor Beads Task Queue State
-1959 4:54p 🔵 Intercept Project Phase Completion Status — Phases 0–2 Done, Phase 3 Next
-1960 " 🔵 Intercept Monorepo Structure with Existing Python Service Directory
-1961 " 🟣 Sub-agent "Jason" Spawned to Implement Bean 3-A: Python DB Plumbing
-**1963** 4:58p 🔵 **CLAUDE.md and AGENTS.md Diverged: AGENTS.md Had Extra Trailing Content**
-At session start, the required byte-identity invariant between CLAUDE.md and AGENTS.md was violated. AGENTS.md had grown to 32183 bytes (vs CLAUDE.md at 20733) due to trailing blank lines added by commit f657b6f. The fix is simple — cp CLAUDE.md AGENTS.md — but the first cp attempt during the session also showed DIFFER because cmp was run before the file was flushed (or because CLAUDE.md itself had unstaged modifications). The second cp at session end confirmed IDENTICAL. Future agents must always verify with cmp after any edit to either file.
-~325t 🔍 176,477
+S534 Phase 0 schema fix fully verified: varchar→text migration confirmed clean on fresh DB, bean 0-G updated to reflect deferred warning now resolved (May 9 at 12:49 PM)
+S543 User sent a simple "reply with ok" test message (May 9 at 12:50 PM)
+### May 10, 2026
+2010 5:30p ⚖️ External UFC Stats Dataset Architecture: GPL Boundary via CSV Snapshot
+2011 " ⚖️ Intercept Bean/Commit/PR Workflow Conventions Established
+2012 5:32p 🔴 Git Branch Operations Require Escalated Sandbox Permissions
+2013 " 🔴 DATABASE_URL Not Passed Through Turbo Without --env-mode=loose
+2014 " 🟣 PR #4: Workflow Docs Commit Pushed and Merged Into Fork Main
+2015 " 🔵 Latest XGBoost Model Metrics and Top Feature Importances Confirmed
+2016 " 🟣 docs/model_scope.md: Plain-English Model Reference Created and Merged
+2017 " 🟣 External UFC Stats Dataset Integration Scoped and Documented
+2018 " 🔵 Full Beans History Confirmed: All Phases 0–4 Completed
+2019 5:34p ✅ intercept-bsn7: External UFC Stats Dataset Scope Document Added
+2020 " ⚖️ GPL Boundary: External Scraper Code Must Not Enter Intercept Repo
+2021 " 🟣 intercept-n89z Planned: CSV Snapshot Downloader with Metadata Recording
+2022 " 🟣 intercept-n89z Completed: UFC Stats CSV Snapshot Downloader Implemented and Committed
+2023 " 🔴 Downloader Failed With "Unknown argument: --" When Called Via pnpm
+2024 " 🔴 Biome Linter Required Single Quotes Throughout the Downloader Script
+2025 " 🟣 validateSnapshotId Guard Added to Downloader to Prevent Path Traversal
+2026 " 🔵 beans --body-replace Requires Unique Match; Fails When String Appears More Than Once
+2027 5:36p 🔵 intercept-0vfw Scoped: CSV-to-DB Importer Task Now Ready
+2028 " 🔵 Session Context Replay: Second Session Re-Executed Same intercept-n89z Work
+2038 5:48p 🔵 UFCStats CSV snapshot codex-verify-n89z-2 — shape and headers for all six files
+2039 " 🔵 intercept DB schema — all tables relevant to the UFC importer task
+2040 " 🔵 CSV→DB mapping and parsing pitfalls for importer intercept-0vfw
+2041 " 🔵 Data quality issues in codex-verify-n89z-2 snapshot — duplicate names, key collision, blank rows
+2054 " 🟣 intercept-0vfw: UFC Stats CSV Snapshot Importer
+2055 " 🔴 tsx CWD Shift Requires INIT_CWD for Workspace-Relative Paths
+2056 " 🔵 intercept-pqsx Walk-Forward Backtest Runner: Next Bean
+2051 6:00p 🔵 intercept ML pipeline architecture: features, train, predict, worker
+2052 " 🔵 Walk-forward backtest spec from docs/model_scope.md
+2053 " ⚖️ Safe implementation shape for walk-forward backtest runner
+### May 11, 2026
+2062 6:30a ⚖️ Decision Engine v2 Roadmap Defined
+2065 6:59a 🟣 Decision Engine v2 Roadmap — Beans graph and Epic 1 implementation plan
+2066 " 🟣 46-feature ML model with round-tendency and common-opponent signals
+2067 " 🟣 SignalTile component added to compare-sheet for decision signals
+2068 " ✅ D2-E in-progress: docs update and bean completion pending for retrain task
+2063 7:29a ⚖️ New Bean D2-ME-A Scoped for Full-Corpus Walk-Forward Backtest
+2064 " 🔵 Decision Engine v2 Epic 1 Merged; Repository State Established
+S545 Simple acknowledgment - user asked to "reply with ok" (May 11 at 7:46 AM)
+S547 Simple acknowledgment - user asked to "reply with ok" (May 11 at 7:46 AM)
+S544 Simple acknowledgment request - user asked for "ok" response (May 11 at 7:46 AM)
+S546 Simple acknowledgment request - user asked Claude to reply with "ok" (May 11 at 7:56 AM)
+2069 7:58a ⚖️ New Bean Created: D2-ME-A Full-Corpus Walk-Forward Backtest
+2070 8:01a 🔵 Beans Structure: intercept-stba and intercept-hofo Created Under Decision Engine v2
+2071 " 🔵 Postgres Port 5434 Blocked by Sandbox Without Escalated Permissions
+2072 " 🟣 Backtest Tooling Enhancements: Progress Output, Compact Stdout, Sorted Bucket Reports
+2073 " 🟣 Full-Corpus Walk-Forward Backtest Completed: 753 Events, 8,332 Predictions
+2074 " ✅ docs/model_scope.md Updated with Full-Corpus Walk-Forward Results and Policy
+2075 " ✅ PR #8 Merged: intercept-stba Full-Corpus Model Evaluation
+**2126** 9:36a 🟣 **Beans Epic and Task Created for Feature-Variant Experiment Harness**
+Work tracking was set up in both the project-local Beans system and the Gobby task system. The epic branch was created before implementation began, following the established one-epic-one-branch convention. Bean IDs are `intercept-ebnb` (epic) and `intercept-af5s` (task).
+~244t 🛠️ 135,828
 
-**1964** " 🔵 **Phase 2 Odds-MMA Implementation Already Shipped in fork/main**
-The session discovered that the fork's squash merge had already included Phase 2 implementation work. The local detailed commit history on epic/phase-1-backfill-pr contains individual commits for each Phase 2 task, but the fork's main is a squash. The remaining Phase 2 work was purely verification and smoke gate beans, not new implementation. This means the session could skip straight to running the API and proving the endpoints work.
-~335t 🔍 176,477
+**2127** " 🔄 **features.py Refactored to Named-Feature Dict Architecture**
+The core refactor converts `build_feature_row` from a positional array builder to a dict-slice architecture. All 46 production features plus 8 new experiment-only features are computed into a named dict by `build_feature_dict`, and then `build_feature_row` selects the requested subset by name. This allows the experiment harness to compare feature subsets without touching production prediction paths. The weight class record profile is fully point-in-time: it queries only fights with `event.date < target_date`.
+~453t 🛠️ 135,828
 
-**1965** " 🔵 **API Server Binds IPv6-Only: curl to 127.0.0.1:3001 Fails Without Elevated Permissions**
-The Hono API server, started with tsx, binds to IPv6 wildcard (*:3001) on macOS. Claude Code's sandbox blocks loopback TCP connections by default. Two workarounds were used: (1) adding sandbox_permissions=require_escalated to curl commands, and (2) using agent-browser which is an external process not subject to the sandbox. This is a recurring pattern for any API verification work in this project.
-~318t 🔍 176,477
+**2128** " 🟣 **backtest.py Updated with feature_names, end_date, and write_output Parameters**
+The backtest module was minimally extended to support variant-aware execution needed by the experiment harness. The key change is `write_output=False` mode which prevents per-variant disk writes while still returning full metrics. Production callers are unaffected since defaults preserve existing behavior.
+~277t 🛠️ 135,828
 
-**1966** " 🟣 **Phase 2 Verification Bean (intercept-1fhe) Completed**
-The Phase 2 verification bean required live evidence from the running API. The 0/288 match rate for odds rows against canonical fights is expected and correct — the live-betting odds API returns upcoming fights whose dates don't align with the existing local seed data (historical results). The unmatched path is fully exercised and logged to unmatched_odds, which is the designed behavior for v1. All test/typecheck/lint gates passed.
-~350t 🛠️ 176,477
+**2129** " 🟣 **ml/experiments.py Created: Report-Only Feature-Variant Experiment Harness**
+The experiment harness is strictly report-only — it writes JSON/Markdown evidence and does not touch `model_versions`, active models, or production predictions. The critical performance optimization is the single feature-build pass: all 54 `EXPERIMENT_FEATURE_NAMES` are built once per fight, then each variant is projected from that master array via numpy index slicing. This makes running 9 variants cost only 1× the DB feature-computation time instead of 9×.
+~572t 🛠️ 135,828
 
-**1967** " 🟣 **Phase 2 Smoke Gate (intercept-qjks) Completed with agent-browser**
-The Phase 2 smoke gate verifies HTTP endpoints using agent-browser as a real browser client (since Phase 2 ships no UI). The API server needed to be restarted to get a fresh cache for the MISS/HIT cycle (the first server session had a warm cache from previous verification runs). The agent-browser workaround for the sandbox loopback restriction worked cleanly. The smoke produced the required screenshots and closed the Phase 2 epic.
-~369t 🛠️ 176,477
+**2130** " 🟣 **Five New Unit Tests Added for Feature-Variant Harness**
+The new tests exercise the experiment-specific code paths. The weight-class record fixture gives alpha a lightweight history and welterweight history, beta two welterweight and one lightweight fight, verifying per-division counts and win rates. The catch-weight test confirms the spec requirement: odd class labels are preserved for same-class counting but pound-move features return NaN when no clean numeric limit exists.
+~438t 🛠️ 135,828
 
-1968 " 🟣 Phase 2 PR #2 Created at StreamlinedStartup/intercept
-1969 " 🔵 Odds Matching Always Returns 0 Matches Against Local Seed Data
+2131 " 🔵 Sandbox Requires escalated Permissions for Postgres Connection on Port 5434
+2132 " 🔵 Smoke Experiment Run Verified: Two-Stage Harness Executes and Produces Output
 
-Access 1953k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 3739k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
