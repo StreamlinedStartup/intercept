@@ -58,3 +58,5 @@ The report writes:
 - `data/experiments/indicator-evaluation.md`
 
 It compares prior `market_indicator_snapshots` against actual outcomes for supported targets: decision, finish, KO/TKO, submission, and Over/Under round thresholds. The report summarizes hit rate, Brier score, candidate hit rate, edge behavior, stale/missing-data rates, and limitations. It is report-only and never retrains, promotes artifacts, or activates betting recommendations.
+
+Promotion, if ever justified, follows `docs/operations/indicator-promotion-gate.md`.

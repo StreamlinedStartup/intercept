@@ -17,6 +17,7 @@
 		"match:fightodds:event": "tsx src/match-historical-odds.ts",
 		"match:fightodds:all": "tsx src/match-historical-odds.ts --all",
 		"migrate": "tsx src/migrate.ts",
+		"candidate:market-indicators": "PYTHONPATH=../../services/python ../../services/python/.venv/bin/python -m ml.evaluate_market_indicators --output data/experiments/candidate-market-indicators.json --markdown data/experiments/candidate-market-indicators.md",
 		"report:fightodds:coverage": "tsx src/report-historical-odds-coverage.ts",
 		"report:fightodds:final": "tsx src/report-historical-odds-final.ts",
 		"report:fightodds:props": "tsx src/report-fightodds-props.ts",
