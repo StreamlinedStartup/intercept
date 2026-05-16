@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-16T01:02:21.438159+00:00",
+  "generated_at": "2026-05-16T02:17:54.207398+00:00",
   "report": "market-experiment-harness",
   "config_path": "configs/experiments/market-opportunity-matrix-v1.json",
-  "git_sha": "b1d629273d5ac8744c7f7e04c0c8a9669e5d1abc",
+  "git_sha": "ddeddf6a74fd417af9cce9363756b1512342c227",
   "report_only": true,
   "writes_model_versions": false,
   "value_status": "research_only",
@@ -762,14 +762,14 @@
         "roc_auc": 0.5528085443037977
       },
       "simulated_research_roi": {
-        "entries": 4,
-        "wins": 1,
-        "units": -1.7547138023968145,
-        "roi_pct": -0.43867845059920363,
+        "entries": 49,
+        "wins": 28,
+        "units": -1.325827865973354,
+        "roi_pct": -0.027057711550476614,
         "stake_unit": "flat_1u",
         "status": "simulated_research_only",
         "selected_entries": 143,
-        "market_backed_entries": 4
+        "market_backed_entries": 49
       },
       "gate_baseline": {
         "name": "decision_edge_log_c1_conf62_market_selected_baseline",
@@ -789,31 +789,31 @@
           },
           "feature_count": 0
         },
-        "events_scored": 1,
+        "events_scored": 23,
         "metrics": {
-          "count": 4,
-          "accuracy": 0.75,
-          "avg_confidence": 0.6569530108345778,
-          "calibration_gap": 0.0930469891654222,
-          "abs_calibration_error": 0.0930469891654222,
-          "log_loss": 0.484231638120061,
-          "brier_score": 0.15336714577574606,
-          "roc_auc": 1.0
+          "count": 49,
+          "accuracy": 0.7142857142857143,
+          "avg_confidence": 0.6268424708876708,
+          "calibration_gap": 0.08744324339804355,
+          "abs_calibration_error": 0.08744324339804355,
+          "log_loss": 0.6104244399706252,
+          "brier_score": 0.21005272473258865,
+          "roc_auc": 0.7431972789115646
         },
         "simulated_research_roi": {
-          "entries": 4,
-          "wins": 3,
-          "units": 0.3965334357318957,
-          "roi_pct": 0.09913335893297393,
+          "entries": 49,
+          "wins": 35,
+          "units": 7.234987531252937,
+          "roi_pct": 0.14765280676026402,
           "stake_unit": "flat_1u",
           "status": "simulated_research_only",
-          "selected_entries": 4,
-          "market_backed_entries": 4
+          "selected_entries": 49,
+          "market_backed_entries": 49
         }
       },
-      "roi_delta_vs_market": -0.5378118095321776,
-      "log_loss_delta_vs_market": 0.2837721687151915,
-      "brier_delta_vs_market": 0.12353022479168357,
+      "roi_delta_vs_market": -0.17471051831074064,
+      "log_loss_delta_vs_market": 0.15757936686462726,
+      "brier_delta_vs_market": 0.06684464583484098,
       "rejection_reasons": [
         "roi_delta_below_market_gate",
         "log_loss_worse_than_market",
@@ -913,14 +913,14 @@
         "roc_auc": 0.5717521652231846
       },
       "simulated_research_roi": {
-        "entries": 1,
-        "wins": 1,
-        "units": 0.572092484811259,
-        "roi_pct": 0.572092484811259,
+        "entries": 81,
+        "wins": 46,
+        "units": -11.500190740241583,
+        "roi_pct": -0.14197766345977264,
         "stake_unit": "flat_1u",
         "status": "simulated_research_only",
         "selected_entries": 174,
-        "market_backed_entries": 1
+        "market_backed_entries": 81
       },
       "gate_baseline": {
         "name": "finish_edge_log_c1_conf62_market_selected_baseline",
@@ -940,31 +940,31 @@
           },
           "feature_count": 0
         },
-        "events_scored": 1,
+        "events_scored": 29,
         "metrics": {
-          "count": 1,
-          "accuracy": 1.0,
-          "avg_confidence": 0.6360948924198039,
-          "calibration_gap": 0.3639051075801961,
-          "abs_calibration_error": 0.3639051075801961,
-          "log_loss": 0.45240752485358343,
-          "brier_score": 0.1324269273229541,
-          "roc_auc": null
+          "count": 81,
+          "accuracy": 0.5925925925925926,
+          "avg_confidence": 0.6732746343789258,
+          "calibration_gap": -0.0806820417863332,
+          "abs_calibration_error": 0.0806820417863332,
+          "log_loss": 0.6343890532561425,
+          "brier_score": 0.22371738350468592,
+          "roc_auc": 0.7204968944099378
         },
         "simulated_research_roi": {
-          "entries": 1,
-          "wins": 1,
-          "units": 0.572092484811259,
-          "roi_pct": 0.572092484811259,
+          "entries": 81,
+          "wins": 48,
+          "units": -11.27734077909532,
+          "roi_pct": -0.13922642937154717,
           "stake_unit": "flat_1u",
           "status": "simulated_research_only",
-          "selected_entries": 1,
-          "market_backed_entries": 1
+          "selected_entries": 81,
+          "market_backed_entries": 81
         }
       },
-      "roi_delta_vs_market": 0.0,
-      "log_loss_delta_vs_market": 0.3276430334038379,
-      "brier_delta_vs_market": 0.14339974070622094,
+      "roi_delta_vs_market": -0.0027512340882254738,
+      "log_loss_delta_vs_market": 0.14566150500127883,
+      "brier_delta_vs_market": 0.052109284524489125,
       "rejection_reasons": [
         "roi_delta_below_market_gate",
         "log_loss_worse_than_market",
@@ -1124,13 +1124,93 @@
       "clears_market_gate": false
     }
   ],
+  "signal_diagnostics": [
+    {
+      "variant": "winner_underdog_blend40_edge04",
+      "target": "winner",
+      "selection_policy": "undervalued_underdog",
+      "model_roi_pct": -0.34703629420815296,
+      "selected_market_roi_pct": 0.24574024850494464,
+      "selected_market_roi_delta_vs_full_market": 0.1305711385687349,
+      "selected_market_entries": 40,
+      "selected_market_accuracy": 0.725,
+      "indicator": "market_too_strong_against_model_underdog",
+      "read": "Model disagreement is currently more useful as a market-strength warning than as a bet-against-market signal.",
+      "status": "research_only"
+    },
+    {
+      "variant": "winner_undervalued_underdog_log_c1_edge05",
+      "target": "winner",
+      "selection_policy": "undervalued_underdog",
+      "model_roi_pct": -0.32449887722448423,
+      "selected_market_roi_pct": 0.2036560648096231,
+      "selected_market_roi_delta_vs_full_market": 0.08848695487341335,
+      "selected_market_entries": 112,
+      "selected_market_accuracy": 0.7321428571428571,
+      "indicator": "market_too_strong_against_model_underdog",
+      "read": "Model disagreement is currently more useful as a market-strength warning than as a bet-against-market signal.",
+      "status": "research_only"
+    },
+    {
+      "variant": "winner_overpriced_favorite_log_c1_edge05",
+      "target": "winner",
+      "selection_policy": "overpriced_favorite",
+      "model_roi_pct": -0.050900108487479646,
+      "selected_market_roi_pct": 0.16737794873694847,
+      "selected_market_roi_delta_vs_full_market": 0.05220883880073873,
+      "selected_market_entries": 271,
+      "selected_market_accuracy": 0.7859778597785978,
+      "indicator": "market_favorite_holds_despite_model_warning",
+      "read": "Model disagreement is currently more useful as a market-strength warning than as a bet-against-market signal.",
+      "status": "research_only"
+    },
+    {
+      "variant": "decision_edge_log_c1_conf62",
+      "target": "decision",
+      "selection_policy": "decision_edge",
+      "model_roi_pct": -0.027057711550476614,
+      "selected_market_roi_pct": 0.14765280676026402,
+      "selected_market_roi_delta_vs_full_market": 0.032483696824054276,
+      "selected_market_entries": 49,
+      "selected_market_accuracy": 0.7142857142857143,
+      "indicator": "decision_market_strength_after_model_filter",
+      "read": "Model-filtered decision rows show positive prop-market ROI; evaluate with a locked future slice.",
+      "status": "research_only"
+    },
+    {
+      "variant": "winner_abstain_log_c1_conf55",
+      "target": "winner",
+      "selection_policy": "abstain",
+      "model_roi_pct": -0.04911993930802457,
+      "selected_market_roi_pct": 0.021876191047901943,
+      "selected_market_roi_delta_vs_full_market": -0.09329291888830779,
+      "selected_market_entries": 56,
+      "selected_market_accuracy": 0.625,
+      "indicator": "market_side_positive_even_when_model_abstains",
+      "read": "Low model-confidence rows are not automatic passes; the market side still has positive simulated ROI.",
+      "status": "research_only"
+    },
+    {
+      "variant": "finish_edge_log_c1_conf62",
+      "target": "finish",
+      "selection_policy": "finish_edge",
+      "model_roi_pct": -0.14197766345977264,
+      "selected_market_roi_pct": -0.13922642937154717,
+      "selected_market_roi_delta_vs_full_market": -0.25439553930775693,
+      "selected_market_entries": 81,
+      "selected_market_accuracy": 0.5925925925925926,
+      "indicator": "avoid_finish_edge_until_method_props_improve",
+      "read": "Finish/inside-distance is the closest configured model candidate, but current prop-backed ROI is still negative.",
+      "status": "research_only"
+    }
+  ],
   "ranking": [
     {
       "rank": 1,
       "name": "finish_edge_log_c1_conf62",
-      "roi_delta_vs_market": 0.0,
-      "log_loss_delta_vs_market": 0.3276430334038379,
-      "brier_delta_vs_market": 0.14339974070622094,
+      "roi_delta_vs_market": -0.0027512340882254738,
+      "log_loss_delta_vs_market": 0.14566150500127883,
+      "brier_delta_vs_market": 0.052109284524489125,
       "clears_gate": false,
       "rejection_reasons": [
         "roi_delta_below_market_gate",
@@ -1155,6 +1235,20 @@
     },
     {
       "rank": 3,
+      "name": "decision_edge_log_c1_conf62",
+      "roi_delta_vs_market": -0.17471051831074064,
+      "log_loss_delta_vs_market": 0.15757936686462726,
+      "brier_delta_vs_market": 0.06684464583484098,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 4,
       "name": "winner_overpriced_favorite_log_c1_edge05",
       "roi_delta_vs_market": -0.2182780572244281,
       "log_loss_delta_vs_market": 0.1673779493675721,
@@ -1167,25 +1261,11 @@
       ]
     },
     {
-      "rank": 4,
+      "rank": 5,
       "name": "winner_undervalued_underdog_log_c1_edge05",
       "roi_delta_vs_market": -0.5281549420341073,
       "log_loss_delta_vs_market": 0.27660470273517723,
       "brier_delta_vs_market": 0.12035543256383605,
-      "clears_gate": false,
-      "rejection_reasons": [
-        "roi_delta_below_market_gate",
-        "log_loss_worse_than_market",
-        "brier_worse_than_market",
-        "unstable_coverage"
-      ]
-    },
-    {
-      "rank": 5,
-      "name": "decision_edge_log_c1_conf62",
-      "roi_delta_vs_market": -0.5378118095321776,
-      "log_loss_delta_vs_market": 0.2837721687151915,
-      "brier_delta_vs_market": 0.12353022479168357,
       "clears_gate": false,
       "rejection_reasons": [
         "roi_delta_below_market_gate",

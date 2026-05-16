@@ -1289,7 +1289,7 @@ const FIGHT_PROP_OFFER_TABLE_QUERY = `query FightPropOfferTableQuery($slug: Stri
 			fighter1DecOdds
 			fighter2DecOdds
 		}
-		propOffers {
+		propOffers(first: 24) {
 			edges {
 				node {
 					offerType {

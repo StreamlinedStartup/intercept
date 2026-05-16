@@ -27,6 +27,7 @@ from ml.experiment_harness import (
     _prop_market_probability,
     _recommendation,
     _run_model_variant,
+    _signal_diagnostics,
     _target,
     _target_label,
     _target_prediction,
@@ -604,6 +605,19 @@ def test_recommendation_requires_locked_followup_for_passing_candidate() -> None
     assert "locked future slice" in recommendation["reason"]
 
 
+def test_signal_diagnostics_surface_market_strength_reads() -> None:
+    market = _variant("market_favorite", roi=0.10, log_loss=0.50, brier=0.18)
+    candidate = _variant("winner_underdog", roi=-0.20, log_loss=0.80, brier=0.30)
+    candidate["params"]["selection_policy"] = {"type": "undervalued_underdog"}
+    candidate["gate_baseline"] = _variant("winner_underdog_market_baseline", roi=0.24, log_loss=0.52, brier=0.19)
+
+    diagnostics = _signal_diagnostics([market, candidate], market)
+
+    assert diagnostics[0]["variant"] == "winner_underdog"
+    assert diagnostics[0]["indicator"] == "market_too_strong_against_model_underdog"
+    assert diagnostics[0]["selected_market_roi_delta_vs_full_market"] == pytest.approx(0.14)
+
+
 def test_markdown_includes_research_only_contract() -> None:
     report = {
         "generated_at": "2026-05-12T00:00:00+00:00",
@@ -636,6 +650,17 @@ def test_markdown_includes_research_only_contract() -> None:
                 "simulated_research_roi": {"roi_pct": 0.1},
             }
         ],
+        "signal_diagnostics": [
+            {
+                "variant": "candidate",
+                "indicator": "market_too_strong_against_model_underdog",
+                "model_roi_pct": -0.2,
+                "selected_market_roi_pct": 0.24,
+                "selected_market_roi_delta_vs_full_market": 0.14,
+                "selected_market_entries": 10,
+                "read": "Model disagreement is currently more useful as a market-strength warning than as a bet-against-market signal.",
+            }
+        ],
         "recommendation": {"status": "research_only", "reason": "test"},
         "policy": "report-only policy",
     }
@@ -643,4 +668,6 @@ def test_markdown_includes_research_only_contract() -> None:
     markdown = render_markdown(report)
 
     assert "Writes `model_versions`: `false`" in markdown
+    assert "## Signal Diagnostics" in markdown
+    assert "market_too_strong_against_model_underdog" in markdown
     assert "report-only policy" in markdown
