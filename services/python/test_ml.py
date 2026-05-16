@@ -20,10 +20,14 @@ from ml.db import pool
 from ml.experiments import rank_variant_results
 from ml.features import (
     FEATURE_NAMES,
+    OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES,
+    STYLE_MATCHUP_PRESSURE_FEATURE_NAMES,
     WEIGHT_CLASS_RECORD_FEATURE_NAMES,
     build_decision_signals,
     build_feature_row,
     build_features,
+    build_opponent_adjusted_recent_performance_features,
+    build_style_matchup_pressure_features,
 )
 
 
@@ -459,6 +463,57 @@ def test_common_opponent_signal_handles_no_shared_opponents() -> None:
 
     assert signals["common_opponents"]["label"] == "No shared opponents"
     assert signals["common_opponents"]["advantage"] == "neutral"
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
+def test_opponent_adjusted_recent_performance_uses_prior_opponent_quality() -> None:
+    prefix = "test-oarp-adjusted"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_opponent_adjusted_recent_fixture(cur, prefix)
+        conn.commit()
+
+    features = build_opponent_adjusted_recent_performance_features(
+        f"{prefix}-alpha",
+        f"{prefix}-beta",
+        date.fromisoformat("2020-04-01"),
+    )
+    values = dict(zip(OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES, features, strict=True))
+
+    assert values["adj_recent_strike_diff_last_3"] == pytest.approx(10.0 / 3.0)
+    assert values["adj_recent_grappling_diff_last_3"] == pytest.approx(2.5)
+    assert values["quality_of_recent_opposition_diff"] == pytest.approx(5.0 / 6.0)
+    assert values["adj_recent_efficiency_trend_diff"] == pytest.approx(-7.0 / 3.0)
+
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+        conn.commit()
+
+
+def test_style_matchup_pressure_uses_point_in_time_career_stats() -> None:
+    prefix = "test-smp-pressure"
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            _delete_fixture(cur, prefix)
+            _insert_style_matchup_pressure_fixture(cur, prefix)
+        conn.commit()
+
+    features = build_style_matchup_pressure_features(
+        f"{prefix}-alpha",
+        f"{prefix}-beta",
+        date.fromisoformat("2020-03-01"),
+    )
+    values = dict(zip(STYLE_MATCHUP_PRESSURE_FEATURE_NAMES, features, strict=True))
+
+    assert values["striking_pressure_vs_defense_edge"] == pytest.approx(3.52)
+    assert values["wrestling_pressure_vs_tdd_edge"] == pytest.approx(4.05)
+    assert values["submission_pressure_vs_grappling_risk_edge"] == pytest.approx(3.0)
 
     with pool.borrow() as conn:
         with conn.cursor() as cur:
@@ -1169,6 +1224,215 @@ def _insert_recent_form_fixture(cur, prefix: str) -> None:
     )
 
 
+def _insert_opponent_adjusted_recent_fixture(cur, prefix: str) -> None:
+    cur.execute(
+        """
+        INSERT INTO fighters (id, name, dob, height_in, reach_in, stance)
+        VALUES
+            (%s, 'Fixture Alpha', '1990-01-01', 72, 74, null),
+            (%s, 'Fixture Beta', '1992-01-01', 70, 73, null),
+            (%s, 'Fixture Strong Opponent', '1991-01-01', 71, 72, null),
+            (%s, 'Fixture Weak Opponent', '1993-01-01', 69, 71, null),
+            (%s, 'Fixture Baseline', '1994-01-01', 68, 70, null)
+        """,
+        (
+            f"{prefix}-alpha",
+            f"{prefix}-beta",
+            f"{prefix}-strong",
+            f"{prefix}-weak",
+            f"{prefix}-baseline",
+        ),
+    )
+    cur.execute(
+        """
+        INSERT INTO events (id, name, date, completed, promotion)
+        VALUES
+            (%s, 'Strong Quality One', '2020-01-01', true, 'ufc'),
+            (%s, 'Weak Quality One', '2020-01-02', true, 'ufc'),
+            (%s, 'Alpha Recent One', '2020-02-01', true, 'ufc'),
+            (%s, 'Beta Recent One', '2020-02-02', true, 'ufc'),
+            (%s, 'Strong Quality Two', '2020-02-15', true, 'ufc'),
+            (%s, 'Weak Quality Two', '2020-02-16', true, 'ufc'),
+            (%s, 'Alpha Recent Two', '2020-03-01', true, 'ufc'),
+            (%s, 'Beta Recent Two', '2020-03-02', true, 'ufc'),
+            (%s, 'Target', '2020-04-01', true, 'ufc')
+        """,
+        (
+            f"{prefix}-event-strong-quality-1",
+            f"{prefix}-event-weak-quality-1",
+            f"{prefix}-event-alpha-recent-1",
+            f"{prefix}-event-beta-recent-1",
+            f"{prefix}-event-strong-quality-2",
+            f"{prefix}-event-weak-quality-2",
+            f"{prefix}-event-alpha-recent-2",
+            f"{prefix}-event-beta-recent-2",
+            f"{prefix}-event-target",
+        ),
+    )
+    fights = [
+        (f"{prefix}-strong-quality-1", f"{prefix}-event-strong-quality-1"),
+        (f"{prefix}-weak-quality-1", f"{prefix}-event-weak-quality-1"),
+        (f"{prefix}-alpha-recent-1", f"{prefix}-event-alpha-recent-1"),
+        (f"{prefix}-beta-recent-1", f"{prefix}-event-beta-recent-1"),
+        (f"{prefix}-strong-quality-2", f"{prefix}-event-strong-quality-2"),
+        (f"{prefix}-weak-quality-2", f"{prefix}-event-weak-quality-2"),
+        (f"{prefix}-alpha-recent-2", f"{prefix}-event-alpha-recent-2"),
+        (f"{prefix}-beta-recent-2", f"{prefix}-event-beta-recent-2"),
+        (f"{prefix}-target", f"{prefix}-event-target"),
+    ]
+    for fight_id, event_id in fights:
+        cur.execute(
+            """
+            INSERT INTO fights (id, event_id, weight_class, scheduled_rounds, is_headliner)
+            VALUES (%s, %s, 'welterweight', 3, false)
+            """,
+            (fight_id, event_id),
+        )
+    for fight_id in [f"{prefix}-strong-quality-1", f"{prefix}-strong-quality-2"]:
+        _insert_result_pair_for_fighters(
+            cur,
+            fight_id=fight_id,
+            fighter_a_id=f"{prefix}-strong",
+            fighter_b_id=f"{prefix}-baseline",
+            fighter_a_outcome="win",
+            fighter_b_outcome="loss",
+            fighter_a_sig_landed=20,
+            fighter_b_sig_landed=10,
+        )
+    for fight_id in [f"{prefix}-weak-quality-1", f"{prefix}-weak-quality-2"]:
+        _insert_result_pair_for_fighters(
+            cur,
+            fight_id=fight_id,
+            fighter_a_id=f"{prefix}-weak",
+            fighter_b_id=f"{prefix}-baseline",
+            fighter_a_outcome="loss",
+            fighter_b_outcome="win",
+            fighter_a_sig_landed=10,
+            fighter_b_sig_landed=20,
+        )
+    for fight_id in [f"{prefix}-alpha-recent-1", f"{prefix}-alpha-recent-2"]:
+        _insert_result_pair_for_fighters(
+            cur,
+            fight_id=fight_id,
+            fighter_a_id=f"{prefix}-alpha",
+            fighter_b_id=f"{prefix}-strong",
+            fighter_a_outcome="win",
+            fighter_b_outcome="loss",
+            fighter_a_sig_landed=30,
+            fighter_b_sig_landed=10,
+            fighter_a_method="Decision - Unanimous",
+            fighter_b_method="Decision - Unanimous",
+        )
+    for fight_id in [f"{prefix}-beta-recent-1", f"{prefix}-beta-recent-2"]:
+        _insert_result_pair_for_fighters(
+            cur,
+            fight_id=fight_id,
+            fighter_a_id=f"{prefix}-beta",
+            fighter_b_id=f"{prefix}-weak",
+            fighter_a_outcome="win",
+            fighter_b_outcome="loss",
+            fighter_a_sig_landed=30,
+            fighter_b_sig_landed=10,
+            fighter_a_method="Decision - Unanimous",
+            fighter_b_method="Decision - Unanimous",
+        )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-target",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-beta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=1,
+        fighter_b_sig_landed=1,
+    )
+
+
+def _insert_style_matchup_pressure_fixture(cur, prefix: str) -> None:
+    cur.execute(
+        """
+        INSERT INTO fighters (id, name, dob, height_in, reach_in, stance)
+        VALUES
+            (%s, 'Fixture Alpha', '1990-01-01', 72, 74, null),
+            (%s, 'Fixture Beta', '1992-01-01', 70, 73, null),
+            (%s, 'Fixture Gamma', '1991-01-01', 71, 72, null),
+            (%s, 'Fixture Delta', '1993-01-01', 69, 71, null)
+        """,
+        (
+            f"{prefix}-alpha",
+            f"{prefix}-beta",
+            f"{prefix}-gamma",
+            f"{prefix}-delta",
+        ),
+    )
+    cur.execute(
+        """
+        INSERT INTO events (id, name, date, completed, promotion)
+        VALUES
+            (%s, 'Alpha Prior', '2020-01-01', true, 'ufc'),
+            (%s, 'Beta Prior', '2020-01-15', true, 'ufc'),
+            (%s, 'Target', '2020-03-01', true, 'ufc')
+        """,
+        (
+            f"{prefix}-event-alpha-prior",
+            f"{prefix}-event-beta-prior",
+            f"{prefix}-event-target",
+        ),
+    )
+    for fight_id, event_id in [
+        (f"{prefix}-alpha-prior", f"{prefix}-event-alpha-prior"),
+        (f"{prefix}-beta-prior", f"{prefix}-event-beta-prior"),
+        (f"{prefix}-target", f"{prefix}-event-target"),
+    ]:
+        cur.execute(
+            """
+            INSERT INTO fights (id, event_id, weight_class, scheduled_rounds, is_headliner)
+            VALUES (%s, %s, 'welterweight', 3, false)
+            """,
+            (fight_id, event_id),
+        )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-alpha-prior",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-gamma",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=40,
+        fighter_b_sig_landed=10,
+        fighter_a_takedowns_landed=4,
+        fighter_a_takedowns_attempted=5,
+        fighter_b_takedowns_landed=1,
+        fighter_b_takedowns_attempted=2,
+        fighter_a_sub_attempts=2,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-beta-prior",
+        fighter_a_id=f"{prefix}-beta",
+        fighter_b_id=f"{prefix}-delta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=20,
+        fighter_b_sig_landed=30,
+        fighter_a_takedowns_landed=1,
+        fighter_a_takedowns_attempted=2,
+        fighter_b_takedowns_landed=2,
+        fighter_b_takedowns_attempted=4,
+        fighter_a_sub_attempts=0,
+    )
+    _insert_result_pair_for_fighters(
+        cur,
+        fight_id=f"{prefix}-target",
+        fighter_a_id=f"{prefix}-alpha",
+        fighter_b_id=f"{prefix}-beta",
+        fighter_a_outcome="win",
+        fighter_b_outcome="loss",
+        fighter_a_sig_landed=1,
+        fighter_b_sig_landed=1,
+    )
+
+
 def _insert_non_ufc_experience_fixture(cur, prefix: str) -> None:
     cur.execute(
         """
@@ -1279,6 +1543,12 @@ def _insert_result_pair_for_fighters(
     fighter_b_method: str | None = None,
     fighter_a_round: int | None = None,
     fighter_b_round: int | None = None,
+    fighter_a_takedowns_landed: int = 1,
+    fighter_a_takedowns_attempted: int = 2,
+    fighter_b_takedowns_landed: int = 0,
+    fighter_b_takedowns_attempted: int = 1,
+    fighter_a_sub_attempts: int = 0,
+    fighter_b_sub_attempts: int = 0,
 ) -> None:
     cur.execute(
         """
@@ -1297,8 +1567,8 @@ def _insert_result_pair_for_fighters(
             sub_attempts
         )
         VALUES
-            (%s, %s, %s, %s, %s, %s, 300, %s, 50, 1, 2, 0),
-            (%s, %s, %s, %s, %s, %s, 300, %s, 50, 0, 1, 0)
+            (%s, %s, %s, %s, %s, %s, 300, %s, 50, %s, %s, %s),
+            (%s, %s, %s, %s, %s, %s, 300, %s, 50, %s, %s, %s)
         """,
         (
             fight_id,
@@ -1308,6 +1578,9 @@ def _insert_result_pair_for_fighters(
             fighter_a_method,
             fighter_a_round,
             fighter_a_sig_landed,
+            fighter_a_takedowns_landed,
+            fighter_a_takedowns_attempted,
+            fighter_a_sub_attempts,
             fight_id,
             fighter_b_id,
             fighter_a_id,
@@ -1315,6 +1588,9 @@ def _insert_result_pair_for_fighters(
             fighter_b_method,
             fighter_b_round,
             fighter_b_sig_landed,
+            fighter_b_takedowns_landed,
+            fighter_b_takedowns_attempted,
+            fighter_b_sub_attempts,
         ),
     )
 

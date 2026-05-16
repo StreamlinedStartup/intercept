@@ -1,0 +1,36 @@
+{
+  "report": "market-grid-mass-edge-search-summary",
+  "source_report": "data/experiments/harness/market-grid-mass-edge-search.json",
+  "value_status": "research_only",
+  "writes_model_versions": false,
+  "model_versions_count_after_run": 14,
+  "variant_count": 1585,
+  "base_key_count": 66,
+  "gate_clear_count": 0,
+  "coverage": {
+    "model_eligible_events": 40,
+    "model_eligible_fights": 379,
+    "scored_events": 51,
+    "scored_fights": 486
+  },
+  "market_baseline": {
+    "roi_pct": 0.18482808272979137,
+    "accuracy": 0.7467018469656992,
+    "log_loss": 0.5765940478013445,
+    "brier_score": 0.19523511986831754
+  },
+  "best_candidate": {
+    "rank": 1,
+    "name": "log_c025_core_stats_temp200_blend01",
+    "clears_gate": false,
+    "roi_delta_vs_market": 0.0,
+    "log_loss_delta_vs_market": 0.0006187771312932133,
+    "brier_delta_vs_market": 0.00024852794525995203,
+    "rejection_reasons": [
+      "roi_delta_below_market_gate",
+      "log_loss_worse_than_market",
+      "brier_worse_than_market"
+    ]
+  },
+  "interpretation": "The best candidate is a 1% model / 99% market blend. It ties market ROI only by staying almost entirely on market probability, while still worsening log loss and Brier. The mass search found no candidate edge on the current corpus."
+}

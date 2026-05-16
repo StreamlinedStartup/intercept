@@ -71,6 +71,19 @@ WEIGHT_CLASS_RECORD_FEATURE_NAMES = [
 
 EXPERIMENT_FEATURE_NAMES = [*FEATURE_NAMES, *WEIGHT_CLASS_RECORD_FEATURE_NAMES]
 
+OPPONENT_ADJUSTED_RECENT_PERFORMANCE_FEATURE_NAMES = [
+    "adj_recent_strike_diff_last_3",
+    "adj_recent_grappling_diff_last_3",
+    "quality_of_recent_opposition_diff",
+    "adj_recent_efficiency_trend_diff",
+]
+
+STYLE_MATCHUP_PRESSURE_FEATURE_NAMES = [
+    "striking_pressure_vs_defense_edge",
+    "wrestling_pressure_vs_tdd_edge",
+    "submission_pressure_vs_grappling_risk_edge",
+]
+
 
 def build_features(
     fight_id: str,
@@ -265,6 +278,43 @@ def build_feature_dict(
         "weight_class_move_lbs_diff": _diff(weight_record_a["move_lbs"], weight_record_b["move_lbs"]),
     }
     return feature_values
+
+
+def build_opponent_adjusted_recent_performance_features(
+    fighter_a_id: str,
+    fighter_b_id: str,
+    fight_date: date,
+) -> np.ndarray:
+    """Build report-only opponent-adjusted recent-performance features."""
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            profile_a = _opponent_adjusted_recent_profile(cur, fighter_a_id, fight_date)
+            profile_b = _opponent_adjusted_recent_profile(cur, fighter_b_id, fight_date)
+    values = [
+        _diff(profile_a["adjusted_strike"], profile_b["adjusted_strike"]),
+        _diff(profile_a["adjusted_grappling"], profile_b["adjusted_grappling"]),
+        _diff(profile_a["opponent_quality"], profile_b["opponent_quality"]),
+        _diff(profile_a["efficiency_trend"], profile_b["efficiency_trend"]),
+    ]
+    return np.array(values, dtype=float)
+
+
+def build_style_matchup_pressure_features(
+    fighter_a_id: str,
+    fighter_b_id: str,
+    fight_date: date,
+) -> np.ndarray:
+    """Build report-only style matchup pressure features."""
+    with pool.borrow() as conn:
+        with conn.cursor() as cur:
+            stats_a = _career_stats(cur, fighter_a_id, fight_date)
+            stats_b = _career_stats(cur, fighter_b_id, fight_date)
+    values = [
+        _diff(_striking_pressure(stats_a, stats_b), _striking_pressure(stats_b, stats_a)),
+        _diff(_wrestling_pressure(stats_a, stats_b), _wrestling_pressure(stats_b, stats_a)),
+        _diff(_submission_pressure(stats_a, stats_b), _submission_pressure(stats_b, stats_a)),
+    ]
+    return np.array(values, dtype=float)
 
 
 def build_decision_signals(
@@ -781,6 +831,123 @@ def _damage_index(cur: Any, fighter_id: str, target_date: date) -> float:
     return total if has_absorbed else math.nan
 
 
+def _opponent_adjusted_recent_profile(cur: Any, fighter_id: str, target_date: date) -> dict[str, float]:
+    cur.execute(
+        """
+        SELECT
+            fr.fight_id,
+            fr.opponent_id,
+            fr.sig_strikes_landed,
+            fr.takedowns_landed,
+            fr.sub_attempts,
+            fr.time_seconds,
+            opp.sig_strikes_landed AS opp_sig_strikes_landed,
+            opp.takedowns_landed AS opp_takedowns_landed,
+            e.date AS event_date
+        FROM fight_results fr
+        JOIN fights f ON f.id = fr.fight_id
+        JOIN events e ON e.id = f.event_id
+        LEFT JOIN fight_results opp
+            ON opp.fight_id = fr.fight_id
+            AND opp.fighter_id = fr.opponent_id
+        WHERE fr.fighter_id = %s
+            AND e.date < %s
+            AND fr.outcome IN ('win', 'loss')
+        ORDER BY e.date DESC, fr.fight_id DESC
+        LIMIT 3
+        """,
+        (fighter_id, target_date),
+    )
+    rows = [_row_dict(cur.description, row) for row in cur.fetchall()]
+    adjusted_rows = []
+    for row in rows:
+        quality = _opponent_quality(cur, row["opponent_id"], row["event_date"])
+        if math.isnan(quality):
+            continue
+        minutes = _maybe_float(row["time_seconds"]) / 60.0
+        strike = _per_minute(
+            _maybe_float(row["sig_strikes_landed"]) - _maybe_float(row["opp_sig_strikes_landed"]),
+            minutes,
+        )
+        grappling = _per_15(
+            _maybe_float(row["takedowns_landed"])
+            - _maybe_float(row["opp_takedowns_landed"])
+            + (0.5 * _maybe_float(row["sub_attempts"])),
+            minutes,
+        )
+        if math.isnan(strike) or math.isnan(grappling):
+            continue
+        multiplier = 0.5 + quality
+        adjusted_rows.append(
+            {
+                "event_date": row["event_date"],
+                "adjusted_strike": strike * multiplier,
+                "adjusted_grappling": grappling * multiplier,
+                "opponent_quality": quality,
+            }
+        )
+    if not adjusted_rows:
+        return {
+            "adjusted_strike": math.nan,
+            "adjusted_grappling": math.nan,
+            "opponent_quality": math.nan,
+            "efficiency_trend": math.nan,
+        }
+    efficiency = [row["adjusted_strike"] + row["adjusted_grappling"] for row in sorted(adjusted_rows, key=lambda row: row["event_date"])]
+    return {
+        "adjusted_strike": _mean(row["adjusted_strike"] for row in adjusted_rows),
+        "adjusted_grappling": _mean(row["adjusted_grappling"] for row in adjusted_rows),
+        "opponent_quality": _mean(row["opponent_quality"] for row in adjusted_rows),
+        "efficiency_trend": _slope(efficiency),
+    }
+
+
+def _opponent_quality(cur: Any, fighter_id: str, target_date: date) -> float:
+    cur.execute(
+        """
+        SELECT fr.outcome
+        FROM fight_results fr
+        JOIN fights f ON f.id = fr.fight_id
+        JOIN events e ON e.id = f.event_id
+        WHERE fr.fighter_id = %s
+            AND e.date < %s
+            AND fr.outcome IN ('win', 'loss')
+        """,
+        (fighter_id, target_date),
+    )
+    rows = [_row_dict(cur.description, row) for row in cur.fetchall()]
+    if not rows:
+        return math.nan
+    return sum(1 for row in rows if row["outcome"] == "win") / len(rows)
+
+
+def _striking_pressure(attacker: dict[str, float], defender: dict[str, float]) -> float:
+    defense_gap = _defensive_gap(defender["str_def"])
+    if any(math.isnan(value) for value in [attacker["slpm"], attacker["str_acc"], defense_gap]):
+        return math.nan
+    return attacker["slpm"] * attacker["str_acc"] * defense_gap
+
+
+def _wrestling_pressure(attacker: dict[str, float], defender: dict[str, float]) -> float:
+    defense_gap = _defensive_gap(defender["td_def"])
+    if any(math.isnan(value) for value in [attacker["td_avg"], attacker["td_acc"], defense_gap]):
+        return math.nan
+    return attacker["td_avg"] * attacker["td_acc"] * defense_gap
+
+
+def _submission_pressure(attacker: dict[str, float], defender: dict[str, float]) -> float:
+    defense_gap = _defensive_gap(defender["td_def"])
+    if any(math.isnan(value) for value in [attacker["sub_avg"], defense_gap]):
+        return math.nan
+    return attacker["sub_avg"] * defense_gap
+
+
+def _defensive_gap(defense_rate: float) -> float:
+    if math.isnan(defense_rate):
+        return math.nan
+    return 1.0 - defense_rate
+
+
 def _is_ko_tko_loss(row: dict[str, Any]) -> bool:
     if row["outcome"] != "loss":
         return False
@@ -796,6 +963,26 @@ def _row_dict(description: Any, row: Any) -> dict[str, Any]:
 
 def _sum(rows: list[dict[str, Any]], key: str) -> float:
     return float(sum(row[key] for row in rows if row[key] is not None))
+
+
+def _mean(values: Sequence[float]) -> float:
+    numeric = [value for value in values if not math.isnan(value)]
+    if not numeric:
+        return math.nan
+    return sum(numeric) / len(numeric)
+
+
+def _slope(values: Sequence[float]) -> float:
+    numeric = [value for value in values if not math.isnan(value)]
+    if len(numeric) < 2:
+        return math.nan
+    x_mean = (len(numeric) - 1) / 2
+    y_mean = sum(numeric) / len(numeric)
+    denominator = sum((index - x_mean) ** 2 for index in range(len(numeric)))
+    if denominator == 0:
+        return math.nan
+    numerator = sum((index - x_mean) * (value - y_mean) for index, value in enumerate(numeric))
+    return numerator / denominator
 
 
 def _ratio(numerator: float, denominator: float) -> float:

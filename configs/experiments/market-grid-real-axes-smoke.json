@@ -1,0 +1,159 @@
+{
+  "name": "market-grid-real-axes-smoke",
+  "description": "Compact report-only smoke matrix for real experiment axes: model hyperparameters, feature ablations, calibration transforms, and market blends.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 100,
+    "max_events": null
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "full_current_corpus",
+    "locked_evaluation": "future_required"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline."
+    },
+    {
+      "name": "xgb_default",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": null,
+      "description": "Default XGBoost production feature baseline."
+    },
+    {
+      "name": "xgb_shallow",
+      "model": "xgboost",
+      "features": "production",
+      "model_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.03
+      },
+      "market_blend_weight": null,
+      "description": "Shallower lower-rate XGBoost hyperparameter variant."
+    },
+    {
+      "name": "xgb_no_recent_form",
+      "model": "xgboost",
+      "features": "production",
+      "feature_subset": {
+        "mode": "exclude",
+        "names": [
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b"
+        ]
+      },
+      "market_blend_weight": null,
+      "description": "XGBoost ablation without recent-form features."
+    },
+    {
+      "name": "xgb_temperature_150",
+      "model": "xgboost",
+      "features": "production",
+      "calibration": {
+        "method": "temperature",
+        "temperature": 1.5
+      },
+      "market_blend_weight": null,
+      "description": "Default XGBoost with temperature calibration that softens model confidence."
+    },
+    {
+      "name": "xgb_temperature_150_blend_25",
+      "model": "xgboost",
+      "features": "production",
+      "calibration": {
+        "method": "temperature",
+        "temperature": 1.5
+      },
+      "market_blend_weight": 0.25,
+      "description": "Temperature-calibrated XGBoost with 25% model / 75% market blend."
+    },
+    {
+      "name": "xgb_availability_shallow_blend_25",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "model_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.03
+      },
+      "market_blend_weight": 0.25,
+      "description": "Availability-augmented shallow XGBoost with 25% model / 75% market blend."
+    },
+    {
+      "name": "logistic_default",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": null,
+      "description": "Default regularized logistic baseline."
+    },
+    {
+      "name": "logistic_c_025_temperature_150_blend_10",
+      "model": "logistic_regression",
+      "features": "production",
+      "model_params": {
+        "C": 0.25
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 1.5
+      },
+      "market_blend_weight": 0.1,
+      "description": "Stronger-regularized temperature-calibrated logistic model with 10% model / 90% market blend."
+    },
+    {
+      "name": "logistic_core_stats_only",
+      "model": "logistic_regression",
+      "features": "production",
+      "feature_subset": {
+        "mode": "only",
+        "names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff"
+        ]
+      },
+      "market_blend_weight": null,
+      "description": "Logistic model using only core career and physical differential features."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/market-grid-real-axes-smoke.json",
+    "markdown": "data/experiments/harness/market-grid-real-axes-smoke.md"
+  }
+}

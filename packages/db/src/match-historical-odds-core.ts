@@ -1,5 +1,6 @@
 export type CanonicalFight = {
 	fightId: string;
+	weightClass?: string | null;
 	fighters: Array<{ id: string; name: string }>;
 };
 
@@ -18,12 +19,20 @@ export type FightMatch =
 	  };
 
 const NAME_ALIASES = new Map<string, string[]>([
+	['asu almabayev', ['asu almabaev']],
+	['carlos vergara', ['cj vergara']],
 	['cristian quinonez', ['christian quinonez']],
 	['daniel lacerda', ['daniel da silva']],
+	['dontale mayes', ['don tale mayes']],
+	['jailton almeida', ['jailton junior']],
+	['jairzinho rozenstruik', ['jair rozenstruik']],
 	['muhammad naimov', ['muhammadjon naimov']],
 	['ronaldo rodriguez', ['luis rodriguez']],
 	['yazmin jauregui', ['yasmine jauregui']],
 ]);
+
+const PARTICLES = new Set(['da', 'de', 'del', 'do', 'dos', 'das']);
+const EVENT_TOKEN_ALIASES = new Map([['spivak', 'spivac']]);
 
 export function matchHistoricalFight(
 	historicalFight: { rawFighterA: string; rawFighterB: string; isCancelled: boolean },
@@ -35,13 +44,23 @@ export function matchHistoricalFight(
 		.map((fight) => ({ fight, mapping: mapFighters(sourceA, sourceB, fight) }))
 		.filter((candidate) => candidate.mapping !== null);
 
+	if (historicalFight.isCancelled) {
+		return {
+			status: 'unmatched',
+			reason: candidates.length
+				? 'source fight is cancelled; canonical linking skipped'
+				: 'source fight is cancelled and no canonical fight pair exists on the completed event',
+			candidates: candidates.map((candidate) => candidate.fight),
+		};
+	}
+
 	if (candidates.length === 1) {
 		const [candidate] = candidates;
 		return {
 			status: 'matched',
 			reason: candidate.mapping?.swapped
-				? 'matched by normalized sorted fighter pair with swapped source order'
-				: 'matched by normalized sorted fighter pair',
+				? 'matched by normalized participant keys with swapped source order'
+				: 'matched by normalized participant keys',
 			fight: candidate.fight,
 			sourceFighterAToCanonicalId: candidate.mapping?.fighterAId ?? '',
 			sourceFighterBToCanonicalId: candidate.mapping?.fighterBId ?? '',
@@ -68,8 +87,18 @@ export function matchHistoricalFight(
 	};
 }
 
+export function countHistoricalFightParticipantMatches(
+	historicalFights: Array<{ rawFighterA: string; rawFighterB: string; isCancelled: boolean }>,
+	canonicalFights: CanonicalFight[],
+): number {
+	return historicalFights
+		.map((fight) => matchHistoricalFight(fight, canonicalFights))
+		.filter((match) => match.status === 'matched').length;
+}
+
 export function normalizeName(value: string): string {
 	return value
+		.replace(/[łŁ]/g, 'l')
 		.normalize('NFKD')
 		.replace(/[\u0300-\u036f]/g, '')
 		.toLowerCase()
@@ -77,6 +106,21 @@ export function normalizeName(value: string): string {
 		.replace(/[^a-z0-9]+/g, ' ')
 		.trim()
 		.replace(/\s+/g, ' ');
+}
+
+export function normalizeEventName(value: string): string {
+	return normalizeName(value)
+		.replace(/\bufc on (espn|abc) \d+\b/g, 'ufc fight night')
+		.replace(/\bufc fight night \d+\b/g, 'ufc fight night');
+}
+
+export function eventNameTokens(normalizedEventName: string): string[] {
+	return normalizedEventName
+		.split(' ')
+		.filter(
+			(token) => !['ufc', 'fight', 'night', 'vs'].includes(token) && Number.isNaN(Number(token)),
+		)
+		.map((token) => EVENT_TOKEN_ALIASES.get(token) ?? token);
 }
 
 function mapFighters(sourceA: string[], sourceB: string[], fight: CanonicalFight) {
@@ -94,19 +138,39 @@ function mapFighters(sourceA: string[], sourceB: string[], fight: CanonicalFight
 
 function nameKeys(value: string): string[] {
 	const normalized = normalizeName(value);
-	const keys = new Set([normalized]);
+	const keys = new Set([normalized, sortedNameKey(normalized), withoutParticles(normalized)]);
+	const tokens = normalized.split(' ').filter(Boolean);
+	if (tokens.length > 2) {
+		keys.add(tokens.slice(1).join(' '));
+		keys.add(sortedNameKey(tokens.slice(1).join(' ')));
+	}
 	for (const [canonical, aliases] of NAME_ALIASES) {
 		if (canonical === normalized || aliases.includes(normalized)) {
 			keys.add(canonical);
+			keys.add(sortedNameKey(canonical));
+			keys.add(withoutParticles(canonical));
 			for (const alias of aliases) {
 				keys.add(alias);
+				keys.add(sortedNameKey(alias));
+				keys.add(withoutParticles(alias));
 			}
 		}
 	}
-	return [...keys];
+	return [...keys].filter(Boolean);
 }
 
 function intersects(left: string[], right: string[]): boolean {
 	const rightSet = new Set(right);
 	return left.some((value) => rightSet.has(value));
+}
+
+function sortedNameKey(value: string): string {
+	return value.split(' ').filter(Boolean).sort().join(' ');
+}
+
+function withoutParticles(value: string): string {
+	return value
+		.split(' ')
+		.filter((token) => !PARTICLES.has(token))
+		.join(' ');
 }

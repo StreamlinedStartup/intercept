@@ -1,0 +1,81 @@
+{
+  "name": "market-grid-smoke",
+  "description": "Small report-only matrix for comparing model families, pre-fight feature transforms, and market blends against the no-vig market favorite.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 100,
+    "max_events": null
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "full_current_corpus",
+    "locked_evaluation": "future_required"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline."
+    },
+    {
+      "name": "xgboost_production",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": null,
+      "description": "Current XGBoost model family with production pre-fight features."
+    },
+    {
+      "name": "xgboost_availability",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": null,
+      "description": "Current XGBoost plus pre-fight feature availability indicators."
+    },
+    {
+      "name": "logistic_production",
+      "model": "logistic_regression",
+      "features": "production",
+      "market_blend_weight": null,
+      "description": "Regularized logistic baseline with production pre-fight features."
+    },
+    {
+      "name": "blend_25_xgboost_75_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.25,
+      "description": "25% XGBoost probability plus 75% no-vig market probability."
+    },
+    {
+      "name": "blend_50_xgboost_50_market",
+      "model": "xgboost",
+      "features": "production",
+      "market_blend_weight": 0.5,
+      "description": "50% XGBoost probability plus 50% no-vig market probability."
+    },
+    {
+      "name": "blend_25_availability_75_market",
+      "model": "xgboost",
+      "features": "production_plus_availability",
+      "market_blend_weight": 0.25,
+      "description": "25% availability-augmented XGBoost probability plus 75% no-vig market probability."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/market-grid-smoke.json",
+    "markdown": "data/experiments/harness/market-grid-smoke.md"
+  }
+}

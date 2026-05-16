@@ -1,0 +1,72 @@
+{
+  "name": "locked-evaluation-candidates-v1",
+  "description": "Frozen candidate list for locked-style historical holdout evaluation. Do not edit after evaluation starts.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "frozen_at_stage": "before_locked_style_holdout_results",
+  "holdout_policy": {
+    "type": "last_n_events",
+    "event_count": 10,
+    "note": "Historical locked-style holdout only. These events are not truly unseen because prior discovery work inspected the current corpus."
+  },
+  "candidates": [
+    {
+      "name": "original_winner_allresearch_c2p5_temp2p2_blend45_conf63",
+      "source_variant": "log_allmarketctx_c2p5_temp2p2_blend45_min_confidence0p63",
+      "model": "logistic_regression",
+      "features": "production_plus_all_research_market_context",
+      "market_blend_weight": 0.45,
+      "model_params": {
+        "C": 2.5
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.2
+      },
+      "selection_policy": {
+        "type": "min_confidence",
+        "threshold": 0.63
+      },
+      "description": "Original gate-clearing winner that survived expanded corpus windows."
+    },
+    {
+      "name": "top_additional_allresearch_c2p0_temp2p2_blend55_conf66",
+      "source_variant": "log_allmarketctx_c2p0_temp2p2_blend55_min_confidence0p66",
+      "model": "logistic_regression",
+      "features": "production_plus_all_research_market_context",
+      "market_blend_weight": 0.55,
+      "model_params": {
+        "C": 2.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.2
+      },
+      "selection_policy": {
+        "type": "min_confidence",
+        "threshold": 0.66
+      },
+      "description": "Top additional winner from expanded selected-fight search."
+    },
+    {
+      "name": "top_marketctx_c1p0_temp2p4_blend60_conf66",
+      "source_variant": "log_marketctx_c1p0_temp2p4_blend60_min_confidence0p66",
+      "model": "logistic_regression",
+      "features": "production_plus_market_context",
+      "market_blend_weight": 0.6,
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.4
+      },
+      "selection_policy": {
+        "type": "min_confidence",
+        "threshold": 0.66
+      },
+      "description": "Best market-context-only additional winner."
+    }
+  ]
+}

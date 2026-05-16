@@ -94,6 +94,8 @@ type FightPrediction = {
 	}>;
 	edge_pct?: number;
 	market_prob?: number;
+	value_status?: 'research_only' | 'insufficient_coverage' | 'validated';
+	value_status_reason?: string;
 };
 
 const INITIAL: FighterState = { data: null, loading: false, error: null };
@@ -637,7 +639,7 @@ function ModelPickRow({
 					badge={
 						modelPickEdge !== null
 							? {
-									text: `Edge ${formatSignedPct(modelPickEdge)}`,
+									text: `Research edge ${formatSignedPct(modelPickEdge)}`,
 									tone: edgeTone(modelPickEdge),
 								}
 							: null
@@ -670,17 +672,17 @@ function ModelPickRow({
 					}
 				/>
 				<SignalTile
-					label="Value Pick"
+					label="Market comparison"
 					name={valuePick?.fighter.name ?? 'Market odds unavailable'}
 					primary={
 						valuePick
-							? `${formatSignedPct(valuePick.edge ?? 0)} vs market`
+							? `${formatSignedPct(valuePick.edge ?? 0)} research edge`
 							: 'Need two matched moneylines'
 					}
 					badge={
 						valuePick
 							? {
-									text: valueDiffers ? 'Differs from pick' : 'Same as pick',
+									text: prediction.value_status === 'validated' ? 'Validated' : 'Research only',
 									tone: valueDiffers ? 'amber' : 'green',
 								}
 							: null
@@ -689,6 +691,7 @@ function ModelPickRow({
 			</div>
 			<div className="text-xs text-muted-foreground mt-2 text-center">
 				Model {prediction.model_version}
+				{prediction.value_status_reason ? ` - ${prediction.value_status_reason}` : ''}
 			</div>
 		</div>
 	);

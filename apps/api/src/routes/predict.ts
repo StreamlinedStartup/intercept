@@ -60,6 +60,8 @@ type StoredPrediction = {
 	odds?: MarketOdds[];
 	edge_pct?: number;
 	market_prob?: number;
+	value_status: ValueStatus;
+	value_status_reason: string;
 };
 
 type MarketOdds = {
@@ -68,6 +70,8 @@ type MarketOdds = {
 	american_odds: number;
 	market_prob: number;
 };
+
+type ValueStatus = 'research_only' | 'insufficient_coverage' | 'validated';
 
 type PredictionHistoryRow = {
 	fight_id: string;
@@ -334,6 +338,8 @@ async function predictAndPersist(
 		edgePct,
 	});
 
+	const valueStatus = getValueStatus(market.length === 2 && edgePct !== null);
+
 	return {
 		fight_id: fightId,
 		fight_date: fightDate,
@@ -347,6 +353,25 @@ async function predictAndPersist(
 		...(market.length === 2 && edgePct !== null
 			? { odds: market, edge_pct: edgePct, market_prob: predictedMarketOdds?.market_prob }
 			: {}),
+		value_status: valueStatus.status,
+		value_status_reason: valueStatus.reason,
+	};
+}
+
+export function getValueStatus(hasMatchedMarketOdds: boolean): {
+	status: ValueStatus;
+	reason: string;
+} {
+	if (!hasMatchedMarketOdds) {
+		return {
+			status: 'insufficient_coverage',
+			reason: 'Matched two-sided market odds are required before edge can be evaluated.',
+		};
+	}
+	return {
+		status: 'research_only',
+		reason:
+			'Edge and ROI are simulated research metrics until leakage audits, baselines, and market-gated validation pass.',
 	};
 }
 
@@ -478,6 +503,9 @@ type SerializedHistoryRow = {
 	actual_winner_name: string | null;
 	hit: boolean | null;
 	bet_pl_units: number | null;
+	simulated_pl_units: number | null;
+	value_status: ValueStatus;
+	value_status_reason: string;
 };
 
 function serializeHistoryRow(row: PredictionHistoryRow): SerializedHistoryRow {
@@ -485,6 +513,7 @@ function serializeHistoryRow(row: PredictionHistoryRow): SerializedHistoryRow {
 	const betPlaced = typeof row.edge_pct === 'number' && row.edge_pct > 0.05;
 	const betPlUnits =
 		betPlaced && hit !== null ? (hit ? (row.best_decimal_odds ?? 2) - 1 : -1) : null;
+	const valueStatus = getValueStatus(row.market_prob !== null && row.edge_pct !== null);
 	return {
 		fight_id: row.fight_id,
 		event_name: row.event_name,
@@ -499,6 +528,9 @@ function serializeHistoryRow(row: PredictionHistoryRow): SerializedHistoryRow {
 		actual_winner_name: row.actual_winner_name,
 		hit,
 		bet_pl_units: betPlUnits,
+		simulated_pl_units: betPlUnits,
+		value_status: valueStatus.status,
+		value_status_reason: valueStatus.reason,
 	};
 }
 
@@ -511,6 +543,11 @@ function aggregateHistory(rows: SerializedHistoryRow[]): {
 	n_bets: number;
 	roi_units: number;
 	roi_pct: number | null;
+	n_simulated_entries: number;
+	simulated_roi_units: number;
+	simulated_roi_pct: number | null;
+	value_status: ValueStatus;
+	value_status_reason: string;
 } {
 	const withResult = rows.filter((row) => row.hit !== null);
 	const hits = withResult.filter((row) => row.hit).length;
@@ -534,6 +571,12 @@ function aggregateHistory(rows: SerializedHistoryRow[]): {
 		n_bets: bets.length,
 		roi_units: roiUnits,
 		roi_pct: bets.length ? roiUnits / bets.length : null,
+		n_simulated_entries: bets.length,
+		simulated_roi_units: roiUnits,
+		simulated_roi_pct: bets.length ? roiUnits / bets.length : null,
+		value_status: 'research_only',
+		value_status_reason:
+			'Prediction-history ROI is simulated research output until leakage audits, baselines, and market-gated validation pass.',
 	};
 }
 

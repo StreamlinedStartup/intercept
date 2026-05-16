@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interceptor.local/schemas/market-experiment.schema.json",
+  "title": "Market Experiment Harness Config",
+  "type": "object",
+  "required": ["name", "description", "corpus", "split", "gate", "variants", "outputs"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "value_status": {
+      "type": "string",
+      "const": "research_only"
+    },
+    "report_only": {
+      "type": "boolean",
+      "const": true
+    },
+    "writes_model_versions": {
+      "type": "boolean",
+      "const": false
+    },
+    "corpus": {
+      "type": "object",
+      "required": ["source", "market_source", "min_train_samples"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["matched_market_fights"]
+        },
+        "market_source": {
+          "type": "string",
+          "enum": ["fightodds_no_vig_consensus"]
+        },
+        "min_train_samples": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_events": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "holdout": {
+          "type": ["object", "null"],
+          "required": ["type", "event_count"],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "last_n_events"
+            },
+            "event_count": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "split": {
+      "type": "object",
+      "required": ["policy", "candidate_selection", "locked_evaluation"],
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string",
+          "const": "chronological_walk_forward"
+        },
+        "candidate_selection": {
+          "type": "string",
+          "enum": ["full_current_corpus", "discovery_slice"]
+        },
+        "locked_evaluation": {
+          "type": "string",
+          "enum": ["none_current_corpus", "future_required"]
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": ["baseline", "min_roi_delta_vs_market", "probability_quality"],
+      "additionalProperties": false,
+      "properties": {
+        "baseline": {
+          "type": "string",
+          "const": "market_favorite"
+        },
+        "min_roi_delta_vs_market": {
+          "type": "number"
+        },
+        "probability_quality": {
+          "type": "object",
+          "required": ["require_log_loss_not_worse", "require_brier_not_worse"],
+          "additionalProperties": false,
+          "properties": {
+            "require_log_loss_not_worse": {
+              "type": "boolean"
+            },
+            "require_brier_not_worse": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "variants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "model", "features"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$"
+          },
+          "model": {
+            "type": "string",
+            "enum": ["market_favorite", "xgboost", "logistic_regression"]
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "winner",
+              "decision",
+              "finish",
+              "ko_tko",
+              "submission",
+              "over_0_5",
+              "over_1_5",
+              "over_2_5",
+              "over_3_5",
+              "over_4_5"
+            ],
+            "default": "winner"
+          },
+          "features": {
+            "type": "string",
+            "enum": [
+              "none",
+              "production",
+              "production_plus_availability",
+              "production_plus_opponent_adjusted_recent_performance",
+              "production_plus_style_matchup_pressure",
+              "production_plus_market_context",
+              "production_plus_all_research",
+              "production_plus_all_research_market_context"
+            ]
+          },
+          "market_blend_weight": {
+            "type": ["number", "null"],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "model_params": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "n_estimators": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "max_depth": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "learning_rate": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "subsample": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1
+              },
+              "colsample_bytree": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1
+              },
+              "C": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            }
+          },
+          "feature_subset": {
+            "type": "object",
+            "required": ["mode", "names"],
+            "additionalProperties": false,
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": ["only", "exclude"]
+              },
+              "names": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                },
+                "uniqueItems": true
+              }
+            }
+          },
+          "calibration": {
+            "type": "object",
+            "required": ["method"],
+            "additionalProperties": false,
+            "properties": {
+              "method": {
+                "type": "string",
+                "enum": ["none", "temperature"]
+              },
+              "temperature": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            }
+          },
+          "selection_policy": {
+            "type": "object",
+            "required": ["type"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "market_favorite_only",
+                  "market_underdog_only",
+                  "model_market_agree",
+                  "model_market_disagree",
+                  "min_confidence",
+                  "min_model_market_edge",
+                  "min_absolute_model_market_edge",
+                  "overpriced_favorite",
+                  "undervalued_underdog",
+                  "decision_edge",
+                  "finish_edge",
+                  "positive_target_edge",
+                  "abstain"
+                ]
+              },
+              "threshold": {
+                "type": "number"
+              }
+            }
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["json", "markdown"],
+      "additionalProperties": false,
+      "properties": {
+        "json": {
+          "type": "string"
+        },
+        "markdown": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

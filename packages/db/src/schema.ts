@@ -321,6 +321,59 @@ export const historicalMoneylineOdds = pgTable(
 	}),
 );
 
+export const historicalPropOdds = pgTable(
+	'historical_prop_odds',
+	{
+		id: text('id').primaryKey(),
+		importRunId: text('import_run_id')
+			.notNull()
+			.references(() => historicalOddsImportRuns.id, { onDelete: 'cascade' }),
+		historicalFightId: text('historical_fight_id')
+			.notNull()
+			.references(() => historicalOddsFights.id, { onDelete: 'cascade' }),
+		sourceEventId: text('source_event_id').notNull(),
+		sourceFightId: text('source_fight_id').notNull(),
+		sourceMarketId: text('source_market_id').notNull(),
+		sourceOfferId: text('source_offer_id').notNull(),
+		sourceOfferTypeId: text('source_offer_type_id').notNull(),
+		marketFamily: text('market_family').notNull(),
+		marketLabel: text('market_label').notNull(),
+		propName: text('prop_name').notNull(),
+		sportsbookId: text('sportsbook_id').notNull(),
+		sportsbookSlug: text('sportsbook_slug').notNull(),
+		sportsbookName: text('sportsbook_name').notNull(),
+		sourceOutcomeId: text('source_outcome_id').notNull(),
+		rawOutcomeName: text('raw_outcome_name').notNull(),
+		rawFighterName: text('raw_fighter_name'),
+		sourceFighterId: text('source_fighter_id'),
+		canonicalFighterId: text('canonical_fighter_id').references(() => fighters.id, {
+			onDelete: 'set null',
+		}),
+		side: text('side').notNull(),
+		outcomeSide: text('outcome_side').notNull(),
+		isNot: boolean('is_not').notNull().default(false),
+		lineKind: text('line_kind').notNull(),
+		americanOdds: integer('american_odds').notNull(),
+		decimalOdds: real('decimal_odds').notNull(),
+		impliedProbability: real('implied_probability').notNull(),
+		marketTimestamp: timestamp('market_timestamp', { withTimezone: true }),
+		marketTimestampSemantics: text('market_timestamp_semantics').notNull(),
+		scrapedAt: timestamp('scraped_at', { withTimezone: true }).notNull(),
+		rawMetadata: text('raw_metadata').notNull(),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => ({
+		sourceOutcomeIdx: uniqueIndex('historical_prop_odds_source_outcome_idx').on(
+			t.importRunId,
+			t.sourceMarketId,
+			t.sourceOfferId,
+			t.sourceOutcomeId,
+			t.lineKind,
+		),
+	}),
+);
+
 export const unmatchedHistoricalOdds = pgTable('unmatched_historical_odds', {
 	id: text('id').primaryKey(),
 	source: text('source').notNull(),

@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-05-12T03:54:54Z",
+  "report": "market-coverage-unlock-final",
+  "epic": {
+    "id": "intercept-p6uo",
+    "title": "D2-MCU: Market coverage unlock to 30 scored events",
+    "parent": "intercept-8mw9"
+  },
+  "report_only": true,
+  "writes_model_versions": false,
+  "coverage_gate_passed": true,
+  "activation_gate_passed": false,
+  "value_status": "research_only",
+  "value_status_reason": "Model ROI did not clear the market-favorite baseline gate.",
+  "model_improvement_experiments_unblocked": true,
+  "validated_activation_unblocked": false,
+  "frozen_evidence_bundle": {
+    "coverage": "data/experiments/market-coverage-unlock-validation-coverage.json",
+    "leakage_audit": "data/experiments/market-coverage-unlock-leakage-audit.json",
+    "baselines": "data/experiments/market-coverage-unlock-simple-baselines.json",
+    "market_gate": "data/experiments/market-coverage-unlock-market-gate-report.json"
+  },
+  "coverage": {
+    "source_events_imported": 37,
+    "source_events_matched": 37,
+    "source_events_unmatched": 0,
+    "source_fights_imported": 572,
+    "source_fights_matched": 357,
+    "source_fights_unmatched": 215,
+    "moneyline_rows_imported": 29056,
+    "moneyline_rows_linked": 20075,
+    "scored_events": 37,
+    "scored_fights": 345,
+    "min_scored_events": 30,
+    "min_scored_fights": 200
+  },
+  "leakage_audit": {
+    "status": "pass",
+    "checks": 15,
+    "passed": 15,
+    "failed": 0
+  },
+  "market_gate": {
+    "min_market_roi_delta": 0.02,
+    "market_favorite_roi": 0.16167167767526539,
+    "model_pick_roi": -0.10357596988111521,
+    "best_blend_name": "blend_25_model_75_market",
+    "best_blend_roi": 0.1588586462200478,
+    "best_candidate_roi_delta_vs_market_favorite": -0.00281303145521758
+  },
+  "decision": "Research-only model-improvement experiments are unblocked because market coverage is now sufficient and leakage audit passes. Validated/value activation remains blocked because neither the model nor blend strategies beat the market favorite by the required +2pp.",
+  "next_epic": "intercept-tgq5",
+  "next_scope": [
+    "Freeze this evidence bundle as the D2-MIX experiment input.",
+    "Evaluate calibration, market-aware blend, feature, and model-family variants against the no-vig market favorite baseline.",
+    "Keep all outputs research-only unless a separate activation gate passes."
+  ],
+  "blocked_scope": [
+    "Do not activate validated status.",
+    "Do not write active model_versions.",
+    "Do not surface value claims in UI/API/docs."
+  ]
+}

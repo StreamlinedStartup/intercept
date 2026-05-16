@@ -1,0 +1,65 @@
+{
+  "report": "winner-expanded-corpus-summary",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "candidate": "log_allmarketctx_c2p5_temp2p2_blend45_min_confidence0p63",
+  "summary": "The frozen gate-clearing candidate cleared the market gate across all expanded min_train_samples windows.",
+  "windows": [
+    {
+      "min_train_samples": 20,
+      "model_eligible_events": 49,
+      "model_eligible_fights": 462,
+      "selected_events": 49,
+      "selected_fights": 268,
+      "roi_delta_vs_market": 0.027403672196982115,
+      "log_loss_delta_vs_market": -0.012627118764957701,
+      "brier_delta_vs_market": -0.006189819677758973,
+      "clears_market_gate": true
+    },
+    {
+      "min_train_samples": 40,
+      "model_eligible_events": 46,
+      "model_eligible_fights": 438,
+      "selected_events": 46,
+      "selected_fights": 251,
+      "roi_delta_vs_market": 0.02083150582899171,
+      "log_loss_delta_vs_market": -0.011454351550839514,
+      "brier_delta_vs_market": -0.0056960924666856205,
+      "clears_market_gate": true
+    },
+    {
+      "min_train_samples": 60,
+      "model_eligible_events": 44,
+      "model_eligible_fights": 419,
+      "selected_events": 44,
+      "selected_fights": 234,
+      "roi_delta_vs_market": 0.022344905825115086,
+      "log_loss_delta_vs_market": -0.0030183078956986797,
+      "brier_delta_vs_market": -0.0021311032693790977,
+      "clears_market_gate": true
+    },
+    {
+      "min_train_samples": 80,
+      "model_eligible_events": 42,
+      "model_eligible_fights": 397,
+      "selected_events": 42,
+      "selected_fights": 217,
+      "roi_delta_vs_market": 0.03379798256646578,
+      "log_loss_delta_vs_market": -0.0013751169832220134,
+      "brier_delta_vs_market": -0.0015358830689437553,
+      "clears_market_gate": true
+    },
+    {
+      "min_train_samples": 100,
+      "model_eligible_events": 40,
+      "model_eligible_fights": 379,
+      "selected_events": 40,
+      "selected_fights": 204,
+      "roi_delta_vs_market": 0.024873795784313757,
+      "log_loss_delta_vs_market": -0.0010823293139512469,
+      "brier_delta_vs_market": -0.0015395175854509557,
+      "clears_market_gate": true
+    }
+  ]
+}

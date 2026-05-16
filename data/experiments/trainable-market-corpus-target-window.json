@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-05-12T04:25:10Z",
+  "report": "trainable-market-corpus-target-window",
+  "epic": "intercept-ftbt",
+  "task": "intercept-loww",
+  "report_only": true,
+  "writes_model_versions": false,
+  "baseline": {
+    "source_events_imported": 37,
+    "source_events_matched": 37,
+    "scored_events": 37,
+    "scored_fights": 345,
+    "model_min_train_samples": 100,
+    "model_eligible_events": 26,
+    "model_eligible_fights": 241,
+    "current_oldest_imported_event_date": "2023-05-06",
+    "current_oldest_imported_event": "UFC 288: Sterling vs. Cejudo"
+  },
+  "target_window": {
+    "source": "fightodds",
+    "from": "2023-01-01",
+    "to": "2023-05-06",
+    "target_unique_ufc_events": 14,
+    "selection_rule": "Use FightOdds EventsRecentQuery with dateGte=2023-01-01, dateLt=2023-05-06, orderBy=-date, filter promotion slug/shortName to UFC, dedupe repeated event PKs, and import the unique UFC events before the current corpus.",
+    "rationale": "D2-MIX can score only 26 model-eligible events after requiring 100 prior market-covered training samples. Four more model-eligible events are required to cross the 30-event stability floor; importing the 14-event pre-May-2023 UFC window should provide enough prior market-covered fights with buffer for unmatched or cancelled bouts."
+  },
+  "target_events": [
+    { "pk": 4592, "date": "2023-04-29", "name": "UFC Fight Night: Song vs. Simon" },
+    { "pk": 4579, "date": "2023-04-22", "name": "UFC Fight Night: Pavlovich vs. Blaydes" },
+    { "pk": 4580, "date": "2023-04-15", "name": "UFC Fight Night: Holloway vs. Allen" },
+    { "pk": 4556, "date": "2023-04-08", "name": "UFC 287: Pereira vs Adesanya 2" },
+    { "pk": 4501, "date": "2023-03-25", "name": "UFC Fight Night: Vera vs. Sandhagen" },
+    { "pk": 4483, "date": "2023-03-18", "name": "UFC 286: Edwards vs. Usman 3" },
+    { "pk": 4486, "date": "2023-03-11", "name": "UFC Fight Night: Yan vs. Dvalishvili" },
+    { "pk": 4450, "date": "2023-03-04", "name": "UFC 285: Jones vs. Gane" },
+    { "pk": 4469, "date": "2023-02-25", "name": "UFC Fight Night: Krylov vs. Spann" },
+    { "pk": 4460, "date": "2023-02-18", "name": "UFC Fight Night: Andrade vs. Blanchfield" },
+    { "pk": 4438, "date": "2023-02-11", "name": "UFC 284: Makhachev vs. Volkanovski" },
+    { "pk": 4441, "date": "2023-02-04", "name": "UFC Fight Night: Lewis vs. Spivac" },
+    { "pk": 4382, "date": "2023-01-21", "name": "UFC 283: Teixeira vs. Hill" },
+    { "pk": 4426, "date": "2023-01-14", "name": "UFC Fight Night: Strickland vs. Imavov" }
+  ],
+  "next_commands": {
+    "import": "pnpm --filter @interceptor/db import:fightodds:event -- --event-pks 4592,4579,4580,4556,4501,4483,4486,4450,4469,4460,4438,4441,4382,4426 --delay-ms 1500 --continue-on-error",
+    "match": "pnpm --filter @interceptor/db match:fightodds:all",
+    "coverage": "pnpm --filter @interceptor/db report:fightodds:coverage"
+  }
+}

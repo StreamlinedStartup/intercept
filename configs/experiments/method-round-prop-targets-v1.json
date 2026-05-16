@@ -1,0 +1,120 @@
+{
+  "name": "method-round-prop-targets-v1",
+  "description": "Report-only opportunity matrix for goes-to-decision, finish, KO/TKO, submission, and over/under round targets.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 100,
+    "max_events": null
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "full_current_corpus",
+    "locked_evaluation": "future_required"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "target": "winner",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline."
+    },
+    {
+      "name": "decision_positive_log_c1_conf62",
+      "model": "logistic_regression",
+      "target": "decision",
+      "features": "production_plus_all_research",
+      "model_params": { "C": 1.0 },
+      "calibration": { "method": "temperature", "temperature": 1.6 },
+      "selection_policy": { "type": "positive_target_edge", "threshold": 0.62 },
+      "description": "Goes-to-decision target using the DISTANCE market baseline."
+    },
+    {
+      "name": "finish_positive_log_c1_conf62",
+      "model": "logistic_regression",
+      "target": "finish",
+      "features": "production_plus_all_research",
+      "model_params": { "C": 1.0 },
+      "calibration": { "method": "temperature", "temperature": 1.6 },
+      "selection_policy": { "type": "positive_target_edge", "threshold": 0.62 },
+      "description": "Finish likelihood target using the DISTANCE market baseline."
+    },
+    {
+      "name": "ko_tko_positive_log_c1_conf32",
+      "model": "logistic_regression",
+      "target": "ko_tko",
+      "features": "production_plus_all_research",
+      "model_params": { "C": 1.0 },
+      "calibration": { "method": "temperature", "temperature": 1.8 },
+      "selection_policy": { "type": "positive_target_edge", "threshold": 0.32 },
+      "description": "Any-fighter KO/TKO likelihood target using fight-level method odds."
+    },
+    {
+      "name": "submission_positive_log_c1_conf22",
+      "model": "logistic_regression",
+      "target": "submission",
+      "features": "production_plus_all_research",
+      "model_params": { "C": 1.0 },
+      "calibration": { "method": "temperature", "temperature": 1.8 },
+      "selection_policy": { "type": "positive_target_edge", "threshold": 0.22 },
+      "description": "Any-fighter submission likelihood target using fight-level method odds."
+    },
+    {
+      "name": "over_1_5_positive_log_c1_conf62",
+      "model": "logistic_regression",
+      "target": "over_1_5",
+      "features": "production_plus_all_research",
+      "model_params": { "C": 1.0 },
+      "calibration": { "method": "temperature", "temperature": 1.6 },
+      "selection_policy": { "type": "positive_target_edge", "threshold": 0.62 },
+      "description": "Over 1.5 rounds target using OVERUNDER_1.5 market rows."
+    },
+    {
+      "name": "over_2_5_positive_log_c1_conf58",
+      "model": "logistic_regression",
+      "target": "over_2_5",
+      "features": "production_plus_all_research",
+      "model_params": { "C": 1.0 },
+      "calibration": { "method": "temperature", "temperature": 1.6 },
+      "selection_policy": { "type": "positive_target_edge", "threshold": 0.58 },
+      "description": "Over 2.5 rounds target using OVERUNDER_2.5 market rows."
+    },
+    {
+      "name": "over_3_5_positive_log_c1_conf54",
+      "model": "logistic_regression",
+      "target": "over_3_5",
+      "features": "production_plus_all_research",
+      "model_params": { "C": 1.0 },
+      "calibration": { "method": "temperature", "temperature": 1.6 },
+      "selection_policy": { "type": "positive_target_edge", "threshold": 0.54 },
+      "description": "Over 3.5 rounds target using OVERUNDER_3.5 market rows."
+    },
+    {
+      "name": "over_4_5_positive_log_c1_conf50",
+      "model": "logistic_regression",
+      "target": "over_4_5",
+      "features": "production_plus_all_research",
+      "model_params": { "C": 1.0 },
+      "calibration": { "method": "temperature", "temperature": 1.6 },
+      "selection_policy": { "type": "positive_target_edge", "threshold": 0.5 },
+      "description": "Over 4.5 rounds target using OVERUNDER_4.5 market rows."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/method-round-prop-targets-v1.json",
+    "markdown": "data/experiments/harness/method-round-prop-targets-v1.md"
+  }
+}

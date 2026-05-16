@@ -1,0 +1,76 @@
+{
+  "generated_at": "2026-05-12T03:58:40Z",
+  "report": "market-aware-model-experiment-manifest",
+  "epic": "intercept-tgq5",
+  "task": "intercept-0ipt",
+  "report_only": true,
+  "writes_model_versions": false,
+  "activation_allowed": false,
+  "source_decision_report": "data/experiments/market-coverage-unlock-final-report.json",
+  "frozen_evidence_bundle": {
+    "coverage": "data/experiments/market-coverage-unlock-validation-coverage.json",
+    "leakage_audit": "data/experiments/market-coverage-unlock-leakage-audit.json",
+    "baselines": "data/experiments/market-coverage-unlock-simple-baselines.json",
+    "market_gate": "data/experiments/market-coverage-unlock-market-gate-report.json"
+  },
+  "dataset_contract": {
+    "corpus": "D2-MCU coverage-passing historical FightOdds/UFCStats corpus",
+    "source_events_imported": 37,
+    "source_events_matched": 37,
+    "scored_market_covered_events": 37,
+    "scored_market_covered_fights": 345,
+    "chronology": "walk-forward-compatible chronological event order",
+    "split_policy": "All training, calibration, and selection logic must use only fights before the evaluated fight/event.",
+    "inclusion_rules": [
+      "UFC canonical events only.",
+      "Completed fights only.",
+      "Historical odds rows must be linked to both canonical fighters for market-comparison metrics.",
+      "Cancelled source fights remain excluded from scored market metrics and reportable as review rows.",
+      "Rows with unresolved fighter-pair matching remain excluded from scored market metrics and reportable as review rows."
+    ],
+    "exclusion_rules": [
+      "No future fight stats, future market odds, post-fight results, or same-event later-bout labels may be used in features for an evaluated fight.",
+      "No unlinked moneyline rows may be used for ROI or market-baseline comparisons.",
+      "No active model_versions writes are allowed in D2-MIX."
+    ]
+  },
+  "metric_contract": {
+    "primary_baseline": "no-vig market favorite",
+    "activation_threshold": "candidate simulated ROI must exceed no-vig market favorite by at least +2pp after passing coverage and leakage gates",
+    "metrics": [
+      "log_loss",
+      "brier_score",
+      "accuracy",
+      "roc_auc",
+      "calibration_gap",
+      "abs_calibration_error",
+      "simulated_research_roi"
+    ],
+    "roi_policy": {
+      "stake": "flat_1u",
+      "status": "simulated_research_only",
+      "baseline_roi": 0.16167167767526539,
+      "minimum_candidate_roi": 0.18167167767526538
+    }
+  },
+  "starting_market_gate": {
+    "value_status": "research_only",
+    "coverage_gate_passed": true,
+    "activation_gate_passed": false,
+    "market_favorite_roi": 0.16167167767526539,
+    "model_pick_roi": -0.10357596988111521,
+    "best_prior_candidate": "blend_25_model_75_market",
+    "best_prior_candidate_roi": 0.1588586462200478,
+    "best_prior_candidate_delta_vs_market_favorite": -0.00281303145521758
+  },
+  "experiment_sequence": [
+    "intercept-zx69: Evaluate calibration and market-blend variants.",
+    "intercept-z2lz: Evaluate feature and model-family variants.",
+    "intercept-wz5q: Publish model-improvement recommendation."
+  ],
+  "guardrails": [
+    "Research-only reports may identify candidate improvements, but must not activate validated status.",
+    "A separate activation epic is required before writing active model_versions or surfacing value claims.",
+    "Every candidate must be compared against the no-vig market favorite baseline."
+  ]
+}

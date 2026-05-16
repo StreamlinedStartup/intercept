@@ -1,0 +1,560 @@
+{
+  "generated_at": "2026-05-16T02:20:59.647Z",
+  "report": "fightodds-prop-coverage",
+  "report_only": true,
+  "writes_model_versions": false,
+  "summary": {
+    "source_events": 31,
+    "source_fights": 452,
+    "matched_fights": 322,
+    "distance_markets": 398,
+    "prop_rows": 15215,
+    "linked_prop_rows": 12379,
+    "source_current_rows": 8338,
+    "source_previous_rows": 6877,
+    "fight_match_rate": 0.7123893805309734,
+    "prop_link_rate": 0.813604995070654,
+    "decision_finish_baselines_ready": false
+  },
+  "timestamp_limitations": [
+    "Imported prop rows use line_kind source_current or source_previous only.",
+    "FightOdds exposes oddsPrev but no previous-price timestamp in this query shape.",
+    "oddsOpen, oddsBest, and oddsWorst are preserved in raw_metadata but are not treated as model-ready timestamps."
+  ],
+  "readiness_notes": [
+    "Not ready: imported prop rows are missing, or some rows are not linked to canonical fights."
+  ],
+  "events": [
+    {
+      "source_event_id": "5362",
+      "raw_name": "UFC Fight Night 237: Moreno vs. Royval 2",
+      "event_date": "2024-02-24",
+      "canonical_event_id": "902ab9197b83d0db",
+      "source_fights": 14,
+      "matched_fights": 12,
+      "distance_markets": 12,
+      "prop_rows": 294,
+      "linked_prop_rows": 294,
+      "source_current_rows": 164,
+      "source_previous_rows": 130
+    },
+    {
+      "source_event_id": "6488",
+      "raw_name": "UFC 319: Du Plessis vs. Chimaev",
+      "event_date": "2025-08-16",
+      "canonical_event_id": "421ccfc6ddb17958",
+      "source_fights": 16,
+      "matched_fights": 10,
+      "distance_markets": 12,
+      "prop_rows": 353,
+      "linked_prop_rows": 299,
+      "source_current_rows": 196,
+      "source_previous_rows": 157
+    },
+    {
+      "source_event_id": "6511",
+      "raw_name": "UFC Fight Night: Walker vs. Zhang",
+      "event_date": "2025-08-23",
+      "canonical_event_id": "754968e325d6f60d",
+      "source_fights": 12,
+      "matched_fights": 6,
+      "distance_markets": 12,
+      "prop_rows": 269,
+      "linked_prop_rows": 137,
+      "source_current_rows": 158,
+      "source_previous_rows": 111
+    },
+    {
+      "source_event_id": "6547",
+      "raw_name": "UFC Fight Night: Imavov vs. Borralho",
+      "event_date": "2025-09-06",
+      "canonical_event_id": "6e380a4d73ab4f0e",
+      "source_fights": 15,
+      "matched_fights": 12,
+      "distance_markets": 13,
+      "prop_rows": 339,
+      "linked_prop_rows": 311,
+      "source_current_rows": 193,
+      "source_previous_rows": 146
+    },
+    {
+      "source_event_id": "6414",
+      "raw_name": "UFC Fight Night: Lopes vs. Silva",
+      "event_date": "2025-09-13",
+      "canonical_event_id": "5efaaf313b652dd7",
+      "source_fights": 15,
+      "matched_fights": 12,
+      "distance_markets": 14,
+      "prop_rows": 406,
+      "linked_prop_rows": 356,
+      "source_current_rows": 236,
+      "source_previous_rows": 170
+    },
+    {
+      "source_event_id": "6602",
+      "raw_name": "UFC Fight Night: Ulberg vs. Reyes",
+      "event_date": "2025-09-27",
+      "canonical_event_id": "ed220e87bef0cc64",
+      "source_fights": 16,
+      "matched_fights": 11,
+      "distance_markets": 12,
+      "prop_rows": 371,
+      "linked_prop_rows": 339,
+      "source_current_rows": 216,
+      "source_previous_rows": 155
+    },
+    {
+      "source_event_id": "6552",
+      "raw_name": "UFC 320: Ankalaev vs. Pereira 2",
+      "event_date": "2025-10-04",
+      "canonical_event_id": "8944a0f9b2f0ce6d",
+      "source_fights": 15,
+      "matched_fights": 9,
+      "distance_markets": 14,
+      "prop_rows": 432,
+      "linked_prop_rows": 286,
+      "source_current_rows": 234,
+      "source_previous_rows": 198
+    },
+    {
+      "source_event_id": "6619",
+      "raw_name": "UFC Fight Night 261: Oliveira vs. Gamrot",
+      "event_date": "2025-10-11",
+      "canonical_event_id": "9336e86cfd4ceaa1",
+      "source_fights": 13,
+      "matched_fights": 10,
+      "distance_markets": 12,
+      "prop_rows": 369,
+      "linked_prop_rows": 310,
+      "source_current_rows": 204,
+      "source_previous_rows": 165
+    },
+    {
+      "source_event_id": "6553",
+      "raw_name": "UFC Fight Night: de Ridder vs. Allen",
+      "event_date": "2025-10-18",
+      "canonical_event_id": "38e5d9dcb0fddc42",
+      "source_fights": 14,
+      "matched_fights": 10,
+      "distance_markets": 13,
+      "prop_rows": 400,
+      "linked_prop_rows": 308,
+      "source_current_rows": 221,
+      "source_previous_rows": 179
+    },
+    {
+      "source_event_id": "6593",
+      "raw_name": "UFC 321: Aspinall vs. Gane",
+      "event_date": "2025-10-25",
+      "canonical_event_id": "7956f026e2672c47",
+      "source_fights": 14,
+      "matched_fights": 10,
+      "distance_markets": 13,
+      "prop_rows": 399,
+      "linked_prop_rows": 305,
+      "source_current_rows": 221,
+      "source_previous_rows": 178
+    },
+    {
+      "source_event_id": "6668",
+      "raw_name": "UFC Fight Night: Garcia vs. Onama",
+      "event_date": "2025-11-01",
+      "canonical_event_id": "0e2c2daf11b5d8f2",
+      "source_fights": 16,
+      "matched_fights": 9,
+      "distance_markets": 13,
+      "prop_rows": 487,
+      "linked_prop_rows": 338,
+      "source_current_rows": 269,
+      "source_previous_rows": 218
+    },
+    {
+      "source_event_id": "8596",
+      "raw_name": "UFC Fight Night: Bonfim vs. Brown",
+      "event_date": "2025-11-08",
+      "canonical_event_id": "6436029b50a9c255",
+      "source_fights": 15,
+      "matched_fights": 10,
+      "distance_markets": 12,
+      "prop_rows": 493,
+      "linked_prop_rows": 410,
+      "source_current_rows": 274,
+      "source_previous_rows": 219
+    },
+    {
+      "source_event_id": "8597",
+      "raw_name": "UFC 322: Della Maddalena vs. Makhachev",
+      "event_date": "2025-11-15",
+      "canonical_event_id": "8db1b36dde268ef6",
+      "source_fights": 15,
+      "matched_fights": 11,
+      "distance_markets": 14,
+      "prop_rows": 595,
+      "linked_prop_rows": 475,
+      "source_current_rows": 316,
+      "source_previous_rows": 279
+    },
+    {
+      "source_event_id": "6603",
+      "raw_name": "UFC Fight Night 265: Tsarukyan vs. Hooker",
+      "event_date": "2025-11-22",
+      "canonical_event_id": "92c96df8bdab5fea",
+      "source_fights": 15,
+      "matched_fights": 10,
+      "distance_markets": 14,
+      "prop_rows": 565,
+      "linked_prop_rows": 397,
+      "source_current_rows": 314,
+      "source_previous_rows": 251
+    },
+    {
+      "source_event_id": "8620",
+      "raw_name": "UFC 323: Dvalishvili vs. Yan 2",
+      "event_date": "2025-12-06",
+      "canonical_event_id": "bd92cf5da5413d2a",
+      "source_fights": 14,
+      "matched_fights": 13,
+      "distance_markets": 14,
+      "prop_rows": 597,
+      "linked_prop_rows": 551,
+      "source_current_rows": 322,
+      "source_previous_rows": 275
+    },
+    {
+      "source_event_id": "8609",
+      "raw_name": "UFC Fight Night: Royval vs. Kape",
+      "event_date": "2025-12-13",
+      "canonical_event_id": "bc0f994de0521926",
+      "source_fights": 14,
+      "matched_fights": 11,
+      "distance_markets": 12,
+      "prop_rows": 483,
+      "linked_prop_rows": 447,
+      "source_current_rows": 268,
+      "source_previous_rows": 215
+    },
+    {
+      "source_event_id": "8768",
+      "raw_name": "UFC 324: Gaethje vs. Pimblett",
+      "event_date": "2026-01-24",
+      "canonical_event_id": "00e11b5c8b7bfeeb",
+      "source_fights": 14,
+      "matched_fights": 9,
+      "distance_markets": 11,
+      "prop_rows": 491,
+      "linked_prop_rows": 407,
+      "source_current_rows": 253,
+      "source_previous_rows": 238
+    },
+    {
+      "source_event_id": "8805",
+      "raw_name": "UFC 325: Volkanovski vs. Lopes 2",
+      "event_date": "2026-01-31",
+      "canonical_event_id": "30ad2050273d016a",
+      "source_fights": 16,
+      "matched_fights": 7,
+      "distance_markets": 13,
+      "prop_rows": 566,
+      "linked_prop_rows": 309,
+      "source_current_rows": 299,
+      "source_previous_rows": 267
+    },
+    {
+      "source_event_id": "8813",
+      "raw_name": "UFC Fight Night: Bautista vs. Oliveira",
+      "event_date": "2026-02-07",
+      "canonical_event_id": "c337c3c85b1871e0",
+      "source_fights": 15,
+      "matched_fights": 10,
+      "distance_markets": 13,
+      "prop_rows": 535,
+      "linked_prop_rows": 432,
+      "source_current_rows": 287,
+      "source_previous_rows": 248
+    },
+    {
+      "source_event_id": "8828",
+      "raw_name": "UFC Fight Night: Strickland vs. Hernandez",
+      "event_date": "2026-02-21",
+      "canonical_event_id": "79ab17db3b40831a",
+      "source_fights": 15,
+      "matched_fights": 12,
+      "distance_markets": 14,
+      "prop_rows": 601,
+      "linked_prop_rows": 521,
+      "source_current_rows": 324,
+      "source_previous_rows": 277
+    },
+    {
+      "source_event_id": "8814",
+      "raw_name": "UFC Mexico: Moreno vs. Kavanagh",
+      "event_date": "2026-02-28",
+      "canonical_event_id": "0cfbbfa0ba6d9855",
+      "source_fights": 14,
+      "matched_fights": 10,
+      "distance_markets": 13,
+      "prop_rows": 555,
+      "linked_prop_rows": 428,
+      "source_current_rows": 299,
+      "source_previous_rows": 256
+    },
+    {
+      "source_event_id": "8823",
+      "raw_name": "UFC 326: Holloway vs. Oliveira 2",
+      "event_date": "2026-03-07",
+      "canonical_event_id": "15ec018d144710db",
+      "source_fights": 16,
+      "matched_fights": 11,
+      "distance_markets": 12,
+      "prop_rows": 519,
+      "linked_prop_rows": 475,
+      "source_current_rows": 276,
+      "source_previous_rows": 243
+    },
+    {
+      "source_event_id": "8830",
+      "raw_name": "UFC Fight Night: Emmett vs. Vallejos",
+      "event_date": "2026-03-14",
+      "canonical_event_id": "babc6b5745335f18",
+      "source_fights": 14,
+      "matched_fights": 12,
+      "distance_markets": 14,
+      "prop_rows": 594,
+      "linked_prop_rows": 513,
+      "source_current_rows": 320,
+      "source_previous_rows": 274
+    },
+    {
+      "source_event_id": "8822",
+      "raw_name": "UFC London: Evloev vs. Murphy",
+      "event_date": "2026-03-21",
+      "canonical_event_id": "69108cb8b32efe04",
+      "source_fights": 14,
+      "matched_fights": 13,
+      "distance_markets": 13,
+      "prop_rows": 512,
+      "linked_prop_rows": 512,
+      "source_current_rows": 283,
+      "source_previous_rows": 229
+    },
+    {
+      "source_event_id": "8832",
+      "raw_name": "UFC Seattle: Adesanya vs. Pyfer",
+      "event_date": "2026-03-28",
+      "canonical_event_id": "5c38639f860a5542",
+      "source_fights": 17,
+      "matched_fights": 10,
+      "distance_markets": 13,
+      "prop_rows": 561,
+      "linked_prop_rows": 429,
+      "source_current_rows": 299,
+      "source_previous_rows": 262
+    },
+    {
+      "source_event_id": "8898",
+      "raw_name": "UFC Fight Night: Moicano vs. Duncan",
+      "event_date": "2026-04-04",
+      "canonical_event_id": "9a70f67ad2187fa3",
+      "source_fights": 14,
+      "matched_fights": 12,
+      "distance_markets": 13,
+      "prop_rows": 603,
+      "linked_prop_rows": 557,
+      "source_current_rows": 323,
+      "source_previous_rows": 280
+    },
+    {
+      "source_event_id": "8861",
+      "raw_name": "UFC 327: Procházka vs. Ulberg",
+      "event_date": "2026-04-11",
+      "canonical_event_id": "f3eb664db7fb1df3",
+      "source_fights": 13,
+      "matched_fights": 10,
+      "distance_markets": 12,
+      "prop_rows": 537,
+      "linked_prop_rows": 444,
+      "source_current_rows": 298,
+      "source_previous_rows": 239
+    },
+    {
+      "source_event_id": "8946",
+      "raw_name": "UFC Fight Night: Burns vs. Malott",
+      "event_date": "2026-04-18",
+      "canonical_event_id": "c3ac8d0da7b05772",
+      "source_fights": 14,
+      "matched_fights": 10,
+      "distance_markets": 12,
+      "prop_rows": 531,
+      "linked_prop_rows": 445,
+      "source_current_rows": 302,
+      "source_previous_rows": 229
+    },
+    {
+      "source_event_id": "8959",
+      "raw_name": "UFC Fight Night: Sterling vs. Zalal",
+      "event_date": "2026-04-25",
+      "canonical_event_id": "e60d773a0a42048a",
+      "source_fights": 14,
+      "matched_fights": 11,
+      "distance_markets": 13,
+      "prop_rows": 606,
+      "linked_prop_rows": 512,
+      "source_current_rows": 323,
+      "source_previous_rows": 283
+    },
+    {
+      "source_event_id": "8994",
+      "raw_name": "UFC Perth: Della Maddalena vs. Prates",
+      "event_date": "2026-05-02",
+      "canonical_event_id": "872b018076f831b0",
+      "source_fights": 15,
+      "matched_fights": 12,
+      "distance_markets": 13,
+      "prop_rows": 549,
+      "linked_prop_rows": 511,
+      "source_current_rows": 321,
+      "source_previous_rows": 228
+    },
+    {
+      "source_event_id": "9010",
+      "raw_name": "UFC 328: Chimaev vs. Strickland",
+      "event_date": "2026-05-09",
+      "canonical_event_id": "9eedac48b497de5a",
+      "source_fights": 14,
+      "matched_fights": 7,
+      "distance_markets": 13,
+      "prop_rows": 603,
+      "linked_prop_rows": 321,
+      "source_current_rows": 325,
+      "source_previous_rows": 278
+    }
+  ],
+  "outcomes": [
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Yes",
+      "rows": 1565
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Will the fight go the distance? - Yes",
+      "rows": 1518
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Will The Fight Go The Distance - Yes",
+      "rows": 1001
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Goes the Distance - Yes",
+      "rows": 747
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Fight Goes To Decision - Yes",
+      "rows": 647
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Fight to Go the Distance - Yes",
+      "rows": 639
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Fight to go the Distance",
+      "rows": 628
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "To go the distance - Yes",
+      "rows": 503
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Fight to Go the Distance? - Yes",
+      "rows": 481
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Fight To Go The Distance - Yes",
+      "rows": 133
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Fight Goes To Decision? - Yes",
+      "rows": 44
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "No",
+      "rows": 1562
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Will the fight go the distance? - No",
+      "rows": 1513
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Will The Fight Go The Distance - No",
+      "rows": 996
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Goes the Distance - No",
+      "rows": 748
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Fight to Go the Distance - No",
+      "rows": 684
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Fight Goes To Decision - No",
+      "rows": 646
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "To go the distance - No",
+      "rows": 503
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Fight to Go the Distance? - No",
+      "rows": 481
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Fight To Go The Distance - No",
+      "rows": 132
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Fight Goes To Decision? - No",
+      "rows": 44
+    }
+  ]
+}
