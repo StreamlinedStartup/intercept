@@ -105,6 +105,7 @@ def run_experiment_harness(
     eligible_samples = _eligible_evaluation_samples(samples, min_train_samples)
     eligible_samples = _apply_holdout_policy(eligible_samples, config["corpus"].get("holdout"))
     markets = _load_market_consensus()
+    prop_markets = _load_prop_market_consensus()
     samples = _attach_market_context(samples, markets)
     eligible_samples = _attach_market_context(eligible_samples, markets)
     market_predictions = [_market_prediction(sample, markets) for sample in eligible_samples]
@@ -120,6 +121,11 @@ def run_experiment_harness(
         },
         market_predictions,
     )
+    target_market_reports = {
+        "winner": market_report,
+        "decision": _target_market_baseline_report("decision", eligible_samples, prop_markets),
+        "finish": _target_market_baseline_report("finish", eligible_samples, prop_markets),
+    }
     reports = []
     for variant in config["variants"]:
         if variant["name"] == "market_favorite" or variant["model"] == "market_favorite":
@@ -130,11 +136,12 @@ def run_experiment_harness(
                 samples,
                 eligible_samples,
                 markets,
+                prop_markets,
                 min_train_samples,
                 base_prediction_cache,
                 feature_vector_cache,
             )
-        _annotate_variant(report, report.get("gate_baseline", market_report), config["gate"])
+        _annotate_variant(report, report.get("gate_baseline", target_market_reports[_target(variant)]), config["gate"])
         reports.append(report)
     if not any(report["name"] == "market_favorite" for report in reports):
         _annotate_variant(market_report, market_report, config["gate"])
@@ -361,6 +368,7 @@ def _run_model_variant(
     training_samples: list[dict[str, Any]],
     evaluation_samples: list[dict[str, Any]],
     markets: dict[str, dict[str, dict[str, float]]],
+    prop_markets: dict[str, dict[str, dict[str, float]]],
     min_train_samples: int,
     base_prediction_cache: dict[tuple[Any, ...], list[dict[str, Any]]] | None = None,
     feature_vector_cache: dict[tuple[tuple[str, ...], str], np.ndarray] | None = None,
@@ -378,6 +386,7 @@ def _run_model_variant(
     predictions = _materialize_predictions(
         cache[key],
         markets,
+        prop_markets,
         _calibration(variant),
         variant.get("market_blend_weight"),
         _target(variant),
@@ -392,12 +401,13 @@ def _run_model_variant(
         report["gate_baseline"] = _variant_report(
             {
                 "name": f"{variant['name']}_market_selected_baseline",
-                "model": "market_favorite",
+                "model": "market_favorite" if _target(variant) == "winner" else "prop_market_baseline",
+                "target": _target(variant),
                 "features": "none",
                 "market_blend_weight": None,
-                "description": "No-vig market favorite baseline on the selected fight subset.",
+                "description": "No-vig market baseline on the selected fight subset.",
             },
-            [_market_prediction(sample, markets) for sample in selected_samples],
+            _target_market_predictions(_target(variant), selected_samples, markets, prop_markets),
         )
     return report
 
@@ -463,6 +473,7 @@ def _cached_feature_vector(
 def _materialize_predictions(
     base_predictions: list[dict[str, Any]],
     markets: dict[str, dict[str, dict[str, float]]],
+    prop_markets: dict[str, dict[str, dict[str, float]]] | None,
     calibration: dict[str, Any],
     market_blend_weight: float | None,
     target: str = "winner",
@@ -471,6 +482,7 @@ def _materialize_predictions(
         _target_prediction(
             base_prediction["sample"],
             markets,
+            prop_markets or {},
             _calibrate_probability(float(base_prediction["model_probability"]), calibration),
             market_blend_weight,
             target,
@@ -604,6 +616,40 @@ def _market_prediction(
     return _prediction(sample, markets, probability, None)
 
 
+def _target_market_baseline_report(
+    target: str,
+    samples: list[dict[str, Any]],
+    prop_markets: dict[str, dict[str, dict[str, float]]],
+) -> dict[str, Any]:
+    return _variant_report(
+        {
+            "name": f"{target}_market_baseline",
+            "model": "prop_market_baseline",
+            "target": target,
+            "features": "none",
+            "market_blend_weight": None,
+            "description": f"No-vig FightOdds DISTANCE market baseline for {target}.",
+        },
+        _target_market_predictions(target, samples, {}, prop_markets),
+    )
+
+
+def _target_market_predictions(
+    target: str,
+    samples: list[dict[str, Any]],
+    markets: dict[str, dict[str, dict[str, float]]],
+    prop_markets: dict[str, dict[str, dict[str, float]]],
+) -> list[dict[str, Any]]:
+    if target == "winner":
+        return [_market_prediction(sample, markets) for sample in samples]
+    predictions = []
+    for sample in samples:
+        probability = _prop_market_probability(prop_markets, str(sample["fight_id"]), target)
+        if probability is not None and _target_label(sample, target) is not None:
+            predictions.append(_target_prediction(sample, markets, prop_markets, probability, None, target))
+    return predictions
+
+
 def _load_prop_market_consensus() -> dict[str, dict[str, dict[str, float]]]:
     with pool.borrow() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
@@ -680,6 +726,7 @@ def _prop_market_probability(
 def _target_prediction(
     sample: dict[str, Any],
     markets: dict[str, dict[str, dict[str, float]]],
+    prop_markets: dict[str, dict[str, dict[str, float]]],
     model_probability: float,
     market_blend_weight: float | None,
     target: str,
@@ -694,6 +741,17 @@ def _target_prediction(
     probability = float(np.clip(model_probability, 0.001, 0.999))
     predicted_label = 1 if probability >= 0.5 else 0
     confidence = probability if predicted_label == 1 else 1 - probability
+    market_probability = _prop_market_probability(prop_markets, str(sample["fight_id"]), target)
+    market_predicted_label = None if market_probability is None else 1 if market_probability >= 0.5 else 0
+    picked_market_probability = None
+    picked_model_market_edge = None
+    decimal_odds = None
+    net_profit = None
+    if market_probability is not None:
+        picked_market_probability = market_probability if predicted_label == 1 else 1 - market_probability
+        picked_model_market_edge = confidence - picked_market_probability
+        decimal_odds = 1 / picked_market_probability
+        net_profit = decimal_odds - 1 if predicted_label == actual_label else -1.0
     return {
         "fight_id": sample["fight_id"],
         "event_id": sample["event_id"],
@@ -701,15 +759,17 @@ def _target_prediction(
         "target": target,
         "fighter_a_probability": probability,
         "model_probability": model_probability,
-        "market_probability": None,
+        "market_probability": market_probability,
         "actual_label": actual_label,
         "predicted_label": predicted_label,
-        "market_predicted_label": None,
+        "market_predicted_label": market_predicted_label,
         "confidence": confidence,
         "picked_model_probability": confidence,
-        "picked_market_probability": None,
-        "picked_model_market_edge": None,
+        "picked_market_probability": picked_market_probability,
+        "picked_model_market_edge": picked_model_market_edge,
         "won": predicted_label == actual_label,
+        "decimal_odds": decimal_odds,
+        "net_profit": net_profit,
     }
 
 
@@ -813,6 +873,14 @@ def _rejection_reasons(report: dict[str, Any], gate: dict[str, Any]) -> list[str
 def _target_roi(target: str, predictions: list[dict[str, Any]]) -> dict[str, Any]:
     if target == "winner":
         return _roi(predictions)
+    market_backed = [prediction for prediction in predictions if prediction.get("net_profit") is not None]
+    if market_backed:
+        roi = _roi(market_backed)
+        return {
+            **roi,
+            "selected_entries": len(predictions),
+            "market_backed_entries": len(market_backed),
+        }
     return {
         "entries": 0,
         "wins": None,
@@ -925,7 +993,7 @@ def _feature_names(variant: dict[str, Any]) -> list[str]:
 def _feature_spec(variant: dict[str, Any]) -> dict[str, Any]:
     features = variant["features"]
     if features == "none":
-        if variant["model"] == "market_favorite":
+        if variant["model"] in {"market_favorite", "prop_market_baseline"}:
             return {"base": "none"}
         raise ValueError("non-market variants cannot use features='none'")
     if features in {

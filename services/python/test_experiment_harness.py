@@ -69,10 +69,10 @@ def _config() -> dict:
     }
 
 
-def _variant(name: str, roi: float, log_loss: float, brier: float) -> dict:
+def _variant(name: str, roi: float, log_loss: float, brier: float, target: str = "winner") -> dict:
     return {
         "name": name,
-        "params": {"target": "winner"},
+        "params": {"target": target},
         "events_scored": 40,
         "metrics": {"count": 379, "accuracy": 0.6, "log_loss": log_loss, "brier_score": brier},
         "simulated_research_roi": {"roi_pct": roi},
@@ -326,6 +326,7 @@ def test_materialize_predictions_calibrates_before_blending() -> None:
     predictions = _materialize_predictions(
         [{"sample": sample, "model_probability": 0.8}],
         markets,
+        {},
         {"method": "temperature", "temperature": 2.0},
         0.5,
     )
@@ -352,7 +353,7 @@ def test_non_winner_target_prediction_uses_target_label_without_market_roi() -> 
         "target_labels": {"decision": 1, "finish": 0},
     }
 
-    prediction = _target_prediction(sample, {}, 0.7, None, "decision")
+    prediction = _target_prediction(sample, {}, {}, 0.7, None, "decision")
 
     assert prediction["target"] == "decision"
     assert prediction["actual_label"] == 1
@@ -360,6 +361,49 @@ def test_non_winner_target_prediction_uses_target_label_without_market_roi() -> 
     assert prediction["won"] is True
     assert prediction["market_probability"] is None
     assert _target_roi("decision", [prediction])["status"] == "decision_market_odds_unavailable"
+
+
+def test_non_winner_target_prediction_uses_prop_market_roi() -> None:
+    sample = {
+        "fight_id": "fight-1",
+        "event_id": "event-1",
+        "event_date": __import__("datetime").date(2026, 1, 1),
+        "label": 0,
+        "target_labels": {"decision": 1, "finish": 0},
+    }
+    prop_markets = {"fight-1": {"decision": {"market_prob": 0.55, "pair_count": 2}}}
+
+    prediction = _target_prediction(sample, {}, prop_markets, 0.7, None, "decision")
+    roi = _target_roi("decision", [prediction])
+
+    assert prediction["market_probability"] == pytest.approx(0.55)
+    assert prediction["market_predicted_label"] == 1
+    assert prediction["picked_market_probability"] == pytest.approx(0.55)
+    assert prediction["picked_model_market_edge"] == pytest.approx(0.15)
+    assert prediction["decimal_odds"] == pytest.approx(1 / 0.55)
+    assert prediction["net_profit"] == pytest.approx((1 / 0.55) - 1)
+    assert roi["status"] == "simulated_research_only"
+    assert roi["entries"] == 1
+    assert roi["wins"] == 1
+
+
+def test_finish_target_prediction_uses_complement_prop_market_roi() -> None:
+    sample = {
+        "fight_id": "fight-1",
+        "event_id": "event-1",
+        "event_date": __import__("datetime").date(2026, 1, 1),
+        "label": 0,
+        "target_labels": {"decision": 1, "finish": 0},
+    }
+    prop_markets = {"fight-1": {"finish": {"market_prob": 0.45, "pair_count": 2}}}
+
+    prediction = _target_prediction(sample, {}, prop_markets, 0.3, None, "finish")
+
+    assert prediction["predicted_label"] == 0
+    assert prediction["market_predicted_label"] == 0
+    assert prediction["picked_market_probability"] == pytest.approx(0.55)
+    assert prediction["picked_model_market_edge"] == pytest.approx(0.15)
+    assert _target_roi("finish", [prediction])["status"] == "simulated_research_only"
 
 
 def test_non_winner_target_prediction_rejects_market_blend() -> None:
@@ -371,7 +415,7 @@ def test_non_winner_target_prediction_rejects_market_blend() -> None:
     }
 
     with pytest.raises(ValueError, match="market_blend_weight requires target='winner'"):
-        _target_prediction(sample, {}, 0.7, 0.5, "finish")
+        _target_prediction(sample, {}, {}, 0.7, 0.5, "finish")
 
 
 def test_novig_distance_probabilities_require_paired_outcomes() -> None:
@@ -520,8 +564,8 @@ def test_run_model_variant_reuses_base_prediction_cache(monkeypatch: pytest.Monk
     first = {"name": "a", "model": "xgboost", "features": "production", "market_blend_weight": 0.1}
     second = {"name": "b", "model": "xgboost", "features": "production", "market_blend_weight": 0.9}
 
-    _run_model_variant(first, [], [], {}, 100, cache)
-    _run_model_variant(second, [], [], {}, 100, cache)
+    _run_model_variant(first, [], [], {}, {}, 100, cache)
+    _run_model_variant(second, [], [], {}, {}, 100, cache)
 
     assert calls == 1
 
@@ -534,7 +578,19 @@ def test_gate_annotation_requires_roi_and_probability_quality() -> None:
 
     assert candidate["roi_delta_vs_market"] == pytest.approx(0.03)
     assert candidate["clears_market_gate"] is False
-    assert candidate["rejection_reasons"] == ["log_loss_worse_than_market"]
+
+
+def test_gate_annotation_compares_non_winner_to_same_target_prop_baseline() -> None:
+    market = _variant("decision_market_baseline", roi=-0.02, log_loss=0.70, brier=0.24, target="decision")
+    candidate = _variant("decision_candidate", roi=0.03, log_loss=0.69, brier=0.23, target="decision")
+
+    _annotate_variant(candidate, market, _config()["gate"])
+
+    assert candidate["roi_delta_vs_market"] == pytest.approx(0.05)
+    assert candidate["log_loss_delta_vs_market"] == pytest.approx(-0.01)
+    assert "market_baseline_unavailable_for_target" not in candidate["rejection_reasons"]
+    assert candidate["rejection_reasons"] == []
+    assert candidate["clears_market_gate"] is True
 
 
 def test_recommendation_requires_locked_followup_for_passing_candidate() -> None:
