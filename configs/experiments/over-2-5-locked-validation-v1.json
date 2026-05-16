@@ -1,0 +1,62 @@
+{
+  "name": "over-2-5-locked-validation-v1",
+  "description": "Frozen report-only locked validation for over_2_5_positive_log_c1_conf58 discovered in method-round-prop-targets-v1. Do not tune target, threshold, model params, calibration, or selection policy after this config is committed.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 100,
+    "max_events": null,
+    "holdout": {
+      "type": "last_n_events",
+      "event_count": 35
+    }
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "frozen_from_method_round_prop_targets_v1",
+    "locked_evaluation": "frozen_candidates_only"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "target": "winner",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline included for report compatibility."
+    },
+    {
+      "name": "locked_over_2_5_positive_log_c1_conf58",
+      "model": "logistic_regression",
+      "target": "over_2_5",
+      "features": "production_plus_all_research",
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 1.6
+      },
+      "selection_policy": {
+        "type": "positive_target_edge",
+        "threshold": 0.58
+      },
+      "description": "Frozen Over 2.5 candidate from method-round-prop-targets-v1. Validate on the locked chronological holdout without threshold tuning."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/over-2-5-locked-validation-v1.json",
+    "markdown": "data/experiments/harness/over-2-5-locked-validation-v1.md"
+  }
+}
