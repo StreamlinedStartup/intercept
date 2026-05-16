@@ -172,6 +172,7 @@ def run_experiment_harness(
             "brier_score": market_report["metrics"]["brier_score"],
         },
         "variants": reports,
+        "signal_diagnostics": _signal_diagnostics(reports, market_report),
         "ranking": [
             {
                 "rank": index,
@@ -251,6 +252,29 @@ def render_markdown(report: dict[str, Any]) -> str:
                 roi=_fmt_pct(roi["roi_pct"]),
             )
         )
+    diagnostics = report.get("signal_diagnostics") or []
+    if diagnostics:
+        lines.extend(
+            [
+                "",
+                "## Signal Diagnostics",
+                "",
+                "| Variant | Indicator | Model ROI | Selected market ROI | Market ROI delta | Entries | Read |",
+                "|---|---|---:|---:|---:|---:|---|",
+            ]
+        )
+        for row in diagnostics:
+            lines.append(
+                "| {variant} | {indicator} | {model_roi} | {market_roi} | {market_delta} | {entries} | {read} |".format(
+                    variant=row["variant"],
+                    indicator=row["indicator"],
+                    model_roi=_fmt_pct(row["model_roi_pct"]),
+                    market_roi=_fmt_pct(row["selected_market_roi_pct"]),
+                    market_delta=_fmt_signed_pct(row["selected_market_roi_delta_vs_full_market"]),
+                    entries=row["selected_market_entries"],
+                    read=row["read"],
+                )
+            )
     lines.extend(
         [
             "",
@@ -907,6 +931,66 @@ def _recommendation(ranked: list[dict[str, Any]]) -> dict[str, Any]:
         "status": "research_only",
         "reason": f"{best['name']} is the best configured candidate but does not clear the market gate.",
     }
+
+
+def _signal_diagnostics(reports: list[dict[str, Any]], market_report: dict[str, Any]) -> list[dict[str, Any]]:
+    full_market_roi = market_report["simulated_research_roi"]["roi_pct"]
+    diagnostics = []
+    for report in reports:
+        baseline = report.get("gate_baseline")
+        baseline_roi = None if baseline is None else baseline["simulated_research_roi"].get("roi_pct")
+        if baseline_roi is None:
+            continue
+        policy_type = report["params"]["selection_policy"]["type"]
+        target = report["params"]["target"]
+        row = {
+            "variant": report["name"],
+            "target": target,
+            "selection_policy": policy_type,
+            "model_roi_pct": report["simulated_research_roi"].get("roi_pct"),
+            "selected_market_roi_pct": baseline_roi,
+            "selected_market_roi_delta_vs_full_market": roi_delta(baseline_roi, full_market_roi),
+            "selected_market_entries": baseline["simulated_research_roi"].get("entries", baseline["metrics"]["count"]),
+            "selected_market_accuracy": baseline["metrics"]["accuracy"],
+            "indicator": _signal_indicator(target, policy_type, baseline_roi, full_market_roi),
+            "read": _signal_read(target, policy_type, baseline_roi, full_market_roi),
+            "status": "research_only",
+        }
+        diagnostics.append(row)
+    return sorted(
+        diagnostics,
+        key=lambda row: (
+            -(row["selected_market_roi_delta_vs_full_market"] or float("-inf")),
+            -row["selected_market_entries"],
+            row["variant"],
+        ),
+    )
+
+
+def _signal_indicator(target: str, policy_type: str, selected_market_roi: float, full_market_roi: float) -> str:
+    if selected_market_roi > full_market_roi and policy_type == "undervalued_underdog":
+        return "market_too_strong_against_model_underdog"
+    if selected_market_roi > full_market_roi and policy_type == "overpriced_favorite":
+        return "market_favorite_holds_despite_model_warning"
+    if selected_market_roi > 0 and target == "decision":
+        return "decision_market_strength_after_model_filter"
+    if selected_market_roi > 0 and policy_type == "abstain":
+        return "market_side_positive_even_when_model_abstains"
+    if selected_market_roi <= 0 and target == "finish":
+        return "avoid_finish_edge_until_method_props_improve"
+    return "no_positive_market_indicator"
+
+
+def _signal_read(target: str, policy_type: str, selected_market_roi: float, full_market_roi: float) -> str:
+    if selected_market_roi > full_market_roi and policy_type in {"undervalued_underdog", "overpriced_favorite"}:
+        return "Model disagreement is currently more useful as a market-strength warning than as a bet-against-market signal."
+    if selected_market_roi > 0 and target == "decision":
+        return "Model-filtered decision rows show positive prop-market ROI; evaluate with a locked future slice."
+    if selected_market_roi > 0 and policy_type == "abstain":
+        return "Low model-confidence rows are not automatic passes; the market side still has positive simulated ROI."
+    if selected_market_roi <= 0 and target == "finish":
+        return "Finish/inside-distance is the closest configured model candidate, but current prop-backed ROI is still negative."
+    return "No actionable positive signal in this selected subset."
 
 
 def _ranking_key(report: dict[str, Any]) -> tuple[int, float, float, float, str]:
