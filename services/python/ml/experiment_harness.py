@@ -82,7 +82,18 @@ XGBOOST_PARAM_DEFAULTS = {
 }
 XGBOOST_PARAM_KEYS = set(XGBOOST_PARAM_DEFAULTS)
 LOGISTIC_PARAM_KEYS = {"C"}
-SUPPORTED_TARGETS = {"winner", "decision", "finish"}
+SUPPORTED_TARGETS = {
+    "winner",
+    "decision",
+    "finish",
+    "ko_tko",
+    "submission",
+    "over_0_5",
+    "over_1_5",
+    "over_2_5",
+    "over_3_5",
+    "over_4_5",
+}
 
 
 def run_experiment_harness(
@@ -121,10 +132,10 @@ def run_experiment_harness(
         },
         market_predictions,
     )
+    configured_targets = {_target(variant) for variant in config["variants"]}
     target_market_reports = {
-        "winner": market_report,
-        "decision": _target_market_baseline_report("decision", eligible_samples, prop_markets),
-        "finish": _target_market_baseline_report("finish", eligible_samples, prop_markets),
+        target: market_report if target == "winner" else _target_market_baseline_report(target, eligible_samples, prop_markets)
+        for target in configured_targets
     }
     reports = []
     for variant in config["variants"]:
@@ -171,6 +182,7 @@ def run_experiment_harness(
             "log_loss": market_report["metrics"]["log_loss"],
             "brier_score": market_report["metrics"]["brier_score"],
         },
+        "target_market_coverage": _target_market_coverage(configured_targets, eligible_samples, prop_markets),
         "variants": reports,
         "signal_diagnostics": _signal_diagnostics(reports, market_report),
         "ranking": [
@@ -226,6 +238,27 @@ def render_markdown(report: dict[str, Any]) -> str:
                 reasons=", ".join(row["rejection_reasons"]) or "",
             )
         )
+    coverage = report.get("target_market_coverage") or []
+    if coverage:
+        lines.extend(
+            [
+                "",
+                "## Target Market Coverage",
+                "",
+                "| Target | Label rows | Market rows | Market coverage | Status |",
+                "|---|---:|---:|---:|---|",
+            ]
+        )
+        for row in coverage:
+            lines.append(
+                "| {target} | {label_rows} | {market_rows} | {coverage} | {status} |".format(
+                    target=row["target"],
+                    label_rows=row["label_rows"],
+                    market_rows=row["market_rows"],
+                    coverage=_fmt_pct(row["market_coverage"]),
+                    status=row["status"],
+                )
+            )
     lines.extend(
         [
             "",
@@ -561,6 +594,14 @@ def _apply_selection_policy(
             and prediction["predicted_label"] == 1
             and prediction["picked_model_probability"] >= threshold
         ]
+    if policy_type == "positive_target_edge":
+        threshold = float(policy["threshold"])
+        return [
+            prediction for prediction in predictions
+            if prediction["target"] != "winner"
+            and prediction["predicted_label"] == 1
+            and prediction["picked_model_probability"] >= threshold
+        ]
     if policy_type == "abstain":
         threshold = float(policy["threshold"])
         return [prediction for prediction in predictions if prediction["confidence"] <= threshold]
@@ -583,6 +624,7 @@ def _selection_policy(variant: dict[str, Any]) -> dict[str, Any]:
         "undervalued_underdog",
         "decision_edge",
         "finish_edge",
+        "positive_target_edge",
         "abstain",
     }
     if policy_type not in supported:
@@ -595,6 +637,7 @@ def _selection_policy(variant: dict[str, Any]) -> dict[str, Any]:
         "undervalued_underdog",
         "decision_edge",
         "finish_edge",
+        "positive_target_edge",
         "abstain",
     }
     if policy_type in threshold_policies:
@@ -674,6 +717,34 @@ def _target_market_predictions(
     return predictions
 
 
+def _target_market_coverage(
+    targets: set[str],
+    samples: list[dict[str, Any]],
+    prop_markets: dict[str, dict[str, dict[str, float]]],
+) -> list[dict[str, Any]]:
+    rows = []
+    for target in sorted(targets):
+        if target == "winner":
+            continue
+        label_rows = [sample for sample in samples if _target_label(sample, target) is not None]
+        market_rows = [
+            sample
+            for sample in label_rows
+            if _prop_market_probability(prop_markets, str(sample["fight_id"]), target) is not None
+        ]
+        coverage = len(market_rows) / len(label_rows) if label_rows else 0.0
+        rows.append(
+            {
+                "target": target,
+                "label_rows": len(label_rows),
+                "market_rows": len(market_rows),
+                "market_coverage": coverage,
+                "status": "market_backed" if market_rows else "market_unavailable",
+            }
+        )
+    return rows
+
+
 def _load_prop_market_consensus() -> dict[str, dict[str, dict[str, float]]]:
     with pool.borrow() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
@@ -682,41 +753,85 @@ def _load_prop_market_consensus() -> dict[str, dict[str, dict[str, float]]]:
                 SELECT
                     hof.canonical_fight_id AS fight_id,
                     hpo.source_market_id,
+                    hpo.source_offer_type_id,
                     hpo.sportsbook_slug,
                     hpo.outcome_side,
-                    hpo.implied_probability
+                    hpo.implied_probability,
+                    hpo.raw_metadata
                 FROM historical_prop_odds hpo
                 JOIN historical_odds_fights hof ON hof.id = hpo.historical_fight_id
-                WHERE hpo.source_offer_type_id = 'DISTANCE'
-                    AND hpo.market_family = 'fight_distance'
+                WHERE (
+                        hpo.source_offer_type_id = 'DISTANCE'
+                        OR hpo.source_offer_type_id LIKE 'OVERUNDER_%'
+                    )
                     AND hpo.line_kind = 'source_current'
                     AND hof.canonical_fight_id IS NOT NULL
                 """,
             )
-            rows = cur.fetchall()
-    return _prop_market_consensus_from_rows(rows)
+            prop_rows = cur.fetchall()
+            cur.execute(
+                """
+                SELECT DISTINCT ON (hof.canonical_fight_id)
+                    hof.canonical_fight_id AS fight_id,
+                    hpo.raw_metadata
+                FROM historical_prop_odds hpo
+                JOIN historical_odds_fights hof ON hof.id = hpo.historical_fight_id
+                WHERE hpo.line_kind = 'source_current'
+                    AND hof.canonical_fight_id IS NOT NULL
+                ORDER BY hof.canonical_fight_id, hpo.scraped_at DESC
+                """,
+            )
+            method_rows = cur.fetchall()
+    return _merge_prop_market_consensus(
+        _prop_market_consensus_from_rows(prop_rows),
+        _method_market_consensus_from_rows(method_rows),
+    )
 
 
 def _prop_market_consensus_from_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, dict[str, float]]]:
     pairs: dict[tuple[str, str, str], dict[str, float]] = {}
     for row in rows:
-        key = (str(row["fight_id"]), str(row["source_market_id"]), str(row["sportsbook_slug"]))
+        key = (
+            str(row["fight_id"]),
+            str(row["source_market_id"]),
+            str(row["sportsbook_slug"]),
+            str(row.get("source_offer_type_id", "DISTANCE")),
+        )
         pairs.setdefault(key, {})[str(row["outcome_side"])] = float(row["implied_probability"])
     by_fight: dict[str, list[dict[str, float]]] = {}
-    for (fight_id, _source_market_id, _sportsbook_slug), pair in pairs.items():
-        probabilities = _novig_distance_probabilities(pair)
+    for (fight_id, _source_market_id, _sportsbook_slug, offer_type_id), pair in pairs.items():
+        probabilities = _novig_prop_probabilities(offer_type_id, pair)
         if probabilities is not None:
             by_fight.setdefault(fight_id, []).append(probabilities)
     consensus: dict[str, dict[str, dict[str, float]]] = {}
     for fight_id, probabilities in by_fight.items():
-        decision_probability = float(np.mean([row["decision"] for row in probabilities]))
-        finish_probability = float(np.mean([row["finish"] for row in probabilities]))
-        pair_count = len(probabilities)
-        consensus[fight_id] = {
-            "decision": {"market_prob": decision_probability, "pair_count": pair_count},
-            "finish": {"market_prob": finish_probability, "pair_count": pair_count},
-        }
+        consensus[fight_id] = {}
+        targets = sorted({target for row in probabilities for target in row})
+        for target in targets:
+            values = [row[target] for row in probabilities if target in row]
+            consensus[fight_id][target] = {
+                "market_prob": float(np.mean(values)),
+                "pair_count": len(values),
+            }
     return consensus
+
+
+def _merge_prop_market_consensus(
+    *sources: dict[str, dict[str, dict[str, float]]],
+) -> dict[str, dict[str, dict[str, float]]]:
+    merged: dict[str, dict[str, dict[str, float]]] = {}
+    for source in sources:
+        for fight_id, markets in source.items():
+            merged.setdefault(fight_id, {}).update(markets)
+    return merged
+
+
+def _novig_prop_probabilities(offer_type_id: str, pair: dict[str, float]) -> dict[str, float] | None:
+    if offer_type_id == "DISTANCE":
+        return _novig_distance_probabilities(pair)
+    if offer_type_id.startswith("OVERUNDER_"):
+        return _novig_over_under_probabilities(offer_type_id, pair)
+    return None
 
 
 def _novig_distance_probabilities(pair: dict[str, float]) -> dict[str, float] | None:
@@ -734,12 +849,72 @@ def _novig_distance_probabilities(pair: dict[str, float]) -> dict[str, float] | 
     }
 
 
+def _novig_over_under_probabilities(offer_type_id: str, pair: dict[str, float]) -> dict[str, float] | None:
+    over_implied = pair.get("outcome1")
+    under_implied = pair.get("outcome2")
+    if over_implied is None or under_implied is None:
+        return None
+    total = over_implied + under_implied
+    if total <= 0:
+        return None
+    suffix = offer_type_id.removeprefix("OVERUNDER_").replace(".", "_")
+    return {f"over_{suffix}": over_implied / total}
+
+
+def _method_market_consensus_from_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, dict[str, float]]]:
+    consensus: dict[str, dict[str, dict[str, float]]] = {}
+    for row in rows:
+        probabilities = _method_probabilities_from_raw_metadata(row["raw_metadata"])
+        if probabilities is None:
+            continue
+        fight_id = str(row["fight_id"])
+        consensus.setdefault(fight_id, {}).update(
+            {
+                target: {"market_prob": probability, "pair_count": 1}
+                for target, probability in probabilities.items()
+            }
+        )
+    return consensus
+
+
+def _method_probabilities_from_raw_metadata(raw_metadata: str | dict[str, Any]) -> dict[str, float] | None:
+    metadata = json.loads(raw_metadata) if isinstance(raw_metadata, str) else raw_metadata
+    fight = metadata.get("propFight") if isinstance(metadata, dict) else None
+    if not isinstance(fight, dict):
+        return None
+    ko = _method_implied_sum(fight, ["fighter1KoOdds", "fighter2KoOdds"])
+    submission = _method_implied_sum(fight, ["fighter1SubOdds", "fighter2SubOdds"])
+    decision = _method_implied_sum(fight, ["fighter1DecOdds", "fighter2DecOdds"])
+    total = ko + submission + decision
+    if total <= 0:
+        return None
+    return {
+        "ko_tko": ko / total,
+        "submission": submission / total,
+    }
+
+
+def _method_implied_sum(fight: dict[str, Any], keys: list[str]) -> float:
+    total = 0.0
+    for key in keys:
+        odds = fight.get(key)
+        if odds is not None:
+            total += american_to_implied_probability(float(odds))
+    return total
+
+
+def american_to_implied_probability(american_odds: float) -> float:
+    if american_odds < 0:
+        return abs(american_odds) / (abs(american_odds) + 100)
+    return 100 / (american_odds + 100)
+
+
 def _prop_market_probability(
     prop_markets: dict[str, dict[str, dict[str, float]]],
     fight_id: str,
     target: str,
 ) -> float | None:
-    if target not in {"decision", "finish"}:
+    if target not in SUPPORTED_TARGETS - {"winner"}:
         return None
     market = prop_markets.get(fight_id, {}).get(target)
     if market is None:
@@ -1242,27 +1417,73 @@ def _load_target_labels(fight_ids: list[str]) -> dict[str, dict[str, int]]:
                 """
                 SELECT
                     fr.fight_id,
-                    fr.method
+                    fr.method,
+                    fr.round,
+                    fr.time_seconds,
+                    f.scheduled_rounds
                 FROM fight_results fr
+                JOIN fights f ON f.id = fr.fight_id
                 WHERE fr.fight_id = ANY(%s)
                     AND fr.outcome IN ('win', 'loss')
                 """,
                 (fight_ids,),
             )
             rows = cur.fetchall()
-    by_fight: dict[str, list[str]] = {}
+    by_fight: dict[str, dict[str, Any]] = {}
     for row in rows:
+        fight_id = str(row["fight_id"])
         method = str(row["method"] or "").strip().lower()
-        if method:
-            by_fight.setdefault(str(row["fight_id"]), []).append(method)
+        state = by_fight.setdefault(
+            fight_id,
+            {
+                "methods": [],
+                "round": row["round"],
+                "time_seconds": row["time_seconds"],
+                "scheduled_rounds": row["scheduled_rounds"],
+            },
+        )
+        if method and method not in state["methods"]:
+            state["methods"].append(method)
     labels = {}
-    for fight_id, methods in by_fight.items():
+    for fight_id, state in by_fight.items():
+        methods = state["methods"]
         decision = any("decision" in method for method in methods)
+        ko_tko = any("ko" in method or "tko" in method for method in methods)
+        submission = any("sub" in method for method in methods)
+        elapsed_rounds = _elapsed_rounds(state["round"], state["time_seconds"], state["scheduled_rounds"], decision)
         labels[fight_id] = {
             "decision": 1 if decision else 0,
             "finish": 0 if decision else 1,
+            "ko_tko": 1 if ko_tko else 0,
+            "submission": 1 if submission else 0,
+            **_round_total_labels(elapsed_rounds),
         }
     return labels
+
+
+def _elapsed_rounds(
+    result_round: int | None,
+    time_seconds: int | None,
+    scheduled_rounds: int | None,
+    decision: bool,
+) -> float | None:
+    if decision:
+        return float(scheduled_rounds or result_round or 0)
+    if result_round is None or time_seconds is None:
+        return None
+    return max(0.0, float(result_round - 1) + (float(time_seconds) / 300.0))
+
+
+def _round_total_labels(elapsed_rounds: float | None) -> dict[str, int]:
+    if elapsed_rounds is None:
+        return {}
+    return {
+        "over_0_5": 1 if elapsed_rounds > 0.5 else 0,
+        "over_1_5": 1 if elapsed_rounds > 1.5 else 0,
+        "over_2_5": 1 if elapsed_rounds > 2.5 else 0,
+        "over_3_5": 1 if elapsed_rounds > 3.5 else 0,
+        "over_4_5": 1 if elapsed_rounds > 4.5 else 0,
+    }
 
 
 def _target_label(sample: dict[str, Any], target: str) -> int | None:

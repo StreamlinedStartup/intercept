@@ -127,7 +127,18 @@
           },
           "target": {
             "type": "string",
-            "enum": ["winner", "decision", "finish"],
+            "enum": [
+              "winner",
+              "decision",
+              "finish",
+              "ko_tko",
+              "submission",
+              "over_0_5",
+              "over_1_5",
+              "over_2_5",
+              "over_3_5",
+              "over_4_5"
+            ],
             "default": "winner"
           },
           "features": {
@@ -234,6 +245,7 @@
                   "undervalued_underdog",
                   "decision_edge",
                   "finish_edge",
+                  "positive_target_edge",
                   "abstain"
                 ]
               },

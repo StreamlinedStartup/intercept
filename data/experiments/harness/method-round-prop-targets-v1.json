@@ -1,0 +1,1750 @@
+{
+  "generated_at": "2026-05-16T04:48:51.327607+00:00",
+  "report": "market-experiment-harness",
+  "config_path": "configs/experiments/method-round-prop-targets-v1.json",
+  "git_sha": "2d1cde964d6bad687ac256cd1c78dc58f01f86dd",
+  "report_only": true,
+  "writes_model_versions": false,
+  "value_status": "research_only",
+  "config": {
+    "name": "method-round-prop-targets-v1",
+    "description": "Report-only opportunity matrix for goes-to-decision, finish, KO/TKO, submission, and over/under round targets.",
+    "value_status": "research_only",
+    "report_only": true,
+    "writes_model_versions": false,
+    "corpus": {
+      "source": "matched_market_fights",
+      "market_source": "fightodds_no_vig_consensus",
+      "min_train_samples": 100,
+      "max_events": null
+    },
+    "split": {
+      "policy": "chronological_walk_forward",
+      "candidate_selection": "full_current_corpus",
+      "locked_evaluation": "future_required"
+    },
+    "gate": {
+      "baseline": "market_favorite",
+      "min_roi_delta_vs_market": 0.02,
+      "probability_quality": {
+        "require_log_loss_not_worse": true,
+        "require_brier_not_worse": true
+      }
+    },
+    "variants": [
+      {
+        "name": "market_favorite",
+        "model": "market_favorite",
+        "target": "winner",
+        "features": "none",
+        "market_blend_weight": null,
+        "description": "No-vig market favorite baseline."
+      },
+      {
+        "name": "decision_positive_log_c1_conf62",
+        "model": "logistic_regression",
+        "target": "decision",
+        "features": "production_plus_all_research",
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.62
+        },
+        "description": "Goes-to-decision target using the DISTANCE market baseline."
+      },
+      {
+        "name": "finish_positive_log_c1_conf62",
+        "model": "logistic_regression",
+        "target": "finish",
+        "features": "production_plus_all_research",
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.62
+        },
+        "description": "Finish likelihood target using the DISTANCE market baseline."
+      },
+      {
+        "name": "ko_tko_positive_log_c1_conf32",
+        "model": "logistic_regression",
+        "target": "ko_tko",
+        "features": "production_plus_all_research",
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.8
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.32
+        },
+        "description": "Any-fighter KO/TKO likelihood target using fight-level method odds."
+      },
+      {
+        "name": "submission_positive_log_c1_conf22",
+        "model": "logistic_regression",
+        "target": "submission",
+        "features": "production_plus_all_research",
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.8
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.22
+        },
+        "description": "Any-fighter submission likelihood target using fight-level method odds."
+      },
+      {
+        "name": "over_1_5_positive_log_c1_conf62",
+        "model": "logistic_regression",
+        "target": "over_1_5",
+        "features": "production_plus_all_research",
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.62
+        },
+        "description": "Over 1.5 rounds target using OVERUNDER_1.5 market rows."
+      },
+      {
+        "name": "over_2_5_positive_log_c1_conf58",
+        "model": "logistic_regression",
+        "target": "over_2_5",
+        "features": "production_plus_all_research",
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.58
+        },
+        "description": "Over 2.5 rounds target using OVERUNDER_2.5 market rows."
+      },
+      {
+        "name": "over_3_5_positive_log_c1_conf54",
+        "model": "logistic_regression",
+        "target": "over_3_5",
+        "features": "production_plus_all_research",
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.54
+        },
+        "description": "Over 3.5 rounds target using OVERUNDER_3.5 market rows."
+      },
+      {
+        "name": "over_4_5_positive_log_c1_conf50",
+        "model": "logistic_regression",
+        "target": "over_4_5",
+        "features": "production_plus_all_research",
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.5
+        },
+        "description": "Over 4.5 rounds target using OVERUNDER_4.5 market rows."
+      }
+    ],
+    "outputs": {
+      "json": "data/experiments/harness/method-round-prop-targets-v1.json",
+      "markdown": "data/experiments/harness/method-round-prop-targets-v1.md"
+    }
+  },
+  "coverage": {
+    "source_events_imported": 81,
+    "source_events_matched": 81,
+    "source_events_unmatched": 0,
+    "source_fights_imported": 1219,
+    "source_fights_matched": 809,
+    "source_fights_unmatched": 410,
+    "moneyline_rows_imported": 75068,
+    "moneyline_rows_linked": 54298,
+    "scored_events": 81,
+    "scored_fights": 790,
+    "model_eligible_events": 70,
+    "model_eligible_fights": 683,
+    "holdout": null
+  },
+  "market_baseline": {
+    "name": "market_favorite",
+    "roi_pct": 0.11516910993620974,
+    "accuracy": 0.7276720351390923,
+    "log_loss": 0.5818915185169015,
+    "brier_score": 0.19809544726737566
+  },
+  "target_market_coverage": [
+    {
+      "target": "decision",
+      "label_rows": 683,
+      "market_rows": 316,
+      "market_coverage": 0.46266471449487556,
+      "status": "market_backed"
+    },
+    {
+      "target": "finish",
+      "label_rows": 683,
+      "market_rows": 316,
+      "market_coverage": 0.46266471449487556,
+      "status": "market_backed"
+    },
+    {
+      "target": "ko_tko",
+      "label_rows": 683,
+      "market_rows": 316,
+      "market_coverage": 0.46266471449487556,
+      "status": "market_backed"
+    },
+    {
+      "target": "over_1_5",
+      "label_rows": 683,
+      "market_rows": 316,
+      "market_coverage": 0.46266471449487556,
+      "status": "market_backed"
+    },
+    {
+      "target": "over_2_5",
+      "label_rows": 683,
+      "market_rows": 316,
+      "market_coverage": 0.46266471449487556,
+      "status": "market_backed"
+    },
+    {
+      "target": "over_3_5",
+      "label_rows": 683,
+      "market_rows": 29,
+      "market_coverage": 0.0424597364568082,
+      "status": "market_backed"
+    },
+    {
+      "target": "over_4_5",
+      "label_rows": 683,
+      "market_rows": 30,
+      "market_coverage": 0.043923865300146414,
+      "status": "market_backed"
+    },
+    {
+      "target": "submission",
+      "label_rows": 683,
+      "market_rows": 316,
+      "market_coverage": 0.46266471449487556,
+      "status": "market_backed"
+    }
+  ],
+  "variants": [
+    {
+      "name": "market_favorite",
+      "description": "No-vig market favorite baseline.",
+      "params": {
+        "model": "market_favorite",
+        "target": "winner",
+        "features": "none",
+        "feature_names": [],
+        "market_blend_weight": null,
+        "model_params": {},
+        "calibration": {
+          "method": "none"
+        },
+        "selection_policy": {
+          "type": "all"
+        },
+        "feature_count": 0
+      },
+      "events_scored": 70,
+      "metrics": {
+        "count": 683,
+        "accuracy": 0.7276720351390923,
+        "avg_confidence": 0.6569480119040083,
+        "calibration_gap": 0.07072402323508398,
+        "abs_calibration_error": 0.07072402323508398,
+        "log_loss": 0.5818915185169015,
+        "brier_score": 0.19809544726737566,
+        "roc_auc": 0.7661628306423908
+      },
+      "simulated_research_roi": {
+        "entries": 683,
+        "wins": 497,
+        "units": 78.66050208643125,
+        "roi_pct": 0.11516910993620974,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only"
+      },
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.0,
+      "brier_delta_vs_market": 0.0,
+      "rejection_reasons": [
+        "baseline_not_candidate"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "decision_positive_log_c1_conf62",
+      "description": "Goes-to-decision target using the DISTANCE market baseline.",
+      "params": {
+        "model": "logistic_regression",
+        "target": "decision",
+        "features": "production_plus_all_research",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge"
+        ],
+        "market_blend_weight": null,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.62
+        },
+        "feature_count": 56
+      },
+      "events_scored": 59,
+      "metrics": {
+        "count": 143,
+        "accuracy": 0.5524475524475524,
+        "avg_confidence": 0.7298248902069482,
+        "calibration_gap": -0.1773773377593958,
+        "abs_calibration_error": 0.1773773377593958,
+        "log_loss": 0.7680038068352525,
+        "brier_score": 0.27689737056742963,
+        "roc_auc": 0.5528085443037977
+      },
+      "simulated_research_roi": {
+        "entries": 49,
+        "wins": 28,
+        "units": -1.325827865973354,
+        "roi_pct": -0.027057711550476614,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only",
+        "selected_entries": 143,
+        "market_backed_entries": 49
+      },
+      "gate_baseline": {
+        "name": "decision_positive_log_c1_conf62_market_selected_baseline",
+        "description": "No-vig market baseline on the selected fight subset.",
+        "params": {
+          "model": "prop_market_baseline",
+          "target": "decision",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 23,
+        "metrics": {
+          "count": 49,
+          "accuracy": 0.7142857142857143,
+          "avg_confidence": 0.6268424708876708,
+          "calibration_gap": 0.08744324339804355,
+          "abs_calibration_error": 0.08744324339804355,
+          "log_loss": 0.6104244399706252,
+          "brier_score": 0.21005272473258865,
+          "roc_auc": 0.7431972789115646
+        },
+        "simulated_research_roi": {
+          "entries": 49,
+          "wins": 35,
+          "units": 7.234987531252937,
+          "roi_pct": 0.14765280676026402,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only",
+          "selected_entries": 49,
+          "market_backed_entries": 49
+        }
+      },
+      "roi_delta_vs_market": -0.17471051831074064,
+      "log_loss_delta_vs_market": 0.15757936686462726,
+      "brier_delta_vs_market": 0.06684464583484098,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "finish_positive_log_c1_conf62",
+      "description": "Finish likelihood target using the DISTANCE market baseline.",
+      "params": {
+        "model": "logistic_regression",
+        "target": "finish",
+        "features": "production_plus_all_research",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge"
+        ],
+        "market_blend_weight": null,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.62
+        },
+        "feature_count": 56
+      },
+      "events_scored": 68,
+      "metrics": {
+        "count": 174,
+        "accuracy": 0.5459770114942529,
+        "avg_confidence": 0.7155543246793983,
+        "calibration_gap": -0.16957731318514535,
+        "abs_calibration_error": 0.16957731318514535,
+        "log_loss": 0.7800505582574213,
+        "brier_score": 0.27582666802917505,
+        "roc_auc": 0.5717521652231846
+      },
+      "simulated_research_roi": {
+        "entries": 81,
+        "wins": 46,
+        "units": -11.500190740241583,
+        "roi_pct": -0.14197766345977264,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only",
+        "selected_entries": 174,
+        "market_backed_entries": 81
+      },
+      "gate_baseline": {
+        "name": "finish_positive_log_c1_conf62_market_selected_baseline",
+        "description": "No-vig market baseline on the selected fight subset.",
+        "params": {
+          "model": "prop_market_baseline",
+          "target": "finish",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 29,
+        "metrics": {
+          "count": 81,
+          "accuracy": 0.5925925925925926,
+          "avg_confidence": 0.6732746343789258,
+          "calibration_gap": -0.0806820417863332,
+          "abs_calibration_error": 0.0806820417863332,
+          "log_loss": 0.6343890532561425,
+          "brier_score": 0.22371738350468592,
+          "roc_auc": 0.7204968944099378
+        },
+        "simulated_research_roi": {
+          "entries": 81,
+          "wins": 48,
+          "units": -11.27734077909532,
+          "roi_pct": -0.13922642937154717,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only",
+          "selected_entries": 81,
+          "market_backed_entries": 81
+        }
+      },
+      "roi_delta_vs_market": -0.0027512340882254738,
+      "log_loss_delta_vs_market": 0.14566150500127883,
+      "brier_delta_vs_market": 0.052109284524489125,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "ko_tko_positive_log_c1_conf32",
+      "description": "Any-fighter KO/TKO likelihood target using fight-level method odds.",
+      "params": {
+        "model": "logistic_regression",
+        "target": "ko_tko",
+        "features": "production_plus_all_research",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge"
+        ],
+        "market_blend_weight": null,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.8
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.32
+        },
+        "feature_count": 56
+      },
+      "events_scored": 61,
+      "metrics": {
+        "count": 128,
+        "accuracy": 0.4140625,
+        "avg_confidence": 0.5964263750655523,
+        "calibration_gap": -0.1823638750655523,
+        "abs_calibration_error": 0.1823638750655523,
+        "log_loss": 0.7647618751773515,
+        "brier_score": 0.2807332724560679,
+        "roc_auc": 0.5169811320754717
+      },
+      "simulated_research_roi": {
+        "entries": 59,
+        "wins": 25,
+        "units": -8.753590121159695,
+        "roi_pct": -0.14836593425694397,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only",
+        "selected_entries": 128,
+        "market_backed_entries": 59
+      },
+      "gate_baseline": {
+        "name": "ko_tko_positive_log_c1_conf32_market_selected_baseline",
+        "description": "No-vig market baseline on the selected fight subset.",
+        "params": {
+          "model": "prop_market_baseline",
+          "target": "ko_tko",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 26,
+        "metrics": {
+          "count": 59,
+          "accuracy": 0.7288135593220338,
+          "avg_confidence": 0.6387663578972762,
+          "calibration_gap": 0.09004720142475764,
+          "abs_calibration_error": 0.09004720142475764,
+          "log_loss": 0.5987478382292113,
+          "brier_score": 0.20573266056674733,
+          "roc_auc": 0.7294117647058823
+        },
+        "simulated_research_roi": {
+          "entries": 59,
+          "wins": 43,
+          "units": 9.141064614754292,
+          "roi_pct": 0.1549332985551575,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only",
+          "selected_entries": 59,
+          "market_backed_entries": 59
+        }
+      },
+      "roi_delta_vs_market": -0.30329923281210147,
+      "log_loss_delta_vs_market": 0.1660140369481402,
+      "brier_delta_vs_market": 0.07500061188932056,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "submission_positive_log_c1_conf22",
+      "description": "Any-fighter submission likelihood target using fight-level method odds.",
+      "params": {
+        "model": "logistic_regression",
+        "target": "submission",
+        "features": "production_plus_all_research",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge"
+        ],
+        "market_blend_weight": null,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.8
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.22
+        },
+        "feature_count": 56
+      },
+      "events_scored": 34,
+      "metrics": {
+        "count": 66,
+        "accuracy": 0.18181818181818182,
+        "avg_confidence": 0.6643158003659859,
+        "calibration_gap": -0.4824976185478041,
+        "abs_calibration_error": 0.4824976185478041,
+        "log_loss": 1.0601432871589636,
+        "brier_score": 0.3949748196450934,
+        "roc_auc": 0.5447530864197531
+      },
+      "simulated_research_roi": {
+        "entries": 13,
+        "wins": 2,
+        "units": -1.9603402263160916,
+        "roi_pct": -0.15079540202431474,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only",
+        "selected_entries": 66,
+        "market_backed_entries": 13
+      },
+      "gate_baseline": {
+        "name": "submission_positive_log_c1_conf22_market_selected_baseline",
+        "description": "No-vig market baseline on the selected fight subset.",
+        "params": {
+          "model": "prop_market_baseline",
+          "target": "submission",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 9,
+        "metrics": {
+          "count": 13,
+          "accuracy": 0.8461538461538461,
+          "avg_confidence": 0.7755019906846872,
+          "calibration_gap": 0.07065185546915898,
+          "abs_calibration_error": 0.07065185546915898,
+          "log_loss": 0.49400136615694346,
+          "brier_score": 0.1572832659339513,
+          "roc_auc": 0.4090909090909091
+        },
+        "simulated_research_roi": {
+          "entries": 13,
+          "wins": 11,
+          "units": 1.5943984370369442,
+          "roi_pct": 0.12264603361822647,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only",
+          "selected_entries": 13,
+          "market_backed_entries": 13
+        }
+      },
+      "roi_delta_vs_market": -0.2734414356425412,
+      "log_loss_delta_vs_market": 0.5661419210020201,
+      "brier_delta_vs_market": 0.2376915537111421,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "over_1_5_positive_log_c1_conf62",
+      "description": "Over 1.5 rounds target using OVERUNDER_1.5 market rows.",
+      "params": {
+        "model": "logistic_regression",
+        "target": "over_1_5",
+        "features": "production_plus_all_research",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge"
+        ],
+        "market_blend_weight": null,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.62
+        },
+        "feature_count": 56
+      },
+      "events_scored": 70,
+      "metrics": {
+        "count": 490,
+        "accuracy": 0.7755102040816326,
+        "avg_confidence": 0.7853163296475247,
+        "calibration_gap": -0.00980612556589211,
+        "abs_calibration_error": 0.00980612556589211,
+        "log_loss": 0.5514674360537534,
+        "brier_score": 0.1779826386102234,
+        "roc_auc": 0.5479904306220096
+      },
+      "simulated_research_roi": {
+        "entries": 215,
+        "wins": 162,
+        "units": 16.906287797546625,
+        "roi_pct": 0.078633896732775,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only",
+        "selected_entries": 490,
+        "market_backed_entries": 215
+      },
+      "gate_baseline": {
+        "name": "over_1_5_positive_log_c1_conf62_market_selected_baseline",
+        "description": "No-vig market baseline on the selected fight subset.",
+        "params": {
+          "model": "prop_market_baseline",
+          "target": "over_1_5",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 31,
+        "metrics": {
+          "count": 215,
+          "accuracy": 0.7767441860465116,
+          "avg_confidence": 0.6975330902177411,
+          "calibration_gap": 0.0792110958287705,
+          "abs_calibration_error": 0.0792110958287705,
+          "log_loss": 0.5165724145642734,
+          "brier_score": 0.168248943972925,
+          "roc_auc": 0.7236780805963197
+        },
+        "simulated_research_roi": {
+          "entries": 215,
+          "wins": 167,
+          "units": 23.72370259576119,
+          "roi_pct": 0.11034280277098228,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only",
+          "selected_entries": 215,
+          "market_backed_entries": 215
+        }
+      },
+      "roi_delta_vs_market": -0.03170890603820728,
+      "log_loss_delta_vs_market": 0.03489502148947998,
+      "brier_delta_vs_market": 0.009733694637298396,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "over_2_5_positive_log_c1_conf58",
+      "description": "Over 2.5 rounds target using OVERUNDER_2.5 market rows.",
+      "params": {
+        "model": "logistic_regression",
+        "target": "over_2_5",
+        "features": "production_plus_all_research",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge"
+        ],
+        "market_blend_weight": null,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.58
+        },
+        "feature_count": 56
+      },
+      "events_scored": 70,
+      "metrics": {
+        "count": 450,
+        "accuracy": 0.7377777777777778,
+        "avg_confidence": 0.7354492441174858,
+        "calibration_gap": 0.0023285336602919537,
+        "abs_calibration_error": 0.0023285336602919537,
+        "log_loss": 0.6011824344751798,
+        "brier_score": 0.2014679069292288,
+        "roc_auc": 0.5152644476209924
+      },
+      "simulated_research_roi": {
+        "entries": 203,
+        "wins": 153,
+        "units": 67.6576916918132,
+        "roi_pct": 0.33328912163454777,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only",
+        "selected_entries": 450,
+        "market_backed_entries": 203
+      },
+      "gate_baseline": {
+        "name": "over_2_5_positive_log_c1_conf58_market_selected_baseline",
+        "description": "No-vig market baseline on the selected fight subset.",
+        "params": {
+          "model": "prop_market_baseline",
+          "target": "over_2_5",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 31,
+        "metrics": {
+          "count": 203,
+          "accuracy": 0.6945812807881774,
+          "avg_confidence": 0.6220828382463667,
+          "calibration_gap": 0.0724984425418107,
+          "abs_calibration_error": 0.0724984425418107,
+          "log_loss": 0.6035666062130937,
+          "brier_score": 0.20717297255432698,
+          "roc_auc": 0.650718954248366
+        },
+        "simulated_research_roi": {
+          "entries": 203,
+          "wins": 141,
+          "units": 23.217552087157266,
+          "roi_pct": 0.11437217776924762,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only",
+          "selected_entries": 203,
+          "market_backed_entries": 203
+        }
+      },
+      "roi_delta_vs_market": 0.21891694386530014,
+      "log_loss_delta_vs_market": -0.0023841717379138316,
+      "brier_delta_vs_market": -0.005705065625098177,
+      "rejection_reasons": [],
+      "clears_market_gate": true
+    },
+    {
+      "name": "over_3_5_positive_log_c1_conf54",
+      "description": "Over 3.5 rounds target using OVERUNDER_3.5 market rows.",
+      "params": {
+        "model": "logistic_regression",
+        "target": "over_3_5",
+        "features": "production_plus_all_research",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge"
+        ],
+        "market_blend_weight": null,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.54
+        },
+        "feature_count": 56
+      },
+      "events_scored": 27,
+      "metrics": {
+        "count": 37,
+        "accuracy": 0.35135135135135137,
+        "avg_confidence": 0.6614287418263624,
+        "calibration_gap": -0.310077390475011,
+        "abs_calibration_error": 0.310077390475011,
+        "log_loss": 0.9318468131156866,
+        "brier_score": 0.3171608043877787,
+        "roc_auc": 0.6442307692307693
+      },
+      "simulated_research_roi": {
+        "entries": 5,
+        "wins": 5,
+        "units": 2.5538437518185186,
+        "roi_pct": 0.5107687503637037,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only",
+        "selected_entries": 37,
+        "market_backed_entries": 5
+      },
+      "gate_baseline": {
+        "name": "over_3_5_positive_log_c1_conf54_market_selected_baseline",
+        "description": "No-vig market baseline on the selected fight subset.",
+        "params": {
+          "model": "prop_market_baseline",
+          "target": "over_3_5",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 5,
+        "metrics": {
+          "count": 5,
+          "accuracy": 1.0,
+          "avg_confidence": 0.6777265785238704,
+          "calibration_gap": 0.3222734214761296,
+          "abs_calibration_error": 0.3222734214761296,
+          "log_loss": 0.4004240217508709,
+          "brier_score": 0.11359666169088374,
+          "roc_auc": null
+        },
+        "simulated_research_roi": {
+          "entries": 5,
+          "wins": 5,
+          "units": 2.5538437518185186,
+          "roi_pct": 0.5107687503637037,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only",
+          "selected_entries": 5,
+          "market_backed_entries": 5
+        }
+      },
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.5314227913648157,
+      "brier_delta_vs_market": 0.203564142696895,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ],
+      "clears_market_gate": false
+    },
+    {
+      "name": "over_4_5_positive_log_c1_conf50",
+      "description": "Over 4.5 rounds target using OVERUNDER_4.5 market rows.",
+      "params": {
+        "model": "logistic_regression",
+        "target": "over_4_5",
+        "features": "production_plus_all_research",
+        "feature_names": [
+          "slpm_diff",
+          "str_acc_diff",
+          "sapm_diff",
+          "str_def_diff",
+          "td_avg_diff",
+          "td_acc_diff",
+          "td_def_diff",
+          "sub_avg_diff",
+          "height_diff",
+          "reach_diff",
+          "age_diff",
+          "ufc_fight_count_a",
+          "ufc_fight_count_b",
+          "ufc_fight_count_diff",
+          "ufc_debut",
+          "wins_last_3_diff",
+          "wins_last_5_diff",
+          "loss_streak_a",
+          "loss_streak_b",
+          "coming_off_loss_a",
+          "coming_off_loss_b",
+          "days_since_last_fight_a",
+          "days_since_last_fight_b",
+          "days_since_last_fight_diff",
+          "long_layoff_a",
+          "long_layoff_b",
+          "weight_class_change",
+          "same_weight_class_count_diff",
+          "finish_rate_diff",
+          "decision_rate_diff",
+          "time_in_cage_a",
+          "time_in_cage_b",
+          "avg_ending_round_diff",
+          "decision_tendency_diff",
+          "late_round_exposure_diff",
+          "common_opponent_count",
+          "common_opponent_win_diff",
+          "damage_index_a",
+          "damage_index_b",
+          "stance_orthodox_orthodox",
+          "stance_orthodox_southpaw",
+          "stance_southpaw_orthodox",
+          "stance_southpaw_southpaw",
+          "stance_switch_involved",
+          "stance_unknown",
+          "feature_missing_count",
+          "feature_missing_rate",
+          "has_recent_form_context",
+          "has_weight_context",
+          "adj_recent_strike_diff_last_3",
+          "adj_recent_grappling_diff_last_3",
+          "quality_of_recent_opposition_diff",
+          "adj_recent_efficiency_trend_diff",
+          "striking_pressure_vs_defense_edge",
+          "wrestling_pressure_vs_tdd_edge",
+          "submission_pressure_vs_grappling_risk_edge"
+        ],
+        "market_blend_weight": null,
+        "model_params": {
+          "C": 1.0
+        },
+        "calibration": {
+          "method": "temperature",
+          "temperature": 1.6
+        },
+        "selection_policy": {
+          "type": "positive_target_edge",
+          "threshold": 0.5
+        },
+        "feature_count": 56
+      },
+      "events_scored": 27,
+      "metrics": {
+        "count": 36,
+        "accuracy": 0.25,
+        "avg_confidence": 0.6627116546837686,
+        "calibration_gap": -0.4127116546837686,
+        "abs_calibration_error": 0.4127116546837686,
+        "log_loss": 1.1389751778889936,
+        "brier_score": 0.37649478777764145,
+        "roc_auc": 0.588477366255144
+      },
+      "simulated_research_roi": {
+        "entries": 5,
+        "wins": 5,
+        "units": 3.3826122866570025,
+        "roi_pct": 0.6765224573314005,
+        "stake_unit": "flat_1u",
+        "status": "simulated_research_only",
+        "selected_entries": 36,
+        "market_backed_entries": 5
+      },
+      "gate_baseline": {
+        "name": "over_4_5_positive_log_c1_conf50_market_selected_baseline",
+        "description": "No-vig market baseline on the selected fight subset.",
+        "params": {
+          "model": "prop_market_baseline",
+          "target": "over_4_5",
+          "features": "none",
+          "feature_names": [],
+          "market_blend_weight": null,
+          "model_params": {},
+          "calibration": {
+            "method": "none"
+          },
+          "selection_policy": {
+            "type": "all"
+          },
+          "feature_count": 0
+        },
+        "events_scored": 5,
+        "metrics": {
+          "count": 5,
+          "accuracy": 0.8,
+          "avg_confidence": 0.6444238858221396,
+          "calibration_gap": 0.15557611417786044,
+          "abs_calibration_error": 0.15557611417786044,
+          "log_loss": 0.49808648501409236,
+          "brier_score": 0.1572705112830676,
+          "roc_auc": null
+        },
+        "simulated_research_roi": {
+          "entries": 5,
+          "wins": 4,
+          "units": 1.0766607574276263,
+          "roi_pct": 0.21533215148552526,
+          "stake_unit": "flat_1u",
+          "status": "simulated_research_only",
+          "selected_entries": 5,
+          "market_backed_entries": 5
+        }
+      },
+      "roi_delta_vs_market": 0.4611903058458752,
+      "log_loss_delta_vs_market": 0.6408886928749012,
+      "brier_delta_vs_market": 0.21922427649457385,
+      "rejection_reasons": [
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ],
+      "clears_market_gate": false
+    }
+  ],
+  "signal_diagnostics": [
+    {
+      "variant": "over_3_5_positive_log_c1_conf54",
+      "target": "over_3_5",
+      "selection_policy": "positive_target_edge",
+      "model_roi_pct": 0.5107687503637037,
+      "selected_market_roi_pct": 0.5107687503637037,
+      "selected_market_roi_delta_vs_full_market": 0.39559964042749396,
+      "selected_market_entries": 5,
+      "selected_market_accuracy": 1.0,
+      "indicator": "no_positive_market_indicator",
+      "read": "No actionable positive signal in this selected subset.",
+      "status": "research_only"
+    },
+    {
+      "variant": "over_4_5_positive_log_c1_conf50",
+      "target": "over_4_5",
+      "selection_policy": "positive_target_edge",
+      "model_roi_pct": 0.6765224573314005,
+      "selected_market_roi_pct": 0.21533215148552526,
+      "selected_market_roi_delta_vs_full_market": 0.10016304154931552,
+      "selected_market_entries": 5,
+      "selected_market_accuracy": 0.8,
+      "indicator": "no_positive_market_indicator",
+      "read": "No actionable positive signal in this selected subset.",
+      "status": "research_only"
+    },
+    {
+      "variant": "ko_tko_positive_log_c1_conf32",
+      "target": "ko_tko",
+      "selection_policy": "positive_target_edge",
+      "model_roi_pct": -0.14836593425694397,
+      "selected_market_roi_pct": 0.1549332985551575,
+      "selected_market_roi_delta_vs_full_market": 0.03976418861894776,
+      "selected_market_entries": 59,
+      "selected_market_accuracy": 0.7288135593220338,
+      "indicator": "no_positive_market_indicator",
+      "read": "No actionable positive signal in this selected subset.",
+      "status": "research_only"
+    },
+    {
+      "variant": "decision_positive_log_c1_conf62",
+      "target": "decision",
+      "selection_policy": "positive_target_edge",
+      "model_roi_pct": -0.027057711550476614,
+      "selected_market_roi_pct": 0.14765280676026402,
+      "selected_market_roi_delta_vs_full_market": 0.032483696824054276,
+      "selected_market_entries": 49,
+      "selected_market_accuracy": 0.7142857142857143,
+      "indicator": "decision_market_strength_after_model_filter",
+      "read": "Model-filtered decision rows show positive prop-market ROI; evaluate with a locked future slice.",
+      "status": "research_only"
+    },
+    {
+      "variant": "submission_positive_log_c1_conf22",
+      "target": "submission",
+      "selection_policy": "positive_target_edge",
+      "model_roi_pct": -0.15079540202431474,
+      "selected_market_roi_pct": 0.12264603361822647,
+      "selected_market_roi_delta_vs_full_market": 0.007476923682016731,
+      "selected_market_entries": 13,
+      "selected_market_accuracy": 0.8461538461538461,
+      "indicator": "no_positive_market_indicator",
+      "read": "No actionable positive signal in this selected subset.",
+      "status": "research_only"
+    },
+    {
+      "variant": "over_2_5_positive_log_c1_conf58",
+      "target": "over_2_5",
+      "selection_policy": "positive_target_edge",
+      "model_roi_pct": 0.33328912163454777,
+      "selected_market_roi_pct": 0.11437217776924762,
+      "selected_market_roi_delta_vs_full_market": -0.0007969321669621249,
+      "selected_market_entries": 203,
+      "selected_market_accuracy": 0.6945812807881774,
+      "indicator": "no_positive_market_indicator",
+      "read": "No actionable positive signal in this selected subset.",
+      "status": "research_only"
+    },
+    {
+      "variant": "over_1_5_positive_log_c1_conf62",
+      "target": "over_1_5",
+      "selection_policy": "positive_target_edge",
+      "model_roi_pct": 0.078633896732775,
+      "selected_market_roi_pct": 0.11034280277098228,
+      "selected_market_roi_delta_vs_full_market": -0.004826307165227459,
+      "selected_market_entries": 215,
+      "selected_market_accuracy": 0.7767441860465116,
+      "indicator": "no_positive_market_indicator",
+      "read": "No actionable positive signal in this selected subset.",
+      "status": "research_only"
+    },
+    {
+      "variant": "finish_positive_log_c1_conf62",
+      "target": "finish",
+      "selection_policy": "positive_target_edge",
+      "model_roi_pct": -0.14197766345977264,
+      "selected_market_roi_pct": -0.13922642937154717,
+      "selected_market_roi_delta_vs_full_market": -0.25439553930775693,
+      "selected_market_entries": 81,
+      "selected_market_accuracy": 0.5925925925925926,
+      "indicator": "avoid_finish_edge_until_method_props_improve",
+      "read": "Finish/inside-distance is the closest configured model candidate, but current prop-backed ROI is still negative.",
+      "status": "research_only"
+    }
+  ],
+  "ranking": [
+    {
+      "rank": 1,
+      "name": "over_4_5_positive_log_c1_conf50",
+      "roi_delta_vs_market": 0.4611903058458752,
+      "log_loss_delta_vs_market": 0.6408886928749012,
+      "brier_delta_vs_market": 0.21922427649457385,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 2,
+      "name": "over_2_5_positive_log_c1_conf58",
+      "roi_delta_vs_market": 0.21891694386530014,
+      "log_loss_delta_vs_market": -0.0023841717379138316,
+      "brier_delta_vs_market": -0.005705065625098177,
+      "clears_gate": true,
+      "rejection_reasons": []
+    },
+    {
+      "rank": 3,
+      "name": "over_3_5_positive_log_c1_conf54",
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.5314227913648157,
+      "brier_delta_vs_market": 0.203564142696895,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 4,
+      "name": "finish_positive_log_c1_conf62",
+      "roi_delta_vs_market": -0.0027512340882254738,
+      "log_loss_delta_vs_market": 0.14566150500127883,
+      "brier_delta_vs_market": 0.052109284524489125,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 5,
+      "name": "over_1_5_positive_log_c1_conf62",
+      "roi_delta_vs_market": -0.03170890603820728,
+      "log_loss_delta_vs_market": 0.03489502148947998,
+      "brier_delta_vs_market": 0.009733694637298396,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market"
+      ]
+    },
+    {
+      "rank": 6,
+      "name": "decision_positive_log_c1_conf62",
+      "roi_delta_vs_market": -0.17471051831074064,
+      "log_loss_delta_vs_market": 0.15757936686462726,
+      "brier_delta_vs_market": 0.06684464583484098,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 7,
+      "name": "submission_positive_log_c1_conf22",
+      "roi_delta_vs_market": -0.2734414356425412,
+      "log_loss_delta_vs_market": 0.5661419210020201,
+      "brier_delta_vs_market": 0.2376915537111421,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 8,
+      "name": "ko_tko_positive_log_c1_conf32",
+      "roi_delta_vs_market": -0.30329923281210147,
+      "log_loss_delta_vs_market": 0.1660140369481402,
+      "brier_delta_vs_market": 0.07500061188932056,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "roi_delta_below_market_gate",
+        "log_loss_worse_than_market",
+        "brier_worse_than_market",
+        "unstable_coverage"
+      ]
+    },
+    {
+      "rank": 9,
+      "name": "market_favorite",
+      "roi_delta_vs_market": 0.0,
+      "log_loss_delta_vs_market": 0.0,
+      "brier_delta_vs_market": 0.0,
+      "clears_gate": false,
+      "rejection_reasons": [
+        "baseline_not_candidate"
+      ]
+    }
+  ],
+  "recommendation": {
+    "status": "candidate_for_locked_evaluation",
+    "reason": "over_2_5_positive_log_c1_conf58 clears the configured discovery gate; evaluate on a locked future slice before activation."
+  },
+  "policy": "This harness is for report-only discovery. A candidate from the current corpus is not activation proof; validated status requires a locked future evaluation slice and a passing market gate."
+}

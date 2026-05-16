@@ -22,9 +22,12 @@ from ml.experiment_harness import (
     _holdout_summary,
     _load_config,
     _materialize_predictions,
+    _method_probabilities_from_raw_metadata,
     _novig_distance_probabilities,
+    _novig_over_under_probabilities,
     _prop_market_consensus_from_rows,
     _prop_market_probability,
+    _round_total_labels,
     _recommendation,
     _run_model_variant,
     _signal_diagnostics,
@@ -103,16 +106,20 @@ def test_load_config_accepts_market_opportunity_configs() -> None:
     smoke = _load_config(Path("configs/experiments/market-opportunity-smoke.json"))
     matrix = _load_config(Path("configs/experiments/market-opportunity-matrix-v1.json"))
     locked = _load_config(Path("configs/experiments/prop-signal-locked-validation-v1.json"))
+    method_round = _load_config(Path("configs/experiments/method-round-prop-targets-v1.json"))
 
     smoke_variants = {variant["name"]: variant for variant in smoke["variants"]}
     matrix_variants = {variant["name"]: variant for variant in matrix["variants"]}
     locked_variants = {variant["name"]: variant for variant in locked["variants"]}
+    method_round_variants = {variant["name"]: variant for variant in method_round["variants"]}
     assert smoke_variants["decision_edge_smoke"]["target"] == "decision"
     assert smoke_variants["finish_edge_smoke"]["selection_policy"]["type"] == "finish_edge"
     assert matrix_variants["winner_overpriced_favorite_log_c1_edge05"]["selection_policy"]["type"] == "overpriced_favorite"
     assert matrix_variants["winner_underdog_blend40_edge04"]["market_blend_weight"] == 0.4
     assert locked["corpus"]["holdout"] == {"type": "last_n_events", "event_count": 20}
     assert locked_variants["locked_decision_market_strength_conf62"]["target"] == "decision"
+    assert method_round_variants["ko_tko_positive_log_c1_conf32"]["target"] == "ko_tko"
+    assert method_round_variants["over_2_5_positive_log_c1_conf58"]["selection_policy"]["type"] == "positive_target_edge"
 
 
 def test_validate_config_rejects_active_model_writes() -> None:
@@ -142,7 +149,7 @@ def test_validate_config_accepts_decision_and_finish_targets() -> None:
 def test_validate_config_rejects_unknown_target() -> None:
     config = _config()
     config["variants"].append(
-        {"name": "bad_target", "model": "xgboost", "target": "submission", "features": "production"}
+        {"name": "bad_target", "model": "xgboost", "target": "doctor_stoppage", "features": "production"}
     )
 
     with pytest.raises(ValueError, match="unsupported target"):
@@ -341,11 +348,13 @@ def test_materialize_predictions_calibrates_before_blending() -> None:
 
 
 def test_target_label_reads_winner_decision_and_finish_labels() -> None:
-    sample = {"label": 1, "target_labels": {"decision": 0, "finish": 1}}
+    sample = {"label": 1, "target_labels": {"decision": 0, "finish": 1, "ko_tko": 1, "over_2_5": 0}}
 
     assert _target_label(sample, "winner") == 1
     assert _target_label(sample, "decision") == 0
     assert _target_label(sample, "finish") == 1
+    assert _target_label(sample, "ko_tko") == 1
+    assert _target_label(sample, "over_2_5") == 0
     assert _target_label({"label": 0}, "decision") is None
 
 
@@ -432,12 +441,46 @@ def test_novig_distance_probabilities_require_paired_outcomes() -> None:
     assert probabilities["finish"] == pytest.approx(0.5 / 1.1)
 
 
+def test_novig_over_under_probabilities_map_offer_type_to_target() -> None:
+    assert _novig_over_under_probabilities("OVERUNDER_2.5", {"outcome1": 0.6}) is None
+    probabilities = _novig_over_under_probabilities("OVERUNDER_2.5", {"outcome1": 0.6, "outcome2": 0.5})
+
+    assert probabilities is not None
+    assert probabilities["over_2_5"] == pytest.approx(0.6 / 1.1)
+
+
+def test_method_probabilities_normalize_fight_level_method_odds() -> None:
+    probabilities = _method_probabilities_from_raw_metadata(
+        {
+            "propFight": {
+                "fighter1KoOdds": 100,
+                "fighter2KoOdds": 300,
+                "fighter1SubOdds": 400,
+                "fighter2SubOdds": 900,
+                "fighter1DecOdds": 200,
+                "fighter2DecOdds": 600,
+            }
+        }
+    )
+
+    assert probabilities is not None
+    assert probabilities["ko_tko"] > probabilities["submission"]
+    assert probabilities["ko_tko"] + probabilities["submission"] < 1
+
+
+def test_round_total_labels_use_elapsed_rounds() -> None:
+    assert _round_total_labels(None) == {}
+    assert _round_total_labels(2.6)["over_2_5"] == 1
+    assert _round_total_labels(2.4)["over_2_5"] == 0
+
+
 def test_prop_market_consensus_maps_distance_rows_to_targets() -> None:
     consensus = _prop_market_consensus_from_rows(
         [
             {
                 "fight_id": "fight-1",
                 "source_market_id": "market-1",
+                "source_offer_type_id": "DISTANCE",
                 "sportsbook_slug": "book-a",
                 "outcome_side": "outcome1",
                 "implied_probability": 0.60,
@@ -445,6 +488,7 @@ def test_prop_market_consensus_maps_distance_rows_to_targets() -> None:
             {
                 "fight_id": "fight-1",
                 "source_market_id": "market-1",
+                "source_offer_type_id": "DISTANCE",
                 "sportsbook_slug": "book-a",
                 "outcome_side": "outcome2",
                 "implied_probability": 0.50,
@@ -452,6 +496,7 @@ def test_prop_market_consensus_maps_distance_rows_to_targets() -> None:
             {
                 "fight_id": "fight-1",
                 "source_market_id": "market-1",
+                "source_offer_type_id": "DISTANCE",
                 "sportsbook_slug": "book-b",
                 "outcome_side": "outcome1",
                 "implied_probability": 0.55,
@@ -459,6 +504,7 @@ def test_prop_market_consensus_maps_distance_rows_to_targets() -> None:
             {
                 "fight_id": "fight-1",
                 "source_market_id": "market-1",
+                "source_offer_type_id": "DISTANCE",
                 "sportsbook_slug": "book-b",
                 "outcome_side": "outcome2",
                 "implied_probability": 0.55,
@@ -466,6 +512,7 @@ def test_prop_market_consensus_maps_distance_rows_to_targets() -> None:
             {
                 "fight_id": "fight-2",
                 "source_market_id": "market-2",
+                "source_offer_type_id": "DISTANCE",
                 "sportsbook_slug": "book-a",
                 "outcome_side": "outcome1",
                 "implied_probability": 0.60,
@@ -482,6 +529,31 @@ def test_prop_market_consensus_maps_distance_rows_to_targets() -> None:
     assert _prop_market_probability(consensus, "fight-1", "finish") == pytest.approx(1 - expected_decision)
     assert _prop_market_probability(consensus, "fight-1", "winner") is None
     assert _prop_market_probability(consensus, "missing", "decision") is None
+
+
+def test_prop_market_consensus_maps_over_under_rows_to_targets() -> None:
+    consensus = _prop_market_consensus_from_rows(
+        [
+            {
+                "fight_id": "fight-1",
+                "source_market_id": "market-ou",
+                "source_offer_type_id": "OVERUNDER_2.5",
+                "sportsbook_slug": "book-a",
+                "outcome_side": "outcome1",
+                "implied_probability": 0.60,
+            },
+            {
+                "fight_id": "fight-1",
+                "source_market_id": "market-ou",
+                "source_offer_type_id": "OVERUNDER_2.5",
+                "sportsbook_slug": "book-a",
+                "outcome_side": "outcome2",
+                "implied_probability": 0.50,
+            },
+        ]
+    )
+
+    assert consensus["fight-1"]["over_2_5"]["market_prob"] == pytest.approx(0.6 / 1.1)
 
 
 def test_opportunity_selection_policies_pick_expected_rows() -> None:
@@ -523,6 +595,14 @@ def test_opportunity_selection_policies_pick_expected_rows() -> None:
             "market_predicted_label": None,
         },
         {
+            "fight_id": "ko-edge",
+            "target": "ko_tko",
+            "predicted_label": 1,
+            "picked_model_probability": 0.64,
+            "confidence": 0.64,
+            "market_predicted_label": None,
+        },
+        {
             "fight_id": "pass",
             "target": "winner",
             "market_predicted_label": 1,
@@ -550,6 +630,10 @@ def test_opportunity_selection_policies_pick_expected_rows() -> None:
         row["fight_id"]
         for row in _apply_selection_policy(predictions, {"type": "finish_edge", "threshold": 0.65})
     ] == ["finish-edge"]
+    assert [
+        row["fight_id"]
+        for row in _apply_selection_policy(predictions, {"type": "positive_target_edge", "threshold": 0.63})
+    ] == ["decision-edge", "finish-edge", "ko-edge"]
     assert [row["fight_id"] for row in _apply_selection_policy(predictions, {"type": "abstain", "threshold": 0.55})] == [
         "overpriced-favorite",
         "pass",
