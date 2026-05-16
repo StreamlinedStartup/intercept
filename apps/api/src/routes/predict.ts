@@ -558,7 +558,8 @@ export function mergeOver25Indicator(
 			market_pair_count: 0,
 			training_sample_count: model.training_sample_count,
 			value_status: 'insufficient_coverage',
-			value_status_reason: 'Matched OVERUNDER_2.5 prop market is required before edge can be evaluated.',
+			value_status_reason:
+				'Matched OVERUNDER_2.5 prop market is required before edge can be evaluated.',
 		};
 	}
 	return {

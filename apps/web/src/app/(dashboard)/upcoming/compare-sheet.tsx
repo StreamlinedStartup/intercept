@@ -702,8 +702,8 @@ function ModelPickRow({
 									tone: valueDiffers ? 'amber' : 'green',
 								}
 							: null
-						}
-					/>
+					}
+				/>
 				<SignalTile
 					label="Over 2.5"
 					name={over25Name(over25)}
@@ -776,7 +776,9 @@ function over25Primary(indicator: Over25Indicator | undefined): string {
 	if (!indicator || indicator.model_probability === null) return 'Need model output';
 	const model = `Model ${formatPct(indicator.model_probability)}`;
 	const market =
-		indicator.market_probability === null ? 'market unavailable' : `market ${formatPct(indicator.market_probability)}`;
+		indicator.market_probability === null
+			? 'market unavailable'
+			: `market ${formatPct(indicator.market_probability)}`;
 	const edge = indicator.edge_pct === null ? '' : `, edge ${formatSignedPct(indicator.edge_pct)}`;
 	return `${model}, ${market}${edge}`;
 }
