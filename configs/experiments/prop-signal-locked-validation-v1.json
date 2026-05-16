@@ -1,0 +1,135 @@
+{
+  "name": "prop-signal-locked-validation-v1",
+  "description": "Locked report-only validation for prop-corpus market-strength and decision-market indicators discovered in market-opportunity-matrix-v1.",
+  "value_status": "research_only",
+  "report_only": true,
+  "writes_model_versions": false,
+  "corpus": {
+    "source": "matched_market_fights",
+    "market_source": "fightodds_no_vig_consensus",
+    "min_train_samples": 100,
+    "max_events": null,
+    "holdout": {
+      "type": "last_n_events",
+      "event_count": 20
+    }
+  },
+  "split": {
+    "policy": "chronological_walk_forward",
+    "candidate_selection": "full_current_corpus",
+    "locked_evaluation": "future_required"
+  },
+  "gate": {
+    "baseline": "market_favorite",
+    "min_roi_delta_vs_market": 0.02,
+    "probability_quality": {
+      "require_log_loss_not_worse": true,
+      "require_brier_not_worse": true
+    }
+  },
+  "variants": [
+    {
+      "name": "market_favorite",
+      "model": "market_favorite",
+      "target": "winner",
+      "features": "none",
+      "market_blend_weight": null,
+      "description": "No-vig market favorite baseline on the locked holdout."
+    },
+    {
+      "name": "locked_market_strength_underdog_blend40_edge04",
+      "model": "logistic_regression",
+      "target": "winner",
+      "features": "production_plus_all_research_market_context",
+      "market_blend_weight": 0.4,
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.0
+      },
+      "selection_policy": {
+        "type": "undervalued_underdog",
+        "threshold": 0.04
+      },
+      "description": "Validate whether model-underdog disagreement remains more useful as a market-strength warning."
+    },
+    {
+      "name": "locked_market_strength_underdog_log_c1_edge05",
+      "model": "logistic_regression",
+      "target": "winner",
+      "features": "production_plus_all_research_market_context",
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.0
+      },
+      "selection_policy": {
+        "type": "undervalued_underdog",
+        "threshold": 0.05
+      },
+      "description": "Validate whether unblended model-supported underdogs remain inverted into a market-strength signal."
+    },
+    {
+      "name": "locked_market_favorite_holds_edge05",
+      "model": "logistic_regression",
+      "target": "winner",
+      "features": "production_plus_all_research_market_context",
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 2.0
+      },
+      "selection_policy": {
+        "type": "overpriced_favorite",
+        "threshold": 0.05
+      },
+      "description": "Validate whether favorite-underperformance warnings still identify market favorites that hold."
+    },
+    {
+      "name": "locked_decision_market_strength_conf62",
+      "model": "logistic_regression",
+      "target": "decision",
+      "features": "production_plus_all_research",
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 1.6
+      },
+      "selection_policy": {
+        "type": "decision_edge",
+        "threshold": 0.62
+      },
+      "description": "Validate whether model-filtered decision rows keep positive selected-market ROI."
+    },
+    {
+      "name": "locked_finish_proxy_conf62",
+      "model": "logistic_regression",
+      "target": "finish",
+      "features": "production_plus_all_research",
+      "model_params": {
+        "C": 1.0
+      },
+      "calibration": {
+        "method": "temperature",
+        "temperature": 1.6
+      },
+      "selection_policy": {
+        "type": "finish_edge",
+        "threshold": 0.62
+      },
+      "description": "Recheck finish/inside-distance as a KO-potential proxy on the locked holdout."
+    }
+  ],
+  "outputs": {
+    "json": "data/experiments/harness/prop-signal-locked-validation-v1.json",
+    "markdown": "data/experiments/harness/prop-signal-locked-validation-v1.md"
+  }
+}

@@ -102,13 +102,17 @@ def test_load_config_accepts_real_axes_smoke_example() -> None:
 def test_load_config_accepts_market_opportunity_configs() -> None:
     smoke = _load_config(Path("configs/experiments/market-opportunity-smoke.json"))
     matrix = _load_config(Path("configs/experiments/market-opportunity-matrix-v1.json"))
+    locked = _load_config(Path("configs/experiments/prop-signal-locked-validation-v1.json"))
 
     smoke_variants = {variant["name"]: variant for variant in smoke["variants"]}
     matrix_variants = {variant["name"]: variant for variant in matrix["variants"]}
+    locked_variants = {variant["name"]: variant for variant in locked["variants"]}
     assert smoke_variants["decision_edge_smoke"]["target"] == "decision"
     assert smoke_variants["finish_edge_smoke"]["selection_policy"]["type"] == "finish_edge"
     assert matrix_variants["winner_overpriced_favorite_log_c1_edge05"]["selection_policy"]["type"] == "overpriced_favorite"
     assert matrix_variants["winner_underdog_blend40_edge04"]["market_blend_weight"] == 0.4
+    assert locked["corpus"]["holdout"] == {"type": "last_n_events", "event_count": 20}
+    assert locked_variants["locked_decision_market_strength_conf62"]["target"] == "decision"
 
 
 def test_validate_config_rejects_active_model_writes() -> None:
