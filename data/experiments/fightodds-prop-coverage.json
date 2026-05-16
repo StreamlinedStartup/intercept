@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-05-16T00:45:39.211Z",
+  "report": "fightodds-prop-coverage",
+  "report_only": true,
+  "writes_model_versions": false,
+  "summary": {
+    "source_events": 1,
+    "source_fights": 14,
+    "matched_fights": 12,
+    "distance_markets": 12,
+    "prop_rows": 294,
+    "linked_prop_rows": 294,
+    "source_current_rows": 164,
+    "source_previous_rows": 130,
+    "fight_match_rate": 0.8571428571428571,
+    "prop_link_rate": 1,
+    "decision_finish_baselines_ready": true
+  },
+  "timestamp_limitations": [
+    "Imported prop rows use line_kind source_current or source_previous only.",
+    "FightOdds exposes oddsPrev but no previous-price timestamp in this query shape.",
+    "oddsOpen, oddsBest, and oddsWorst are preserved in raw_metadata but are not treated as model-ready timestamps."
+  ],
+  "readiness_notes": [
+    "Ready for report-only opportunity-harness evaluation of fight_goes_decision and finish_likelihood baselines.",
+    "Not ready for betting recommendations or model promotion; the corpus is still a one-event prop slice.",
+    "Fighter-specific decision, KO/TKO, submission, and inside-distance method markets are present in source data but remain outside this first imported slice."
+  ],
+  "events": [
+    {
+      "source_event_id": "5362",
+      "raw_name": "UFC Fight Night 237: Moreno vs. Royval 2",
+      "event_date": "2024-02-24",
+      "canonical_event_id": "902ab9197b83d0db",
+      "source_fights": 14,
+      "matched_fights": 12,
+      "distance_markets": 12,
+      "prop_rows": 294,
+      "linked_prop_rows": 294,
+      "source_current_rows": 164,
+      "source_previous_rows": 130
+    }
+  ],
+  "outcomes": [
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Yes",
+      "rows": 61
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Will The Fight Go The Distance - Yes",
+      "rows": 24
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Goes the Distance - Yes",
+      "rows": 23
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "Fight Goes To Decision? - Yes",
+      "rows": 20
+    },
+    {
+      "outcome_side": "outcome1",
+      "is_not": false,
+      "raw_outcome_name": "To go the distance - Yes",
+      "rows": 19
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "No",
+      "rows": 61
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Will The Fight Go The Distance - No",
+      "rows": 24
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Goes the Distance - No",
+      "rows": 23
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "Fight Goes To Decision? - No",
+      "rows": 20
+    },
+    {
+      "outcome_side": "outcome2",
+      "is_not": true,
+      "raw_outcome_name": "To go the distance - No",
+      "rows": 19
+    }
+  ]
+}
