@@ -28,6 +28,18 @@ type MlPredictResult = {
 	decision_signals?: DecisionSignals;
 };
 
+type MlOver25IndicatorResult = {
+	target: 'over_2_5';
+	label: string;
+	model_version: string;
+	model_probability: number | null;
+	threshold: number;
+	candidate: boolean;
+	value_status: 'report_only' | 'insufficient_training';
+	value_status_reason: string;
+	training_sample_count: number;
+};
+
 type DecisionSignal = {
 	label: string;
 	summary: string;
@@ -60,6 +72,7 @@ type StoredPrediction = {
 	odds?: MarketOdds[];
 	edge_pct?: number;
 	market_prob?: number;
+	over_2_5_indicator?: Over25Indicator;
 	value_status: ValueStatus;
 	value_status_reason: string;
 };
@@ -72,6 +85,21 @@ type MarketOdds = {
 };
 
 type ValueStatus = 'research_only' | 'insufficient_coverage' | 'validated';
+
+type Over25Indicator = {
+	target: 'over_2_5';
+	label: string;
+	model_version: string;
+	model_probability: number | null;
+	market_probability: number | null;
+	edge_pct: number | null;
+	threshold: number;
+	candidate: boolean;
+	market_pair_count: number;
+	training_sample_count: number;
+	value_status: 'report_only' | 'insufficient_coverage' | 'insufficient_training';
+	value_status_reason: string;
+};
 
 type PredictionHistoryRow = {
 	fight_id: string;
@@ -325,9 +353,15 @@ async function predictAndPersist(
 		'ml.predict',
 		buildMlPredictParams(fighterA, fighterB),
 	);
+	const over25Result = await bridge.call<MlOver25IndicatorResult>(
+		'ml.prop_indicator.over_2_5',
+		buildMlPredictParams(fighterA, fighterB),
+	);
 	const market = await loadMarketOdds(fightId);
+	const over25Market = await loadOver25Market(fightId);
 	const predictedMarketOdds = market.find((odds) => odds.fighter_id === result.predicted_winner_id);
 	const edgePct = predictedMarketOdds ? result.win_prob - predictedMarketOdds.market_prob : null;
+	const over25Indicator = mergeOver25Indicator(over25Result, over25Market);
 
 	await db.insert(predictions).values({
 		fightId,
@@ -353,6 +387,7 @@ async function predictAndPersist(
 		...(market.length === 2 && edgePct !== null
 			? { odds: market, edge_pct: edgePct, market_prob: predictedMarketOdds?.market_prob }
 			: {}),
+		over_2_5_indicator: over25Indicator,
 		value_status: valueStatus.status,
 		value_status_reason: valueStatus.reason,
 	};
@@ -432,6 +467,114 @@ async function loadMarketOdds(fightId: string): Promise<MarketOdds[]> {
 		american_odds: row.american_odds,
 		market_prob: row.rawMarketProb / total,
 	}));
+}
+
+async function loadOver25Market(fightId: string): Promise<{
+	market_probability: number;
+	pair_count: number;
+} | null> {
+	const rows = (await sql`
+		SELECT
+			hpo.source_market_id,
+			hpo.sportsbook_slug,
+			hpo.outcome_side,
+			hpo.implied_probability
+		FROM historical_prop_odds hpo
+		JOIN historical_odds_fights hof ON hof.id = hpo.historical_fight_id
+		WHERE hof.canonical_fight_id = ${fightId}
+			AND hpo.source_offer_type_id = 'OVERUNDER_2.5'
+			AND hpo.line_kind = 'source_current'
+	`) as Array<{
+		source_market_id: string;
+		sportsbook_slug: string;
+		outcome_side: string;
+		implied_probability: number;
+	}>;
+	return over25NoVigMarket(rows);
+}
+
+export function over25NoVigMarket(
+	rows: Array<{
+		source_market_id: string;
+		sportsbook_slug: string;
+		outcome_side: string;
+		implied_probability: number;
+	}>,
+): { market_probability: number; pair_count: number } | null {
+	const pairs = new Map<string, { outcome1?: number; outcome2?: number }>();
+	for (const row of rows) {
+		const key = `${row.source_market_id}:${row.sportsbook_slug}`;
+		const pair = pairs.get(key) ?? {};
+		if (row.outcome_side === 'outcome1') pair.outcome1 = Number(row.implied_probability);
+		if (row.outcome_side === 'outcome2') pair.outcome2 = Number(row.implied_probability);
+		pairs.set(key, pair);
+	}
+	const probabilities: number[] = [];
+	for (const pair of pairs.values()) {
+		if (pair.outcome1 === undefined || pair.outcome2 === undefined) continue;
+		const total = pair.outcome1 + pair.outcome2;
+		if (total > 0) probabilities.push(pair.outcome1 / total);
+	}
+	if (probabilities.length === 0) return null;
+	return {
+		market_probability: probabilities.reduce((sum, value) => sum + value, 0) / probabilities.length,
+		pair_count: probabilities.length,
+	};
+}
+
+export function mergeOver25Indicator(
+	model: MlOver25IndicatorResult,
+	market: { market_probability: number; pair_count: number } | null,
+): Over25Indicator {
+	if (model.value_status === 'insufficient_training' || model.model_probability === null) {
+		return {
+			target: 'over_2_5',
+			label: model.label,
+			model_version: model.model_version,
+			model_probability: model.model_probability,
+			market_probability: market?.market_probability ?? null,
+			edge_pct:
+				model.model_probability !== null && market
+					? model.model_probability - market.market_probability
+					: null,
+			threshold: model.threshold,
+			candidate: false,
+			market_pair_count: market?.pair_count ?? 0,
+			training_sample_count: model.training_sample_count,
+			value_status: 'insufficient_training',
+			value_status_reason: model.value_status_reason,
+		};
+	}
+	if (!market) {
+		return {
+			target: 'over_2_5',
+			label: model.label,
+			model_version: model.model_version,
+			model_probability: model.model_probability,
+			market_probability: null,
+			edge_pct: null,
+			threshold: model.threshold,
+			candidate: model.candidate,
+			market_pair_count: 0,
+			training_sample_count: model.training_sample_count,
+			value_status: 'insufficient_coverage',
+			value_status_reason: 'Matched OVERUNDER_2.5 prop market is required before edge can be evaluated.',
+		};
+	}
+	return {
+		target: 'over_2_5',
+		label: model.label,
+		model_version: model.model_version,
+		model_probability: model.model_probability,
+		market_probability: market.market_probability,
+		edge_pct: model.model_probability - market.market_probability,
+		threshold: model.threshold,
+		candidate: model.candidate,
+		market_pair_count: market.pair_count,
+		training_sample_count: model.training_sample_count,
+		value_status: 'report_only',
+		value_status_reason: model.value_status_reason,
+	};
 }
 
 async function loadPredictionHistory({
