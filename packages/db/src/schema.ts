@@ -1,6 +1,7 @@
 import {
 	boolean,
 	date,
+	index,
 	integer,
 	pgEnum,
 	pgTable,
@@ -426,5 +427,47 @@ export const predictions = pgTable(
 		pk: primaryKey({
 			columns: [t.fightId, t.modelVersion, t.predictedAt],
 		}),
+	}),
+);
+
+export const marketIndicatorSnapshots = pgTable(
+	'market_indicator_snapshots',
+	{
+		fightId: text('fight_id')
+			.notNull()
+			.references(() => fights.id, { onDelete: 'cascade' }),
+		target: text('target').notNull(),
+		modelVersion: text('model_version').notNull(),
+		indicatorName: text('indicator_name').notNull(),
+		computedAt: timestamp('computed_at', { withTimezone: true }).notNull(),
+		modelProbability: real('model_probability').notNull(),
+		marketProbability: real('market_probability'),
+		edgePct: real('edge_pct'),
+		candidate: boolean('candidate').notNull().default(false),
+		marketPairCount: integer('market_pair_count').notNull().default(0),
+		valueStatus: text('value_status').notNull().default('research_only'),
+		sourceReport: text('source_report').notNull(),
+		sourceConfig: text('source_config'),
+		sourceGitSha: text('source_git_sha'),
+		sourceModelPath: text('source_model_path'),
+		sourceDataWindow: text('source_data_window'),
+		stalenessReason: text('staleness_reason'),
+		rawMetadata: text('raw_metadata').notNull().default('{}'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => ({
+		pk: primaryKey({
+			columns: [t.fightId, t.target, t.modelVersion, t.indicatorName],
+		}),
+		fightTargetComputedAtIdx: index('market_indicator_snapshots_fight_target_computed_at_idx').on(
+			t.fightId,
+			t.target,
+			t.computedAt,
+		),
+		valueStatusComputedAtIdx: index('market_indicator_snapshots_value_status_computed_at_idx').on(
+			t.valueStatus,
+			t.computedAt,
+		),
 	}),
 );

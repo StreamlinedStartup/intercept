@@ -43,6 +43,13 @@
       "when": 1778887423873,
       "tag": "0005_historical_prop_odds",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778939858000,
+      "tag": "0006_market_indicator_snapshots",
+      "breakpoints": true
     }
   ]
 }
